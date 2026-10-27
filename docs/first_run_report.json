@@ -1,0 +1,365 @@
+{
+  "started": 1793139087.3326957,
+  "tests": {
+    "security: sandbox isolation": {
+      "passed": true,
+      "detail": {
+        "network": "blocked",
+        "secrets_visible": false,
+        "db_visible": false,
+        "env_has_secrets": false,
+        "backend": "namespace",
+        "passed": true
+      },
+      "seconds": 0.1
+    },
+    "native model: train from random init, save, load, infer, evaluate": {
+      "passed": true,
+      "detail": {
+        "checkpoint": "ckpt_880dae42cfbc",
+        "metrics": {
+          "val_loss": 3.2601,
+          "val_ppl": 26.05,
+          "bits_per_byte": 2.1377,
+          "baseline_uniform_loss": 6.6438,
+          "baseline_unigram_loss": 5.6369,
+          "beats_unigram_baseline": true,
+          "init_val_loss": 6.6579,
+          "train_seconds": 418.6,
+          "cpu_seconds": 414.3,
+          "params": 799872,
+          "steps": 1500,
+          "train_tokens": 530678,
+          "energy_kwh": null,
+          "energy_note": "Data unavailable (no power meter)"
+        },
+        "loss_curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "val_loss": 6.6579
+          },
+          {
+            "step": 150,
+            "train_loss": 4.2956,
+            "val_loss": 4.3121
+          },
+          {
+            "step": 300,
+            "train_loss": 3.9539,
+            "val_loss": 4.1057
+          },
+          {
+            "step": 450,
+            "train_loss": 3.7939,
+            "val_loss": 3.9665
+          },
+          {
+            "step": 600,
+            "train_loss": 3.5624,
+            "val_loss": 3.7878
+          },
+          {
+            "step": 750,
+            "train_loss": 3.4,
+            "val_loss": 3.6627
+          },
+          {
+            "step": 900,
+            "train_loss": 3.2811,
+            "val_loss": 3.5454
+          },
+          {
+            "step": 1050,
+            "train_loss": 3.1478,
+            "val_loss": 3.4526
+          },
+          {
+            "step": 1200,
+            "train_loss": 3.062,
+            "val_loss": 3.3765
+          },
+          {
+            "step": 1350,
+            "train_loss": 2.9702,
+            "val_loss": 3.3375
+          },
+          {
+            "step": 1500,
+            "train_loss": 2.9126,
+            "val_loss": 3.3028
+          }
+        ],
+        "reloaded_from_disk": true,
+        "inference": {
+          "checkpoint_id": "ckpt_880dae42cfbc",
+          "performer": "native:mdl_a6c52b07d12e/ckpt_880dae42cfbc",
+          "prompt": "The function returns",
+          "completion": " turtle.\n\nBase following stop.\n\nGeparam sections a file, which is a defined as a string.\n",
+          "latency_ms": 258.5
+        },
+        "job": "job_59b3b01c7cb9"
+      },
+      "seconds": 421.2
+    },
+    "native code model: train + protected code tasks (Milestone B baseline)": {
+      "passed": true,
+      "detail": {
+        "checkpoint": "ckpt_6166f991f510",
+        "train_metrics": {
+          "val_loss": 3.315,
+          "val_ppl": 27.52,
+          "bits_per_byte": 1.9335,
+          "baseline_uniform_loss": 6.6438,
+          "baseline_unigram_loss": 5.8802,
+          "beats_unigram_baseline": true,
+          "init_val_loss": 6.6685,
+          "train_seconds": 416.1,
+          "cpu_seconds": 411.9,
+          "params": 799872,
+          "steps": 1500,
+          "train_tokens": 690493,
+          "energy_kwh": null,
+          "energy_note": "Data unavailable (no power meter)"
+        },
+        "protected_code_tasks": {
+          "pass_at_3": 0.0,
+          "tasks": 8,
+          "tasks_passed": 0
+        },
+        "sample": "line input.spl.\n\n        May_preceided() is set.  IO.\n        \"\"\"\n        # Some Lists the LEFTypected ass the fout.\n        self.policy:"
+      },
+      "seconds": 440.9
+    },
+    "native vision prototype: held-out digit classification (Milestone D)": {
+      "passed": true,
+      "detail": {
+        "accuracy": 0.9777,
+        "test_images": 359,
+        "chance_accuracy": 0.1,
+        "train_seconds": 0.15,
+        "latency_ms": 0.0002,
+        "params": 4810
+      },
+      "seconds": 0.2
+    },
+    "quality lab: one passing + one intentionally failing test reported correctly": {
+      "passed": true,
+      "detail": {
+        "run": "run_5b835f74d817",
+        "results": [
+          [
+            "test_passing_addition",
+            "PASS"
+          ],
+          [
+            "test_intentionally_failing",
+            "FAIL"
+          ]
+        ],
+        "expected": "1 passed, 1 failed (intentional)"
+      },
+      "seconds": 0.5
+    },
+    "first coding benchmark: native attempt recorded honestly + labelled external comparison": {
+      "passed": true,
+      "detail": {
+        "native_task": "task_9f18b0a6ef8f",
+        "native_status": "failed",
+        "native_result": {
+          "task_id": "task_9f18b0a6ef8f",
+          "mode": "native",
+          "run_id": "run_603dace4d14f",
+          "passed": 0,
+          "failed": 10,
+          "attempts": 3,
+          "branch": "aelio/task_9f18b0a6ef8f",
+          "stopped_at": "review",
+          "reason": "acceptance tests failed after bounded retries"
+        },
+        "native_performers": [
+          "deterministic:acceptance-gate-v1",
+          "deterministic:diagnose-v1",
+          "deterministic:plan-template-v1",
+          "deterministic:quality-lab-v1",
+          "deterministic:review-summary-v1",
+          "deterministic:router-v1 + git",
+          "native:mdl_4b8f17c8f55f/ckpt_6166f991f510"
+        ],
+        "external_comparison_task": "task_b28340a28e04",
+        "external_status": "done",
+        "external_result": {
+          "task_id": "task_b28340a28e04",
+          "mode": "external-comparison",
+          "run_id": "run_a3d8571b715c",
+          "passed": 17,
+          "failed": 0,
+          "attempts": 1,
+          "branch": "aelio/task_b28340a28e04",
+          "deployment_id": "dep_66ed3aa3c547"
+        },
+        "native_never_credited_with_external_work": true
+      },
+      "seconds": 16.3
+    },
+    "green guardians: real telemetry + labelled synthetic thermal scenario, recommend-only": {
+      "passed": true,
+      "detail": {
+        "real_readings": {
+          "cpu_util_pct": 0.0,
+          "mem_used_pct": 10.8,
+          "load_1m": 0.9267578125,
+          "cpu_freq_mhz": 2100.0,
+          "cpu_temp_c": null,
+          "fan_rpm": null,
+          "cpu_energy_j_counter": null,
+          "gpu0_temp_c": null,
+          "water_liters": null
+        },
+        "synthetic_events": [
+          [
+            "guardian-workload",
+            "CPU at 84.5\u00b0C (warning \u226580.0\u00b0C). Recommend staggering 0 queued non-critical job(s) until temperature falls."
+          ],
+          [
+            "guardian-cooling",
+            "Cooling demand is rising. Check airflow and confirm fans respond. No fan or firmware settings were changed."
+          ],
+          [
+            "guardian-resource",
+            "Water use: Data unavailable. No facility meter is connected, so no water figure is reported."
+          ]
+        ],
+        "hardware_settings_changed": false,
+        "labelled_simulated": true
+      },
+      "seconds": 0.3
+    },
+    "voice lab: six voices registered; synthesis distinguishes untrained profiles": {
+      "passed": true,
+      "detail": {
+        "voices": [
+          [
+            "aelio-voice-groove",
+            "awaiting_training"
+          ],
+          [
+            "aelio-voice-nova",
+            "awaiting_training"
+          ],
+          [
+            "aelio-voice-sol",
+            "awaiting_training"
+          ],
+          [
+            "aelio-voice-sage",
+            "awaiting_training"
+          ],
+          [
+            "aelio-voice-echo",
+            "awaiting_training"
+          ],
+          [
+            "aelio-voice-aura",
+            "awaiting_training"
+          ]
+        ],
+        "synthesis": {
+          "status": "awaiting_training",
+          "message": "NOVA has no approved AELIO Native speech checkpoint. No audio was generated. Next step: register a licensed, consented speech dataset for this voice and run speech training (Milestone C).",
+          "latency_ms": 0.07
+        }
+      },
+      "seconds": 0.0
+    },
+    "deployment: dry-run preview plan; production blocked pending founder approval": {
+      "passed": true,
+      "detail": {
+        "deployment": "dep_f7dd920da0e1",
+        "plan": {
+          "mode": "dry-run",
+          "reason": "No preview hosting target or deploy credentials are configured. AELIO holds no production credentials.",
+          "would_do": [
+            "build static assets from branch aelio/task_b28340a28e04",
+            "upload to an isolated preview environment (e.g. Cloudflare Pages preview branch)",
+            "post the preview URL to Founder Review"
+          ],
+          "tests_passed": true,
+          "test_run": "run_a3d8571b715c",
+          "production": "BLOCKED: requires founder approval with fresh MFA"
+        },
+        "approval_attempts": [
+          [
+            "agent",
+            true,
+            "blocked: only the founder can approve production deployments"
+          ],
+          [
+            "app",
+            true,
+            "blocked: only the founder can approve production deployments"
+          ],
+          [
+            "founder",
+            false,
+            "blocked: re-enter your authenticator code to approve production"
+          ]
+        ]
+      },
+      "seconds": 0.0
+    },
+    "security: unauthenticated users and app keys cannot reach studio routes": {
+      "passed": true,
+      "detail": {
+        "unauthenticated": {
+          "GET /api/overview": 401,
+          "GET /api/datasets": 401,
+          "GET /api/settings": 401,
+          "POST /api/secrets": 401,
+          "POST /api/train": 401,
+          "POST /api/quality/run": 401,
+          "POST /api/tasks": 401,
+          "GET /api/projects": 401,
+          "POST /api/deployments/x/approve": 401,
+          "GET /api/audit": 401,
+          "POST /api/security/selftest": 401
+        },
+        "application_key_on_studio_routes": {
+          "app-key GET /api/overview": 401,
+          "app-key GET /api/datasets": 401,
+          "app-key GET /api/settings": 401,
+          "app-key POST /api/secrets": 401
+        }
+      },
+      "seconds": 0.1
+    },
+    "integration: authenticated app request via gateway, scopes + audit enforced": {
+      "passed": true,
+      "detail": {
+        "GET /v1/voices": 200,
+        "POST synthesize without scope": 403,
+        "no key": 401,
+        "audited_requests": 2,
+        "existing_grooveville_apps_modified": false
+      },
+      "seconds": 0.0
+    },
+    "auth: Firebase ID-token verification + founder allow-list (offline keys)": {
+      "passed": true,
+      "detail": {
+        "note": "Offline verification with a locally generated signing key. A live Firebase project is not configured yet.",
+        "results": {
+          "founder token": "accepted",
+          "other account": "rejected (this account is not authorised for AELIO Studio)",
+          "wrong project": "rejected (invalid token: Audience doesn't match)",
+          "expired": "rejected (invalid token: Signature has expired)",
+          "unverified email": "rejected (this account is not authorised for AELIO Studio)"
+        }
+      },
+      "seconds": 0.0
+    }
+  },
+  "host": "vm",
+  "finished": 1793139967.111944,
+  "all_passed": true
+}

@@ -1,0 +1,6 @@
+# Image used by the Docker sandbox backend (recommended in production).
+# Build: docker build -f Dockerfile.sandbox -t aelio-sandbox:latest .
+FROM mcr.microsoft.com/playwright/python:v1.47.0-jammy
+RUN pip install --no-cache-dir pytest==8.3.3 \
+ && apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
+WORKDIR /work

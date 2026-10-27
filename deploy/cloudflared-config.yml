@@ -1,0 +1,9 @@
+# Cloudflare Tunnel: exposes the studio at https://studio.aelio.live with no open inbound ports.
+# Setup: cloudflared tunnel login && cloudflared tunnel create aelio-studio
+#        cloudflared tunnel route dns aelio-studio studio.aelio.live   (adds ONE new CNAME; existing records untouched)
+tunnel: aelio-studio
+credentials-file: /etc/cloudflared/aelio-studio.json
+ingress:
+  - hostname: studio.aelio.live
+    service: http://127.0.0.1:8787
+  - service: http_status:404

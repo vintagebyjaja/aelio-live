@@ -1,0 +1,7 @@
+{
+  "performer": "external:claude (Anthropic) — development assistant",
+  "is_aelio_native": false,
+  "training_eligible": false,
+  "purpose": "Explicitly labelled external-assisted comparison for the first coding benchmark (dashboard_benchmark_v1). It shows the task is solvable and what passing looks like. It must never be reported as AELIO Native output or used as AELIO training data.",
+  "created": "2026-10-27"
+}

@@ -1,0 +1,24 @@
+rules_version = '2';
+// AELIO Studio: founder-only Firestore rules.
+// Deploy ONLY to the Firebase project dedicated to AELIO Studio (see firebase/README.md).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isFounder() {
+      return request.auth != null
+        && request.auth.uid == '0RcUhRBDI4hGWisgzuyezqGVVZC3'
+        && request.auth.token.email == 'jaja@vybr8.live'
+        && request.auth.token.email_verified == true;
+    }
+
+    // Founder-published model listings may be read by anyone (for aelio.live); only the founder writes.
+    match /public_models/{modelId} {
+      allow read: if true;
+      allow write: if isFounder();
+    }
+
+    // Everything else: founder only.
+    match /{document=**} {
+      allow read, write: if isFounder();
+    }
+  }
+}
