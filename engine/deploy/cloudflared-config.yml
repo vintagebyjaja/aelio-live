@@ -1,0 +1,9 @@
+# Cloudflare Tunnel for Workers VPC: connects the AELIO engine to Cloudflare with NO public hostname.
+# aelio.live reaches it only through the private "aelio-engine" Worker (cloudflare/aelio-engine-worker).
+# Easiest: create the tunnel in the dashboard (Workers VPC -> Tunnels) and run the install command it shows;
+# then this file isn't needed. For a locally managed tunnel:
+tunnel: aelio-engine
+credentials-file: /etc/cloudflared/aelio-engine.json
+# No hostname entries on purpose. Routing is done by the Workers VPC service (localhost:8787).
+ingress:
+  - service: http_status:404

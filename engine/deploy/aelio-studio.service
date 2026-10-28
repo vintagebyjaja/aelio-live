@@ -1,0 +1,19 @@
+# systemd unit for the studio server. Install: sudo cp deploy/aelio-studio.service /etc/systemd/system/
+[Unit]
+Description=AELIO Native Studio
+After=network-online.target
+
+[Service]
+User=aelio
+WorkingDirectory=/srv/aelio/aelio-live/engine
+EnvironmentFile=/srv/aelio/aelio-live/engine/.env
+ExecStart=/srv/aelio/venv/bin/python -m aelio.cli serve --host 127.0.0.1 --port 8787
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+# protected_suites/ is deliberately read-only to the running server; relock via the CLI as the owner.
+ReadWritePaths=/srv/aelio/var /tmp
+PrivateTmp=false
+
+[Install]
+WantedBy=multi-user.target
