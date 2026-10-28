@@ -1,0 +1,20 @@
+{
+  "name": "aelio-live",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node _src/build.mjs && node _src/build-brain.mjs",
+    "build:pages": "node _src/build.mjs",
+    "build:brain": "node _src/build-brain.mjs",
+    "check": "node _src/checks/check-public.mjs",
+    "check:deploy": "node _src/checks/check-deploy.mjs",
+    "test": "node --test _src/checks/test-engine-proxy.mjs",
+    "dev": "node _src/checks/pages-emulator.mjs public 8090"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "typescript": "5.9.3"
+  }
+}
