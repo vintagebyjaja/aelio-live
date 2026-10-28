@@ -1,0 +1,5 @@
+# Brain app: every /brain/my/* and /studiobrain/* URL loads the app shell (rewrite, not redirect)
+/brain/my/*      /brain/my/index.html      200
+/studiobrain/*   /studiobrain/index.html   200
+# Old one-page anchors -> new pages
+/#aelio          /aelio/                   301
