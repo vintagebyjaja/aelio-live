@@ -11,7 +11,7 @@ import time
 from . import db
 from .security import hash_key, new_api_key
 
-SCOPES = {"voices:read", "voices:synthesize", "models:read", "models:infer", "status:read"}
+SCOPES = {"voices:read", "voices:synthesize", "models:read", "models:infer", "status:read", "core:respond", "core:memory"}
 ECOSYSTEM = ["Grooveville", "Groove Guide", "DrawUp", "VYBR8", "PATHD", "Shadow Crown", "Grooveville Entertainment",
              "Grooveville Music", "Grooveville TV", "Grooveville Live"]
 

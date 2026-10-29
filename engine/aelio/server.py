@@ -41,8 +41,8 @@ gw_limiter = RateLimiter(300)
 
 
 class HTTPError(Exception):
-    def __init__(self, status: int, msg: str):
-        self.status, self.msg = status, msg
+    def __init__(self, status: int, msg: str, code: str | None = None, **info):
+        self.status, self.msg, self.code, self.info = status, msg, code, info
 
 
 def ip_of(req: Request) -> str:
@@ -69,39 +69,45 @@ def _bearer(req: Request) -> str | None:
     return h[7:].strip() if h.lower().startswith("bearer ") else None
 
 
-def ensure_user(ident: dict) -> dict:
-    """Create or refresh the local record for a verified Firebase account (allow-lists are authoritative)."""
-    uid = "fb_" + ident["uid"]
-    u = db.q1("SELECT * FROM users WHERE id=?", (uid,))
-    if not u:
-        email = ident["email"] or uid
-        if db.q1("SELECT id FROM users WHERE email=?", (email,)):
-            email = f"{email}#{ident['uid'][:8]}"
-        db.insert("users", {"id": uid, "email": email, "pw_hash": "firebase", "totp_secret": new_totp_secret(),
-                            "mfa_enabled": 0, "role": ident["role"], "created_at": db.now(),
-                            "firebase_uid": ident["uid"], "unlimited": int(ident["unlimited"])})
-        db.audit("system", uid, "user.created", uid, {"role": ident["role"]})
-    else:
-        db.update("users", "id", uid, role=ident["role"], unlimited=int(ident["unlimited"]), last_seen=db.now())
+def _new_user(prefix: str, ident: dict) -> dict:
+    uid = prefix + ident["uid"]
+    email = ident["email"] or uid
+    if db.q1("SELECT id FROM users WHERE email=?", (email,)):
+        email = f"{email}#{ident['uid'][:8]}"
+    db.insert("users", {"id": uid, "email": email, "pw_hash": ident.get("provider", "idp"), "totp_secret": new_totp_secret(),
+                        "mfa_enabled": 0, "role": ident["role"], "created_at": db.now(),
+                        "firebase_uid": ident["uid"] if ident.get("provider", "firebase") == "firebase" else None,
+                        "unlimited": int(ident["unlimited"])})
+    db.audit("system", uid, "user.created", uid, {"role": ident["role"], "provider": ident.get("provider", "firebase")})
     return db.q1("SELECT * FROM users WHERE id=?", (uid,))
+
+
+def ensure_user(ident: dict) -> dict:
+    """Find or create the ONE AELIO user for a verified identity (any provider); allow-lists set the role."""
+    from . import identity
+    ident = {"provider": "firebase", **ident}
+    u = identity.link(ident, _new_user)
+    db.update("users", "id", u["id"], role=ident["role"], unlimited=int(ident["unlimited"]), last_seen=db.now())
+    return db.q1("SELECT * FROM users WHERE id=?", (u["id"],))
 
 
 def principal(req: Request) -> dict | None:
     """Who is calling: Firebase ID token (aelio.live), session token, or session cookie."""
     tok = _bearer(req)
     if tok and tok.count(".") == 2:
+        from . import identity
         try:
-            claims = firebase_auth.verify_token(tok)
-        except firebase_auth.AuthError as e:
+            ident = identity.resolve(identity.verify(tok))
+        except identity.AuthError as e:
             raise HTTPError(401, str(e))
-        ident = firebase_auth.identity(claims)
+        base = {"provider": ident["provider"], "products": ident["products"], "csrf": None, "via": "idtoken"}
         if ident["role"] == "visitor":
-            return {"user_id": None, "email": ident["email"], "role": "visitor", "unlimited": False,
-                    "mfa_at": None, "csrf": None, "via": "firebase", "plan": None, "status": "active"}
+            return {**base, "user_id": None, "email": ident["email"], "role": "visitor", "unlimited": False,
+                    "mfa_at": None, "plan": None, "status": "active"}
         u = ensure_user(ident)
-        return {"user_id": u["id"], "email": ident["email"], "role": ident["role"],
-                "unlimited": ident["unlimited"], "mfa_at": u["mfa_at"], "csrf": None, "via": "firebase",
-                "plan": u["plan"], "status": u["status"], "mfa_enabled": u["mfa_enabled"]}
+        return {**base, "user_id": u["id"], "email": ident["email"], "role": ident["role"],
+                "unlimited": ident["unlimited"], "mfa_at": u["mfa_at"], "plan": u["plan"], "status": u["status"],
+                "mfa_enabled": u["mfa_enabled"]}
     sess = get_session(tok) if tok else get_session(req.cookies.get(COOKIE))
     if not sess:
         return None
@@ -114,17 +120,24 @@ def principal(req: Request) -> dict | None:
 def _mfa_ok(p: dict) -> bool:
     if not p.get("mfa_at"):
         return False
-    if p["via"] == "firebase":
+    if p["via"] == "idtoken":
         return time.time() - p["mfa_at"] < get_settings().session_hours * 3600
     return True
 
 
-def founder(req: Request, *, write: bool = False, allow_pending_mfa: bool = False) -> dict:
+def founder(req: Request, *, write: bool = False, allow_pending_mfa: bool = False, studio: bool = True) -> dict:
+    """Studio Brain access: founder account (UID + email) + authenticator code + the Studio Brain challenge."""
     p = principal(req)
     if not p or p["role"] != "founder":
         raise HTTPError(401 if not p else 403, "authentication required" if not p else "Studio Brain is founder-only")
     if not allow_pending_mfa and not _mfa_ok(p):
         raise HTTPError(401, "MFA required")
+    if studio and not allow_pending_mfa:
+        from . import studio_security
+        try:
+            studio_security.require_unlocked(p["user_id"])
+        except studio_security.SecurityError as e:
+            raise HTTPError(e.status, e.msg, e.code, **e.info)
     if write and p["via"] == "cookie" and req.headers.get("x-csrf-token") != p["csrf"]:
         raise HTTPError(403, "missing or invalid CSRF token")
     return p
@@ -143,7 +156,7 @@ def member(req: Request, *, write: bool = False) -> dict:
 
 
 def mark_mfa(req: Request, p: dict) -> None:
-    if p["via"] == "firebase":
+    if p["via"] == "idtoken":
         db.update("users", "id", p["user_id"], mfa_at=time.time())
     else:
         touch_mfa(p["token"])
@@ -161,7 +174,7 @@ def route(path: str, methods=("GET",)):
                     return J({"error": "rate limited"}, 429)
                 return await fn(req)
             except HTTPError as e:
-                return J({"error": e.msg}, e.status)
+                return J({"error": e.msg, **({"code": e.code} if e.code else {}), **e.info}, e.status)
             except usage.UsageError as e:
                 return J({"error": str(e), "code": e.code, **{k: v for k, v in e.info.items()}}, e.status)
             except (projects.PolicyError, deploy.ApprovalError, suites.SuiteTampered) as e:
@@ -271,8 +284,9 @@ async def api_me(req):
     p = principal(req)
     if not p:
         return J({"authenticated": False, "destination": "game"})
+    from .routes_security import account_level
     out = {"authenticated": True, "email": p["email"], "role": p["role"], "unlimited": p["unlimited"],
-           "destination": {"founder": "studiobrain", "member": "my"}.get(p["role"], "game")}
+           "destination": {"founder": "studiobrain", "member": "my"}.get(p["role"], "game"), **account_level(p)}
     if p["role"] == "founder":
         u = db.q1("SELECT * FROM users WHERE id=?", (p["user_id"],))
         out["mfa"] = "ok" if _mfa_ok(p) else ("verify" if u["mfa_enabled"] else "enroll")
@@ -863,6 +877,12 @@ def gw(path: str, scope: str, methods=("GET",)):
                 return resp
             except FileNotFoundError:
                 status = 404; return J({"error": "not found"}, 404)
+            except HTTPError as e:
+                status = e.status; return J({"error": e.msg, **({"code": e.code} if e.code else {}), **e.info}, e.status)
+            except usage.UsageError as e:
+                status = e.status; return J({"error": str(e), "code": e.code, **e.info}, e.status)
+            except (ValueError, KeyError, TypeError) as e:
+                status = 400; return J({"error": f"bad request: {e}"}, 400)
             finally:
                 gateway.record(app["id"] if app else None, path, status, (time.time() - t0) * 1000)
         ROUTES.append(Route(path, endpoint, methods=list(methods)))
@@ -1025,8 +1045,8 @@ class SecurityHeaders:
                       (b"x-content-type-options", b"nosniff"), (b"referrer-policy", b"no-referrer"),
                       (b"strict-transport-security", b"max-age=31536000; includeSubDomains"),
                       (b"permissions-policy", b"camera=(self), microphone=(self), display-capture=(self)")]
-                if path.startswith(("/api", "/v1")):
-                    h.append((b"cache-control", b"no-store"))
+                if path.startswith(("/api", "/v1")) and not any(k.lower() == b"cache-control" for k, _ in h):
+                    h.append((b"cache-control", b"no-store"))      # default for API; a route may opt in to caching
                 message = {**message, "headers": h}
             await send(message)
         await self.app(scope, receive, send_wrapper)
@@ -1035,6 +1055,9 @@ class SecurityHeaders:
 from . import routes_brain as _routes_brain  # noqa: E402,F401  (registers My AELIO + economy routes)
 from .intelligence import routes as _routes_ai  # noqa: E402,F401  (registers AI chat + Intelligence dashboard routes)
 from . import routes_engine as _routes_engine  # noqa: E402,F401  (health + founder engine overview)
+from . import routes_security as _routes_security  # noqa: E402,F401  (Studio Brain challenge + emergency recovery)
+from . import routes_core as _routes_core  # noqa: E402,F401  (AELIO Core: product API for PATHD etc. + founder overview)
+from . import routes_design as _routes_design  # noqa: E402,F401  (Web Designer: founder-controlled public site look)
 
 
 def create_app(start_worker: bool | None = None) -> Starlette:

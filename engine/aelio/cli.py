@@ -6,6 +6,11 @@
   python -m aelio.cli first-run            run every first-run verification and write the report
   python -m aelio.cli relock-suites        founder-only: re-hash protected suites after a reviewed change
   python -m aelio.cli register-app NAME SLUG SCOPE[,SCOPE]
+  python -m aelio.cli backup [--label L]   verified snapshot of the engine database (+ manifest)
+  python -m aelio.cli backup-verify FILE   re-check a backup's checksum, integrity and row counts
+  python -m aelio.cli restore FILE         roll back to a backup (backs up the current database first)
+  python -m aelio.cli identity-plan --firebase-export users.json --supabase-users sb.json   map users, changes nothing
+  python -m aelio.cli identity-import MAPPING.json [--apply]                               link Firebase -> Supabase UIDs
 """
 from __future__ import annotations
 
@@ -64,6 +69,39 @@ def cmd_first_run(a) -> None:
     print("ALL PASSED" if rep["all_passed"] else "SOME CHECKS FAILED")
 
 
+def cmd_backup(a) -> None:
+    from . import backup
+    print(json.dumps(backup.create(a.label), indent=1))
+
+
+def cmd_backup_verify(a) -> None:
+    from . import backup
+    r = backup.verify(a.file); print(json.dumps(r)); sys.exit(0 if r["ok"] else 1)
+
+
+def cmd_restore(a) -> None:
+    from . import backup
+    print(json.dumps(backup.restore(a.file), indent=1))
+
+
+def cmd_identity_plan(a) -> None:
+    from . import identity
+    fb = json.loads(open(a.firebase_export).read())
+    sb = json.loads(open(a.supabase_users).read())
+    sb = sb.get("users", sb) if isinstance(sb, dict) else sb
+    print(json.dumps(identity.plan(fb, sb), indent=1))
+
+
+def cmd_identity_import(a) -> None:
+    from . import backup, identity
+    rows = json.loads(open(a.mapping).read())
+    rows = rows.get("mapped", rows) if isinstance(rows, dict) else rows
+    if not a.apply:
+        print(json.dumps({"dry_run": True, "would_link": len(rows), "rows": rows}, indent=1)); return
+    print("backup:", backup.create("before-identity-import")["file"])
+    print(json.dumps(identity.import_mapping(rows, "cli"), indent=1))
+
+
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(prog="aelio")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -76,6 +114,13 @@ def main(argv=None) -> None:
     sub.add_parser("relock-suites").set_defaults(fn=cmd_relock)
     c = sub.add_parser("register-app"); c.add_argument("name"); c.add_argument("slug"); c.add_argument("scopes")
     c.set_defaults(fn=cmd_register_app)
+    c = sub.add_parser("backup"); c.add_argument("--label", default="manual"); c.set_defaults(fn=cmd_backup)
+    c = sub.add_parser("backup-verify"); c.add_argument("file"); c.set_defaults(fn=cmd_backup_verify)
+    c = sub.add_parser("restore"); c.add_argument("file"); c.set_defaults(fn=cmd_restore)
+    c = sub.add_parser("identity-plan"); c.add_argument("--firebase-export", required=True); c.add_argument("--supabase-users", required=True)
+    c.set_defaults(fn=cmd_identity_plan)
+    c = sub.add_parser("identity-import"); c.add_argument("mapping"); c.add_argument("--apply", action="store_true")
+    c.set_defaults(fn=cmd_identity_import)
     a = p.parse_args(argv)
     a.fn(a)
 
