@@ -1,9 +1,7 @@
-AELIO CINEMATIC REBUILD v3
+AELIO V4 targeted public-site patch
 
-This is a real HTML/CSS hero rebuild for the eight main public landing pages, not a screenshot background overlay.
+Merge the public/ folder into your existing GitHub repository public/ directory. Keep Cloudflare wrangler configuration and _redirects unchanged.
 
-Copy the contents of public/ into your GitHub repository public/ folder, preserving paths. This replaces public/assets/site.css with the original clean stylesheet (removing the broken v2 overlay), adds a separate redesign stylesheet and clean architectural photo crop, and replaces the eight landing page HTML files.
+Changes: 8 distinct layout treatments across public landing pages; three separate cinematic environment crops; CSS-created infinity emblem; silent 4-second homepage entry animation using the supplied Dream Beyond logo, skippable and once per session; reduced motion supported. Studio Brain, auth and backend not included.
 
-Do not delete or replace other files. Studio Brain, API, authentication, and Cloudflare config are not included.
-
-Verify navigation, mobile layout, all eight public landing pages, Studio Brain and API routes in Cloudflare preview before promoting to production. The hero photo is a clean crop from the previously generated visual concept, not a full original scene; richer per-page photography and true independent cloud/tree motion remain future work.
+IMPORTANT: The three scene images are derived from earlier approved concept art. Some pages share a scene with different layout/color treatment. This is not yet eight independently generated scenes. Test Cloudflare preview, page navigation, mobile, entry and Studio Brain before promoting to production.
