@@ -196,3 +196,23 @@ body.green .hero{background:radial-gradient(ellipse at 72% 45%,rgba(40,140,90,.2
   .foot-inner{grid-template-columns:1fr 1fr;padding:0 16px}
   .loop i{width:16px}
 }
+
+
+/* AELIO CINEMATIC INTEGRATION v2 — loaded by existing public pages.
+   Do not apply to /studiobrain or /brain routes. */
+@keyframes aelio-landscape-drift{from{transform:scale(1.035) translate3d(-.35%,0,0)}to{transform:scale(1.095) translate3d(.45%,-.5%,0)}}
+.hero:not(.brain-hero){isolation:isolate;background:#080c0e}
+.hero:not(.brain-hero)::after{content:"";position:absolute;inset:-2%;z-index:0;pointer-events:none;background:linear-gradient(90deg,rgba(3,7,11,.89) 0%,rgba(3,7,11,.72) 35%,rgba(3,7,11,.19) 78%),url('/assets/img/aelio-cinematic-home.webp') center/cover no-repeat;animation:aelio-landscape-drift 34s ease-in-out infinite alternate}
+.hero:not(.brain-hero)::before{z-index:1;opacity:.13}
+.hero:not(.brain-hero) .hero-grid{position:relative;z-index:2}
+.hero:not(.brain-hero) .hero-copy{position:relative;z-index:3;text-shadow:0 2px 28px rgba(0,0,0,.65)}
+.hero:not(.brain-hero) .hero-vis{filter:drop-shadow(0 10px 32px rgba(0,0,0,.22));opacity:.8}
+.hero-home .hero-grid{min-height:min(82vh,790px)}
+.hero-home .home-vis{opacity:.55!important}
+.hero .gold-btn{box-shadow:0 10px 30px rgba(255,170,60,.18)}
+/* Public section atmospheres; retain the existing content and navigation. */
+body:has(.nav-item.active a[href^="/technology/"]) .hero::after{background-image:linear-gradient(90deg,rgba(3,7,11,.91),rgba(3,7,11,.2)),url('/assets/img/aelio-atmosphere-studio.webp')}
+body:has(.nav-item.active a[href^="/dream-beyond/"]) .hero::after,body:has(.nav-item.active a[href^="/values/"]) .hero::after{background-image:linear-gradient(90deg,rgba(3,7,11,.89),rgba(3,7,11,.22)),url('/assets/img/aelio-atmosphere-nature.webp')}
+body:has(.nav-item.active a[href^="/create/"]) .hero::after,body:has(.nav-item.active a[href^="/agent-campus/"]) .hero::after{background-image:linear-gradient(90deg,rgba(3,7,11,.88),rgba(3,7,11,.19)),url('/assets/img/aelio-atmosphere-city.webp')}
+@media(max-width:800px){.hero:not(.brain-hero)::after{background-position:58% center;background-image:linear-gradient(90deg,rgba(3,7,11,.9),rgba(3,7,11,.48)),url('/assets/img/aelio-cinematic-home.webp')}.hero-home .hero-grid{min-height:590px}}
+@media(prefers-reduced-motion:reduce){.hero:not(.brain-hero)::after{animation:none;transform:none}}

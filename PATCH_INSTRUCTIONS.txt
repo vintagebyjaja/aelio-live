@@ -1,0 +1,14 @@
+AELIO CINEMATIC INTEGRATION PATCH v2
+
+Merge the public/ directory into the ROOT of your existing aelio-live GitHub repository.
+Replace public/assets/site.css; add/replace four files in public/assets/img/.
+Do NOT upload the ZIP itself as a new Cloudflare deployment or replace the entire repository.
+No Studio Brain files, engine files, redirect files, wrangler config, or backend code are included.
+Cloudflare will deploy public/ using your now-working configuration.
+
+This patch appends cinematic hero background styling to the CSS that all public pages already load.
+It preserves existing content, layout, navigation, and links, with slow animated imagery and reduced-motion support.
+The existing infinity hero illustration remains as a translucent overlay; a full page redesign would require additional HTML edits.
+
+After commit, deploy, hard refresh (Ctrl+Shift+R), and test /, /aelio/, /technology/, /dream-beyond/, /studiobrain/, and mobile.
+If Cloudflare serves old cached CSS, purge cache or version the site.css URL.
