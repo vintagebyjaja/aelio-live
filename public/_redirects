@@ -1,7 +1,3 @@
-# Brain app: every /brain/my/* and /studiobrain/* URL loads the app shell (rewrite, not redirect)
-/brain/my/*      /brain/my/index.html      200
-/studiobrain/*   /studiobrain/index.html   200
-# Old one-page anchors -> new pages
-/#aelio          /aelio/                   301
-# Only this public/ folder is uploaded to Cloudflare Pages (output directory = public).
-# Engine, model and build source are never uploaded, so they need no rules here.
+# AELIO Cloudflare Workers static assets
+# No wildcard HTML rewrites: Wrangler auto-resolves directory index.html.
+# Preserve deep links via app client-side routing or a Worker fallback, not these looping rewrite rules.
