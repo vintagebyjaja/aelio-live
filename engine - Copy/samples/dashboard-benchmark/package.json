@@ -1,7 +1,0 @@
-{
-  "name": "aelio-dashboard-benchmark",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Isolated sample application used only for AELIO's first coding benchmark. Not a Grooveville production app."
-}

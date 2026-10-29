@@ -1,8 +1,0 @@
-{
-  "name": "aelio-studio-web",
-  "private": true,
-  "type": "module",
-  "scripts": { "build": "node build.mjs", "typecheck": "tsc --noEmit -p ." },
-  "dependencies": { "react": "19.2.0", "react-dom": "19.2.0" },
-  "devDependencies": { "esbuild": "0.25.10", "typescript": "5.9.3" }
-}

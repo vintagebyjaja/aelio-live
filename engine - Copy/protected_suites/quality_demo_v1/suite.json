@@ -1,8 +1,0 @@
-{
-  "id": "quality_demo_v1",
-  "description": "First-run Quality Lab check: one test must pass and one is intentionally failing. The Quality Lab must report both correctly.",
-  "expected": {"passed": 1, "failed": 1},
-  "steps": [
-    {"name": "pytest", "category": "unit", "cmd": ["python3", "-m", "pytest", "-q", "-p", "no:cacheprovider", "--junitxml=.aelio_junit.xml", ".aelio_protected/quality_demo_v1/test_demo.py"], "parser": "junit"}
-  ]
-}

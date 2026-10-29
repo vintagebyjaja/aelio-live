@@ -1,9 +1,0 @@
-{
-  "id": "dashboard_benchmark_v1",
-  "description": "Acceptance tests for the first AELIO coding benchmark. Protected: the coding engine cannot modify these files.",
-  "steps": [
-    {"name": "build: syntax check", "category": "build", "cmd": ["node", "--check", "src/dashboard.js"], "parser": "exit"},
-    {"name": "unit + security", "category": "unit", "cmd": ["node", "--test", "--test-reporter=tap", ".aelio_protected/dashboard_benchmark_v1/dashboard.test.mjs"], "parser": "tap"},
-    {"name": "browser: responsive + a11y", "category": "browser", "cmd": ["python3", ".aelio_protected/dashboard_benchmark_v1/browser_test.py"], "parser": "jsonl", "timeout": 90}
-  ]
-}
