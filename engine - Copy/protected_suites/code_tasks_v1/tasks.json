@@ -1,0 +1,44 @@
+{
+ "tasks": [
+  {
+   "id": "add",
+   "prompt": "def add(a, b):\n    \"\"\"Return the sum of a and b.\"\"\"\n    ",
+   "tests": "assert add(2, 3) == 5\nassert add(-1, 1) == 0"
+  },
+  {
+   "id": "is_even",
+   "prompt": "def is_even(n):\n    \"\"\"Return True if n is even.\"\"\"\n    ",
+   "tests": "assert is_even(4) is True\nassert is_even(7) is False"
+  },
+  {
+   "id": "maximum",
+   "prompt": "def maximum(items):\n    \"\"\"Return the largest item in a non-empty list.\"\"\"\n    ",
+   "tests": "assert maximum([3, 9, 2]) == 9\nassert maximum([-5]) == -5"
+  },
+  {
+   "id": "reverse_string",
+   "prompt": "def reverse_string(s):\n    \"\"\"Return s reversed.\"\"\"\n    ",
+   "tests": "assert reverse_string('abc') == 'cba'\nassert reverse_string('') == ''"
+  },
+  {
+   "id": "count_vowels",
+   "prompt": "def count_vowels(s):\n    \"\"\"Return the number of vowels (aeiou) in s.\"\"\"\n    ",
+   "tests": "assert count_vowels('hello') == 2\nassert count_vowels('xyz') == 0"
+  },
+  {
+   "id": "square_list",
+   "prompt": "def square_list(nums):\n    \"\"\"Return a list with each number squared.\"\"\"\n    ",
+   "tests": "assert square_list([1, 2, 3]) == [1, 4, 9]\nassert square_list([]) == []"
+  },
+  {
+   "id": "first_or_none",
+   "prompt": "def first_or_none(items):\n    \"\"\"Return the first item, or None if the list is empty.\"\"\"\n    ",
+   "tests": "assert first_or_none([7, 8]) == 7\nassert first_or_none([]) is None"
+  },
+  {
+   "id": "clamp",
+   "prompt": "def clamp(x, lo, hi):\n    \"\"\"Clamp x into the range [lo, hi].\"\"\"\n    ",
+   "tests": "assert clamp(5, 0, 3) == 3\nassert clamp(-2, 0, 3) == 0\nassert clamp(2, 0, 3) == 2"
+  }
+ ]
+}

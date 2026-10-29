@@ -10,7 +10,9 @@
 
 ## Verify the state (about 1 minute)
 ```bash
-cd engine && python3 -m pytest -q tests        # expect 101 passed
+cd engine && python3 -m pytest -q tests        # expect 151 passed
+supabase/tests/run.sh                          # local Postgres 16: 9 groups pass
+npm test                                       # expect 16 passed
 cd ../native && cargo test -q                   # expect 10 passed
 cd .. && npm run build && npm run check         # needs esbuild/react: npm install (or a symlinked node_modules)
 ```
@@ -18,10 +20,19 @@ cd .. && npm run build && npm run check         # needs esbuild/react: npm insta
 ## Working
 Gateway (OpenAI Responses offline-tested, Native adapter, test provider), streaming chat with consent and personalities, wallet metering and caps, founder Intelligence dashboard, Code Studio AI proposals with diff review, public/ boundary checks. Full table in `AELIO_PROGRESS.md`.
 
+## 2026-10-29: public redesign + Web Designer
+Founder's redesign brief: see VISUAL_ASSETS.md. Founder's GitHub `main` (uploaded zip) = old main + 5f8e7f0 + another tool's
+patches (screenshot backgrounds, entry overlay, wrangler.jsonc, root icons). This branch keeps everything newer and replaces
+those patches. UPLOAD_STEPS.md tells the founder how to put it live. Waiting on: preview deploy check, photoreal images.
+
 ## Current unfinished task
-None in progress. The last milestone (Code Studio AI edits) is committed and tested.
+Firebase → Supabase migration and AELIO Core (founder direction, 2026-10-28). Built and rehearsed offline; see
+`AELIO_MIGRATION_RUNBOOK.md` and `integrations/pathd/README.md`. Waiting on: the founder's architecture files (never
+arrived), a Supabase project, the Firebase user export, PATHD repo access, GitHub connection.
 
 ## Next exact step
+0. Supabase migration: follow `AELIO_MIGRATION_RUNBOOK.md` step 1 once the founder creates the project; then build the
+   PostgreSQL backend for `db.py` in CI (approval needed) and "Continue with AELIO" (Supabase OAuth 2.1 server).
 1. If the founder has added `OPENAI_API_KEY` and deployed the engine: run the live smoke test in `AELIO_DEPLOYMENT.md` §4 and record the real results in `AELIO_TEST_RESULTS.md`.
 2. Otherwise continue with unblocked work, in order:
    a. Conversation search (`GET /api/my/conversations?q=`, SQLite LIKE over the user's own messages) + UI.
@@ -39,10 +50,17 @@ None in progress. The last milestone (Code Studio AI edits) is committed and tes
 - GitHub access to the DrawUp repo for the read-only audit.
 - Cloudflare dashboard access is the founder's (output directory change).
 
+## Infrastructure audit (2026-10-28)
+Claude Doc "AELIO Infrastructure Audit: Running the Engine on Cloudflare". Recommendation: engine (unchanged Python) in a private
+Cloudflare Container behind aelio.live; PostgreSQL (Supabase, Postgres-only) for structured data; R2 for files; Sandboxes for
+Code Studio; Workflows for long jobs; Firebase Auth kept. Next step if approved: add a Postgres backend to `db.py` and run all
+tests on both SQLite and Postgres. Nothing migrated or purchased.
+
 ## Needs founder approval
 1. Cloudflare Pages output directory → `public`, preview check, merge to main.
 2. Creating the "AELIO Live" OpenAI project/key and budget (billable).
-3. Where the engine runs: Option A (your machine + Workers VPC, works today) or Option B (Cloudflare Containers, needs database persistence work). See `engine/docs/DEPLOYMENT.md`.
+3. Infrastructure: approve step 1 of the audit (Postgres backend via Supabase, free tier first); choose the preview domain (separate domain, wildcard on aelio.live, or none in beta).
+4. Studio Brain security: first founder sign-in triggers setup; link and test the recovery account.
 4. Native rebuild decisions (Tier A sources, $100 Phase 1 cap, research gates).
 
 ## Relevant decisions

@@ -1,8 +1,20 @@
+// aelio.live on Cloudflare Workers (static assets + a small Worker for /api and Brain deep links).
+// Deploy: npx wrangler deploy --config wrangler.jsonc   (only ./public is uploaded as assets; nothing else is published)
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "aelio-live",
+  "main": "_src/edge/worker.js",
   "compatibility_date": "2026-10-23",
   "assets": {
-    "directory": "./public"
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    // Only these paths run the Worker; every other request is a plain static file.
+    "run_worker_first": ["/api/*", "/webhooks/*", "/brain/my/*", "/studiobrain/*"]
   }
+  // When the private engine Worker exists (cloudflare/aelio-engine-worker), connect it here, then add the secret:
+  //   "services": [{ "binding": "AELIO_ENGINE", "service": "aelio-engine" }]
+  //   npx wrangler secret put AELIO_PROXY_SECRET
+  // Until then /api answers 503 "engine not connected" and the public site works normally.
 }

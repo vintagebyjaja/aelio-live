@@ -60,3 +60,23 @@ Added 2026-10-28:
 - OpenAI receives a salted hash as `safety_identifier`, never an email or UID.
 - Founder settings changes need a fresh authenticator code and are written to the append-only audit log.
 - Rate limiting and concurrency are in-process. That's correct for one engine process and must move to a shared store before running several.
+
+## Identity and AELIO Core (2026-10-28)
+```
+           aelio.live (Pages)                         mypathd.com (Pages, PATHD brand)
+   browser ── Supabase Auth (shared project) ──────── browser
+      │ /api/* (same origin)                              │ /api/ai/* (same origin)
+      ▼                                                   ▼
+   Pages Function ── service binding ─┐   ┌── service binding ── Pages Function (+ PATHD product key)
+                                      ▼   ▼
+                         private aelio-engine Worker (no route, no workers.dev)
+                                      │  Workers VPC / Container
+                                      ▼
+   AELIO engine:  identity.verify (Supabase JWKS | Firebase during migration) → one AELIO user (identities table)
+                  /api/*  aelio.live users        /v1/core/*  products (app key + user token + membership)
+                  core.respond → plan → memory.recall → reasoning | coding (Intelligence Gateway) → memory.save
+                                         vision | voice | agents → 501 until built
+```
+Supabase project: `auth.users` (shared) · `core.profiles`, `core.memberships` (products list mirrored into
+`app_metadata.products`) · `aelio.*` (engine only) · `pathd.*` (RLS: own rows + PATHD membership).
+Studio Brain permissions never come from Supabase: allow-listed UID + verified email + authenticator + security questions.

@@ -8,7 +8,7 @@
     "build:brain": "node _src/build-brain.mjs",
     "check": "node _src/checks/check-public.mjs",
     "check:deploy": "node _src/checks/check-deploy.mjs",
-    "test": "node --test _src/checks/test-engine-proxy.mjs",
+    "test": "node --test _src/checks/test-engine-proxy.mjs _src/checks/test-supabase-auth.mjs _src/checks/test-pathd-bridge.mjs _src/checks/test-worker.mjs",
     "dev": "node _src/checks/pages-emulator.mjs public 8090"
   },
   "devDependencies": {

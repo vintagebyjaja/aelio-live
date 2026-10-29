@@ -4,6 +4,34 @@ Updated 2026-10-28 · branch `phase0` · latest commit `4c71fc0` (plus this docs
 
 Legend: **WORKING** = implemented and passed a test · **PARTIAL** = implemented but not fully tested or connected · **BLOCKED** = needs approval, credentials or infrastructure · **NOT STARTED**
 
+## Public redesign and Web Designer (2026-10-29)
+| Component | Status | Evidence / what's missing |
+|---|---|---|
+| Cinematic environments for every section (code-drawn), distinct section layouts, all 50 pages | WORKING locally | Sweep: no errors or overflow, desktop and mobile. Photoreal photos still to be generated (specs in VISUAL_ASSETS.md) |
+| 4-second silent entrance with the official emblem | WORKING locally | 8 behaviour checks incl. script failure and broken timers |
+| Official icons, manifest | WORKING | Generated from the uploaded emblem without changes |
+| Studio Brain → Web Designer | WORKING locally · needs engine hosted | 13 API tests + 12-step browser E2E |
+| Workers deploy (wrangler.jsonc + Worker for /api and deep links) | WORKING in tests · not deployed | 4 Worker tests; preview deploy pending |
+
+## Supabase migration and AELIO Core (2026-10-28)
+| Component | Status | Evidence / what's missing |
+|---|---|---|
+| Firebase inventory | WORKING | Only Firebase **Auth** is used; no Firestore/Storage. All AELIO data is in the engine DB |
+| Verified backup + restore (CLI) | WORKING | sha256 + integrity + row counts; tamper detected; restore makes a safety backup first |
+| User mapping Firebase → Supabase | WORKING (offline) | `identity-plan` (dry run) / `identity-import --apply`; needs your real exports |
+| Engine accepts Supabase tokens (JWKS, ES256/RS256) alongside Firebase | WORKING (offline) | 14 tests incl. founder look-alike, anon/service_role/HS256 refused, cutover + rollback switch |
+| Founder / personal / recovery permissions across providers | WORKING (offline) | Same AELIO account, Studio security carries over, personal still 403 on Studio |
+| Supabase schema (shared auth, AELIO identity on every signup, isolated AELIO/PATHD data) | WORKING on local Postgres · BLOCKED on Supabase | 9/9 SQL test groups; needs the project created |
+| Browser sign-in via Supabase (password, signup, Google PKCE, refresh, reset) | WORKING (mock) · off by default | `auth:"firebase"` until cutover; 6 Node tests |
+| Rollback plan | WORKING (rehearsed) | Full rehearsal test: backup → map → dual-run → cutover → switch back → restore; data fingerprint identical |
+| AELIO Core router: reasoning, coding, memory | WORKING (test provider) | 14 tests; real answers need OPENAI_API_KEY on a hosted engine |
+| AELIO Core: vision, voice | NOT STARTED | Refused with 501, nothing charged |
+| AELIO Core: agents for products | PARTIAL | Brain agents work on aelio.live; not offered to products |
+| PATHD bridge (mypathd.com → service binding → Core) | WORKING (isolated test) · BLOCKED | 4 tests; needs PATHD repo, same Cloudflare account, product key |
+| One sign-in across both domains ("Continue with AELIO") | NOT STARTED | Same credentials work on both today |
+| CI (GitHub Actions: engine, site, Supabase SQL, Native) | WRITTEN, not run | Runs once the repo is on GitHub |
+| Engine database on Supabase Postgres | NOT STARTED · needs approval | psycopg can't be installed here; build/test in CI |
+
 ## Functional status
 | Area | Status | Evidence / what's missing |
 |---|---|---|
@@ -15,6 +43,13 @@ Legend: **WORKING** = implemented and passed a test · **PARTIAL** = implemented
 | Engine hosting | BLOCKED (your decision) | Option A: your machine + Workers VPC (works with today's code). Option B: Cloudflare Containers after database persistence work |
 | Public deployment boundary (`public/` only) | WORKING locally · BLOCKED for production | Local Pages emulator: new layout passes `check-deploy`, old layout fails (engine leak detected). Needs the Cloudflare output-directory change + preview check |
 | Accounts, roles (founder / personal / game) | WORKING | Existing tests (test_brain_roles, test_security) |
+| Three access levels (founder · personal with founder perks + recovery · regular) | WORKING | test_studio_security (14): only jaja@vybr8.live opens Studio Brain; personal gets 403 on every Studio route; regular users never see the challenge |
+| Studio Brain challenge (5 questions + passphrase + authenticator), lockout | WORKING | Case-insensitive answers, exact numbers, hashed with scrypt; 5 wrong → 1 h lock; 3 locks/24 h → locked until recovery. Browser E2E 14/15 checks pass (the 15th was a test-script selector; screen verified by screenshot) |
+| Emergency recovery via personal account | WORKING (offline) | Linked + own MFA + tested before active; request (3/day) → personal MFA → single-use 10-min authorization → 15-min session that can only reset the questions/passphrase → founder must sign in and answer the new challenge. Expiry, single use, denial and restrictions tested |
+| Security notifications to both emails | PARTIAL | Recorded in Studio Brain → Security; email delivery needs an email-sending endpoint (AELIO_NOTIFY_WEBHOOK_URL) |
+| Passkeys / optional MFA for regular users | NOT STARTED | Spec offers them; regular users currently use Firebase sign-in only |
+| Tamper-evident security log | WORKING | Hash chain; tampering detected in test; status shown in Studio Brain → Security |
+| Short addresses /login /my-aelio /studio /backoffice /settings/security | WORKING | Redirects; tested in the Pages emulator |
 | Wallet: allowances, credits, reservations, Stripe test mode | WORKING | test_credits (21) |
 | Agent Transfer | WORKING | test_transfer (17) |
 | Intelligence Gateway: routing, tiers, fallback, retries, timeouts, kill switch | WORKING | test_intelligence (24) against a local fake Responses endpoint |
