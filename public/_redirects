@@ -1,3 +1,14 @@
-# AELIO Cloudflare Workers static assets
-# No wildcard HTML rewrites: Wrangler auto-resolves directory index.html.
-# Preserve deep links via app client-side routing or a Worker fallback, not these looping rewrite rules.
+# Brain app deep links (/brain/my/*, /studiobrain/*) are served by _src/edge/app-shell.js (Worker or Pages Function),
+# not by rewrites here: 200-rewrites to index.html can loop with Workers' trailing-slash handling.
+# Short addresses (everything stays on aelio.live)
+/login                /brain/                    302
+/my-aelio             /brain/my/                 301
+/my-aelio/*           /brain/my/:splat           301
+/studio               /studiobrain/              301
+/studio/*             /studiobrain/:splat        301
+/backoffice           /studiobrain/engine        301
+/settings/security    /brain/my/security         301
+# Old one-page anchors -> new pages
+/#aelio          /aelio/                   301
+# Only this public/ folder is uploaded (Workers assets directory / Pages output directory = public).
+# Engine, model and build source are never uploaded, so they need no rules here.
