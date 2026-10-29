@@ -1,0 +1,16 @@
+/* AELIO cinematic visual layer — public site only. */
+:root{--aelio-sun:#ffc36d;--aelio-copper:#d88b4a;--aelio-glass:rgba(10,16,20,.64)}
+.hero{isolation:isolate}
+.hero::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,rgba(2,7,10,.91) 0%,rgba(2,7,10,.69) 39%,rgba(2,7,10,.16) 78%),url('/assets/img/aelio-cinematic-home.webp') center 42%/cover no-repeat;animation:aelio-breeze 32s ease-in-out infinite alternate;transform-origin:center}
+.hero::before{z-index:1;opacity:.16}
+.hero-grid{z-index:2}
+.hero-copy{position:relative;z-index:3;text-shadow:0 2px 24px rgba(0,0,0,.55)}
+.hero-home .hero-grid{min-height:min(82vh,790px)}
+.hero-home .home-vis{opacity:.90;filter:drop-shadow(0 14px 34px rgba(0,0,0,.3))}
+.hero-home .cloud-art{animation:aelio-float 11s ease-in-out infinite alternate}
+.hero-home .hero-side{position:relative;z-index:2}
+.gold-btn{box-shadow:0 8px 30px rgba(255,165,66,.2)}
+@keyframes aelio-breeze{0%{transform:scale(1.025) translate3d(-.5%,0,0)}100%{transform:scale(1.095) translate3d(.7%,-.65%,0)}}
+@keyframes aelio-float{0%{transform:translateY(0)}100%{transform:translateY(-9px)}}
+@media(max-width:800px){.hero::after{background-position:57% center;background-image:linear-gradient(90deg,rgba(2,7,10,.89),rgba(2,7,10,.5)),url('/assets/img/aelio-cinematic-home.webp')}.hero-home .hero-grid{min-height:610px}}
+@media(prefers-reduced-motion:reduce){.hero::after,.hero-home .cloud-art{animation:none!important;transform:none!important}}
