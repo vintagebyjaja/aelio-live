@@ -12,6 +12,9 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("AELIO_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("AELIO_SECURE_COOKIES", "0")
     monkeypatch.setenv("AELIO_AUTH", "local")
+    # Studio Brain's security challenge is ON by default in production. Tests of other features run with it
+    # off; tests/test_studio_security.py turns it on and covers it (including that the default is on).
+    monkeypatch.setenv("AELIO_STUDIO_GATE", "0")
     from aelio import config, db
     config.reset_settings()
     db.reset_connection_cache()
