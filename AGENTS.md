@@ -32,3 +32,7 @@ The user authorized pushing the completed AELIO update to main now, followed by 
 ## Current 1.0.5 review boundary
 
 The latest user explicitly requests GitHub migration-branch previews first and will approve main later. Push only migration; never main or a manual deployment. PATHD stays in its own repository/branch. Apply no production SQL or secrets. Eight official companions use stable kind IDs and locked identities; Dream Team contains only the six specialists. Only custom agents may be renamed/deleted. See config/V1_0_5_SETUP.md and the 1.0.5 validation notes.
+
+## Main promotion approved — 2026-10-30
+
+The user explicitly approved promoting the reviewed migration update to main. Keep AELIO and PATHD separate. Existing Git-triggered Cloudflare builds are permitted; do not run a manual deployment or change production settings/secrets. The user will retrieve and execute Supabase SQL personally. No production SQL is authorized for Codex.

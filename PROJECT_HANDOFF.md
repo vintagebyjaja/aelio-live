@@ -1,3 +1,9 @@
+# Main promotion approved — 2026-10-30
+
+The user approved pushing the reviewed AELIO 1.0.5 migration update to main, with Git-triggered Cloudflare builds permitted. Reviewed application commit: 3b5afe7. This promotion adds documentation only; application/SQL/package contents are unchanged. The owner will retrieve and execute Supabase SQL. No manual deployment, production SQL, settings or secret changes were performed. PATHD is promoted independently in its own repository.
+
+---
+
 # Current handoff — AELIO_v1.0.5 migration review
 
 The user requires a secondary migration branch preview and explicit later approval before main. Branch: migration, base main 8da7e87. No main push, manual deployment, production SQL or secret change is authorized for this update. PATHD 0.1.3 remains separate.

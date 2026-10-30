@@ -1,6 +1,6 @@
-# AELIO 1.0.5 — migration preview
+# AELIO 1.0.5 — approved update
 
-Review branch only: main is unchanged and awaits your explicit approval. [Preview gallery](docs/previews/v1.0.5/README.md) · [Setup and SQL order](config/V1_0_5_SETUP.md) · [Validation and limitations](docs/releases/AELIO_v1.0.5_VALIDATION.md).
+The reviewed migration update is approved for main. The owner handles Supabase SQL; no production database changes or manual deployment were performed. [Preview gallery](docs/previews/v1.0.5/README.md) · [Setup and SQL order](config/V1_0_5_SETUP.md) · [Validation and limitations](docs/releases/AELIO_v1.0.5_VALIDATION.md).
 
 Actual local browser render with synthetic test data; not a live deployment:
 
