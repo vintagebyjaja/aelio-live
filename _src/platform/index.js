@@ -35,6 +35,7 @@ export function publicConfig(env) {
       JSON.stringify({
         engine: "",
         auth: "supabase",
+        passkeysEnabled: env.AELIO_PASSKEYS_ENABLED === "true",
         turnstileSiteKey: env.TURNSTILE_SITE_KEY || "",
         supabase: {
           url: resolved.url,
@@ -56,6 +57,13 @@ export function publicConfig(env) {
 }
 async function account(req, env, path) {
   const u = await who(req, env);
+  if(path==='/health'&&req.method==='GET'){
+    const probes={authentication:{verified:true},account:{verified:false},serverDatabase:{configured:!!env.SUPABASE_SERVICE_ROLE_KEY,verified:false},ai:{configured:!!env.OPENAI_API_KEY||!!env.AELIO_ENGINE?.fetch,inferenceVerified:false}};
+    for(const [key,probe] of [['account',()=>sb(env,'/rest/v1/rpc/app_account_bootstrap',{token:u.token,method:'POST',data:{}})],['serverDatabase',()=>rpc(env,'app_service_health',{})]]){
+      try{const value=await probe();probes[key].verified=!!value;}catch(error){probes[key].code=error.code||'internal_failure';}
+    }
+    return reply(probes);
+  }
   if (path === "" && req.method === "GET") {
     const result = await sb(env, "/rest/v1/rpc/app_account_bootstrap", {token:u.token,method:"POST",data:{}});
     return reply({...result,user:{...result.user,email:u.email},connectedApps:["aelio","pathd"],paidPlans:"closed"});
@@ -316,10 +324,11 @@ export async function platform(req, env) {
   } catch (e) {
     const status = e instanceof Problem ? e.status : 500,
       code = e instanceof Problem ? e.code : "internal_failure";
+    const reference=typeof e.requestId==='string'&&/^[a-f0-9-]{36}$/i.test(e.requestId)?e.requestId:id;
     console.error(
       JSON.stringify({
         event: "platform_request_failed",
-        request_id: id,
+        request_id: reference,
         code,
         status,
         path: new URL(req.url).pathname,
@@ -330,10 +339,10 @@ export async function platform(req, env) {
         error:
           consumerMessage(code,e instanceof Problem?e.message:undefined),
         code,
-        request_id: id,
+        request_id: reference,
       },
       status,
-      { "x-request-id": id },
+      { "x-request-id": reference },
     );
   }
 }

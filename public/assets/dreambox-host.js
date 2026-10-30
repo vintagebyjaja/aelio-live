@@ -1,0 +1,10 @@
+// One same-origin, lazily mounted assistant. No AI request on page load.
+(()=>{if(window.top!==window||document.getElementById('aelio-dreambox-access'))return;
+ const button=document.createElement('button');button.id='aelio-dreambox-access';button.className='dreambox-access';button.setAttribute('aria-label','Open AELIO DreamBox');button.setAttribute('aria-expanded','false');button.innerHTML='<span aria-hidden="true"></span><b>Ask AELIO</b>';document.body.append(button);
+ let frame=null,expanded=false;const store=(value)=>{try{sessionStorage.setItem('aelio.dreambox.open',value);}catch{}};
+ function context(){frame?.contentWindow?.postMessage({type:'aelio-page-context',path:location.pathname,title:document.title,description:document.querySelector('meta[name="description"]')?.content||document.querySelector('main h1')?.textContent||document.querySelector('main h2')?.textContent||''},location.origin);}
+ function close(){if(frame)frame.hidden=true;button.hidden=false;button.setAttribute('aria-expanded','false');store('false');button.focus();}
+ function open(){if(!frame){frame=document.createElement('iframe');frame.className='dreambox-frame';frame.id='aelio-dreambox-panel';frame.title='AELIO DreamBox conversation';frame.src='/dreambox/';frame.setAttribute('allow','microphone');document.body.append(frame);button.setAttribute('aria-controls',frame.id);}frame.hidden=false;button.hidden=true;button.setAttribute('aria-expanded','true');store('true');context();frame.focus();}
+ button.addEventListener('click',open);addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame?.contentWindow||e.data?.type!=='aelio-dreambox')return;const action=e.data.action;if(action==='ready')context();else if(action==='close'||action==='minimize')close();else if(action==='expand'){expanded=!expanded;frame.classList.toggle('expanded',expanded);}});addEventListener('keydown',e=>{if(e.key==='Escape'&&frame&&!frame.hidden)close();});
+ try{if(sessionStorage.getItem('aelio.dreambox.open')==='true')open();}catch{}
+})();

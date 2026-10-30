@@ -148,3 +148,16 @@ test('another client logout is respected while storage-blocked browsers retain a
  const unavailable={getItem(){throw Error('blocked');},setItem(){throw Error('blocked');},removeItem(){throw Error('blocked');}};
  const c=createSupabaseAuth({url:URL_,anonKey:ANON},{storage:unavailable,fetch:M.fetch,now:M.now});await c.signInWithPassword('tabs@x.dev','pw-1234567890');assert.ok(await c.session());await c.signOut();assert.equal(await c.session(),null);
 });
+
+test('Apple OAuth uses fresh PKCE without calendar scopes; linking cannot replace the existing UUID',async()=>{
+ const M=mock(),original=M.fetch;let query;
+ M.fetch=async(url,init)=>{if(String(url).includes('/user/identities/authorize')){query=new URL(url);assert.ok(init.headers.authorization);assert.equal(query.searchParams.get('skip_http_redirect'),'true');return Response.json({url:'https://appleid.apple.com/auth/authorize?fixture=1'});}return original(url,init);};
+ const [c]=client(M);const start=new URL(await c.oauthUrl('apple','https://aelio.live/auth/callback/'));
+ assert.equal(start.searchParams.get('provider'),'apple');assert.equal(start.searchParams.get('code_challenge_method'),'s256');assert.ok(!start.search.includes('calendar'));
+ await c.signUp('existing@example.test','existing-password');M.users.get('existing@example.test').confirmed=true;
+ const old=await c.signInWithPassword('existing@example.test','existing-password');
+ assert.match(await c.oauthUrl('apple','https://aelio.live/auth/callback/',true),/^https:\/\/appleid/);
+ M.codes.set('mismatched',{user:{id:'other-user',email:'other@example.test'},challenge:query.searchParams.get('code_challenge')});
+ await assert.rejects(c.exchangeCode('mismatched'),/original session has been preserved/);
+ assert.equal((await c.session()).user.id,old.user.id);
+});

@@ -1,3 +1,4 @@
+import {CalendarConnections} from "./CalendarConnections";
 import { useState } from "react";
 import { ECOSYSTEM_APPS, ecosystemHandoff } from "../shared/ecosystem.js";
 import { Icon } from "./Icon";
@@ -13,7 +14,7 @@ export function ConnectedApps({onPlan,onMila}:{onPlan?:(topic:string[])=>void;on
       {app.id==='vybr8'&&onPlan&&<button onClick={()=>onPlan(['Find your vibe','',"Help me explore food, drinks and activities that fit my vibe. Ask about my preferences and location before making suggestions. Don’t invent live availability.",''])}>Explore ideas</button>}
       {app.id==='pathd'&&onMila&&<button onClick={onMila}>Talk to MILA</button>}</div>
       {app.id==='pathd'&&<small>Your PATHD plan stays separate from AELIO.</small>}
-    </article>)}</div>
+    </article>)}</div><CalendarConnections/>
   </section>;
 }
 export function HandoffCard({ proposal, onMila }: any) {

@@ -11,7 +11,7 @@
   function apply(d) {
     const t = d.theme || {};
     const vars = { "--gold": t.gold, "--copper": t.copper, "--bg": t.bg, "--text": t.text };
-    for (const [k, v] of Object.entries(vars)) if (HEX.test(v || "")) html.style.setProperty(k, v);
+    for (const [k, v] of Object.entries(vars)) if (HEX.test(v || "")) {html.style.setProperty(k, v);body.style.setProperty(k,v);}
     if (typeof t.radius === "number") html.style.setProperty("--r", Math.max(0, Math.min(32, t.radius)) + "px");
     if (typeof t.heading_scale === "number") html.style.setProperty("--hscale", String(Math.max(.7, Math.min(1.3, t.heading_scale))));
     html.classList.remove("btn-pill", "btn-square"); if (t.button === "pill" || t.button === "square") html.classList.add("btn-" + t.button);

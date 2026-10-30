@@ -1,3 +1,4 @@
+import {ModernSignIn} from "./ModernAuth";
 import {friendly} from "./Experience";
 import React, { useState, useEffect } from "react";
 import { auth, authConfigurationError, call, download } from "./client";
@@ -86,7 +87,9 @@ export function AuthPanel({ onDone, enroll = false }: any) {
     [error, setError] = useState(""),
     [note, setNote] = useState("");
   useEffect(() => {
-    const c = new URLSearchParams(location.search).get("code");
+    const query=new URLSearchParams(location.search);
+    if(query.has("error"))setError("That sign-in method could not finish. Try again or continue with email.");
+    const c = query.get("code");
     if (c && auth) {
       setBusy(true);
       auth
@@ -115,8 +118,6 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           throw new Error("Complete the abuse-prevention check.");
         if (password.length < 12)
           throw new Error("Use a password of at least 12 characters.");
-        if (answers.some((a) => a.trim().length < 3) || qs[0] === qs[1])
-          throw new Error("Complete two different recovery questions.");
         const r = await auth.signUp(
           email,
           password,
@@ -130,13 +131,6 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           );
           return;
         }
-        setMode("enroll");
-        try { await call("/recovery/enroll", "POST", {
-          password,
-          questions: qs,
-          answers,
-        });
-        } catch { /* Account is already created: optional setup must not prevent entry. */ }
         onDone();
         setAnswers(["", ""]);
         setPassword("");
@@ -226,6 +220,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           ? "Your existing account is ready. Set up recovery once for AELIO and PATHD."
           : "One account for AELIO and PATHD. Independent plans. Your own space."}
       </p>
+      {["signin","signup"].includes(mode)&&<ModernSignIn onDone={onDone}/>}
       <form onSubmit={submit}>
         {mode === "signup" && (
           <label>
@@ -265,7 +260,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
             />
           </label>
         )}
-        {["signup", "enroll", "recover"].includes(mode) && (
+        {["enroll", "recover"].includes(mode) && (
           <RecoveryFields
             qs={qs}
             setQs={setQs}

@@ -6,6 +6,7 @@ const errors={
  session_not_configured:'I’m having a little trouble opening your space. Let’s try again.',
  auth_not_configured:'Sign-in needs a moment. Please try again shortly. Your password has not been sent.',
  auth_key_rejected:'Sign-in needs a moment. Please try again shortly. Your password has not been sent.',
+ server_credentials_rejected:'Your sign-in is active, but account storage is temporarily unavailable. Please try again shortly.',
  database_not_configured:'I’m having trouble opening your account right now. Please try again.',
  database_unavailable:'I’m having trouble opening your account right now. Please try again.',
  database_failure:'I couldn’t save that change. Please try again.',

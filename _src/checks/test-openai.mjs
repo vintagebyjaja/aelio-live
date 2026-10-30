@@ -34,3 +34,15 @@ test('cancelling the browser-facing stream aborts the upstream fetch',async()=>{
 test('daily safety refusal occurs before any paid provider call',async()=>{
  let requests=0;const res=await openAIResponses(env,payload,undefined,{reserve:async()=>{throw Error('fixture limit');},fetch:async()=>{requests++;return new Response('');}});await res.text();assert.equal(requests,0);
 });
+
+test('signed-in AI safety reservation does not depend on guest-cookie signing',async()=>{
+ const original=globalThis.fetch;let reserved=false;
+ globalThis.fetch=async(url,options)=>{assert.match(String(url),/\/rpc\/app_limit$/);const request=JSON.parse(options.body);assert.equal(request.k.length,64);reserved=true;return Response.json(true);};
+ try{const response=await openAIResponses({...env,SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_ANON_KEY:'public-fixture',SUPABASE_SERVICE_ROLE_KEY:'sb_secret_fixture',AELIO_SESSION_SECRET:'short'},payload,undefined,{fetch:async()=>new Response(event({type:'response.output_text.delta',delta:'fixture reply'})+event({type:'response.completed',response:{usage:{input_tokens:1,output_tokens:1}}}))});await response.text();assert.equal(reserved,true);}finally{globalThis.fetch=original;}
+});
+
+test('provider CRLF frames may split between chunks without losing completion',async()=>{
+ const wire=(event({type:'response.output_text.delta',delta:'Split newline reply'})+event({type:'response.completed',response:{}})).replace(/\n/g,'\r\n');
+ const upstream=new ReadableStream({start(c){for(const character of wire)c.enqueue(new TextEncoder().encode(character));c.close();}});
+ const response=await openAIResponses(env,payload,undefined,{reserve:async()=>{},fetch:async()=>new Response(upstream)});const text=await response.text();assert.match(text,/Split newline reply/);assert.match(text,/"type":"complete"/);assert.doesNotMatch(text,/stream_interrupted/);
+});

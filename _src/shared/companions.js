@@ -22,3 +22,15 @@ export function coordinateTeam(agents,input){
  const selected=ranked.filter(a=>a.score>0).slice(0,many?3:2).map(a=>a.agent);
  return selected.length?selected:agents.filter(a=>['angelo',...(many?['reggie']:[])].includes(a.kind)).slice(0,many?2:1);
 }
+
+// Bounded routing for both permanent and user-created groups. No background messages.
+export function coordinateGroup(agents,input){
+ const text=String(input||'').toLowerCase();
+ const mentioned=agents.filter(a=>text.includes('@'+String(a.name).toLowerCase()));
+ if(mentioned.length)return mentioned;
+ if(/\beverybody\b|\beveryone\b|\ball of you\b|\beveryone.s opinion\b/.test(text))return agents;
+ const official=coordinateTeam(agents.filter(a=>a.kind!=='custom'),input);
+ const words=text.match(/[a-z]{4,}/g)||[];
+ const custom=agents.filter(a=>a.kind==='custom').map(a=>({agent:a,score:words.filter(w=>(String(a.specialty||'')+' '+String(a.instructions||'')).toLowerCase().includes(w)).length})).filter(a=>a.score).sort((a,b)=>b.score-a.score).map(a=>a.agent);
+ return [...custom,...official].slice(0,3).length?[...custom,...official].slice(0,3):agents.slice(0,2);
+}

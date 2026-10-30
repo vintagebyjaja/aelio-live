@@ -43,3 +43,14 @@ The user explicitly approved promoting the reviewed migration update to main. Ke
 Owner authorizes pushing this repair to main in each separate repository. Verified sign-in never forces recovery enrollment. Public browsing remains available; private account data still requires authentication. Signup no longer depends on optional companion/guest configuration. Saving recovery answers does not change passwords or sessions and preserves existing backup codes; new codes require explicit opt-in. Current-password verification remains required when editing security settings. Shared identities do not merge subscriptions or browser sessions.
 
 Run AELIO migration `20261030000007_optional_recovery.sql` once after the already-applied 05 and 06 for answer-only saving. Do not rerun old migrations. Sign-in is independent of 07. No production SQL, credentials/settings changes or manual deployment performed. Local fixture checks do not verify production Auth or Cloudflare runtime configuration.
+
+## v1.0.7 — migration preview required
+
+The owner has authorized only the sign-in hotfix 1.0.6 on main. The new group-chat, editorial unification and persistent DreamBox iteration must be pushed only to migration for review. Do not promote 1.0.7 to main or manually deploy. Keep PATHD unchanged in this iteration. Approved portraits and the eight permanent identities remain locked; Big Dre and Marcus are fictional demo profiles only. No production SQL or credentials/settings changes.
+
+## Additional 1.0.7 account/auth review scope
+
+Keep this combined iteration on migration only. Fix existing account/chat dependencies before new sign-in methods. Unlimited message credits are UUID-bound and separate from Studio Brain/admin roles; the owner must verify the two Auth IDs and execute the private SQL grant manually. No runtime email allowlist. Native passkey code is gated OFF pending hosted Auth/RP/recent-auth-policy validation. Google/Apple/calendar configuration is manual; login never requests calendar scopes. Do not claim the production outage or live inference is verified without its actual response/log. Preserve the earlier requested migration-only group and DreamBox work.
+
+
+Latest owner priority: pause new visual/UI refinement until actual backend responding is verified. Preserve the resizable-workspace assignment as deferred. Migration review may include the already implemented earlier requests, but do not claim the live outage fixed from fixtures. SQL10 repairs only new-turn ordering; existing history stays intact. Correlate safe request IDs through credit/provider/persistence stages; never log raw requests or credentials.

@@ -167,3 +167,154 @@ Validation: 53 JavaScript tests, 11 disposable local database scenarios, private
 Owner authorizes pushing this repair to main in each separate repository. Verified sign-in never forces recovery enrollment. Public browsing remains available; private account data still requires authentication. Signup no longer depends on optional companion/guest configuration. Saving recovery answers does not change passwords or sessions and preserves existing backup codes; new codes require explicit opt-in. Current-password verification remains required when editing security settings. Shared identities do not merge subscriptions or browser sessions.
 
 Run AELIO migration `20261030000007_optional_recovery.sql` once after the already-applied 05 and 06 for answer-only saving. Do not rerun old migrations. Sign-in is independent of 07. No production SQL, credentials/settings changes or manual deployment performed. Local fixture checks do not verify production Auth or Cloudflare runtime configuration.
+
+
+## 1.0.7 — Migration review, not main (2026-10-30)
+
+The owner requests migration-only review for this iteration. Preserve main at AELIO1.0.6 / PATHD0.1.4. No manual deployment, production SQL, secrets or settings changes. Accounts remain separate in each repository with shared Auth identities and independent subscriptions.
+
+Account repair isolates optional legacy PATHD profile failures, preserves verified sessions and existing agent access, and removes guest-signing dependence from the global AI counter. Recovery questions are optional settings and absent from signup. Google/Apple PKCE and authenticated provider linking are wired; native Supabase passkey controls are default-off pending hosted-project/RP/recent-auth policy verification. Do not claim live OAuth/passkeys/production chat has been verified. The production outage's exact response/log is still needed.
+
+AELIO09 SQL adds a private UUID-bound unlimited-credit registry; grants require the owner-verified IDs in config/GRANT_APPROVED_UNLIMITED.sql and confer no admin/Studio Brain/paid-plan permissions. Regular balances stay plan/product specific. Apply07 if needed, then08 and09 manually only after review; never rerun historical backfills. No real entitlement or production database was changed by Codex.
+
+AELIO additionally includes bounded editable custom groups, the exact scripted UNCs marketing example, shared editorial styles and a reusable lazy page-aware DreamBox. These earlier requested features remain on migration. PATHD does not receive the AELIO group ecosystem or visual redesign. See AELIO config/V1_0_7_REVIEW_SETUP.md and release validation notes for manual setup and limitations.
+
+
+Backend-priority follow-up: UI refinement/resizable workspace is deferred. Added correlated reservation/provider/persistence diagnostics and copyable support references, fixed fragmented CRLF stream parsing and deterministic ordering for newly saved chat turns (SQL10). All eight companion handler/provider/persistence paths are tested with explicitly synthetic local inference; Simone provider rejection is correlated/refunded. Production outage remains unverified: no Cloudflare runtime-log connection or live provider credentials were available. New work stays migration-only; no main push, production SQL or manual deployment.
+
+
+### 1.0.7 changed-file inventory (delta over main1.0.6)
+
+- AGENTS.md
+- CHANGELOG.md
+- PROJECT_HANDOFF.md
+- PROJECT_OVERVIEW.md
+- RELEASE_MANIFEST.md
+- _src/brain/supabase-auth.ts
+- _src/build-auth-config.mjs
+- _src/build-chat.mjs
+- _src/build.mjs
+- _src/chat/Auth.tsx
+- _src/chat/CalendarConnections.tsx
+- _src/chat/ConnectedApps.tsx
+- _src/chat/DreamBox.tsx
+- _src/chat/ModernAuth.tsx
+- _src/chat/dreambox.css
+- _src/chat/main.tsx
+- _src/checks/browser_dreambox_stream.py
+- _src/checks/browser_sitewide.py
+- _src/checks/pages-emulator.mjs
+- _src/checks/sql/local-bootstrap-regression.sql
+- _src/checks/sql/local-credit-regression.sql
+- _src/checks/test-groups.mjs
+- _src/checks/test-openai.mjs
+- _src/checks/test-platform-integration.mjs
+- _src/checks/test-supabase-auth.mjs
+- _src/group-demo.mjs
+- _src/platform/index.js
+- _src/platform/messaging.js
+- _src/platform/providers/openai.js
+- _src/platform/shared.js
+- _src/public-experience.mjs
+- _src/shared/companions.js
+- _src/shared/experience.js
+- assets/references/visual-direction/01_Approved_Site_Direction_Diverse.png
+- assets/references/visual-direction/02_Original_Six_Page_Concept.png
+- assets/references/visual-direction/03_DreamBox_And_Sitewide_Concept.png
+- assets/references/visual-direction/04_Explore_Standalone_Reference.png
+- assets/references/visual-direction/05_Agent_Team_Clean_Influencer_Reference.png
+- assets/references/visual-direction/SHA256SUMS.txt
+- config/AELIO_v1.0.7.env.example
+- config/GRANT_APPROVED_UNLIMITED.sql
+- config/V1_0_7_REVIEW_SETUP.md
+- docs/assignments/AELIO_NEXT_UI_REFINEMENT_DEFERRED.md
+- docs/assignments/AELIO_v1.0.7_ACCOUNT_AUTH.md
+- docs/assignments/AELIO_v1.0.7_GROUPS.md
+- docs/assignments/AELIO_v1.0.7_VISUAL_DREAMBOX.md
+- docs/releases/AELIO_v1.0.7_VALIDATION.md
+- docs/review/v1.0.7/README.md
+- docs/review/v1.0.7/agent-team-desktop.png
+- docs/review/v1.0.7/agent-team-mobile.png
+- docs/review/v1.0.7/dreambox-desktop.png
+- docs/review/v1.0.7/dreambox-mobile.png
+- docs/review/v1.0.7/signup-mobile.png
+- package-lock.json
+- package.json
+- public/404.html
+- public/account/index.html
+- public/aelio/agent-transfer/index.html
+- public/aelio/conversation/index.html
+- public/aelio/how-it-works/index.html
+- public/aelio/index.html
+- public/aelio/main-pal/index.html
+- public/aelio/personalities/index.html
+- public/aelio/teammate/index.html
+- public/agent-campus/accountability/index.html
+- public/agent-campus/community-service/index.html
+- public/agent-campus/draft-block/index.html
+- public/agent-campus/index.html
+- public/agent-campus/lobby/index.html
+- public/agent-campus/mentor-mentee/index.html
+- public/agent-campus/onboarding/index.html
+- public/agent-campus/reports/index.html
+- public/agent-campus/university/index.html
+- public/assets/brain/app.js
+- public/assets/chat/app.js
+- public/assets/config.js
+- public/assets/design.js
+- public/assets/dreambox-host.css
+- public/assets/dreambox-host.js
+- public/assets/dreambox/widget.css
+- public/assets/dreambox/widget.js
+- public/assets/editorial.css
+- public/assets/group-demo.js
+- public/assets/img/demo/big-dre.svg
+- public/assets/img/demo/marcus.svg
+- public/assets/search-index.json
+- public/auth/callback/index.html
+- public/auth/reset/index.html
+- public/brain/index.html
+- public/brain/my/index.html
+- public/chat/index.html
+- public/create/animation/index.html
+- public/create/architecture/index.html
+- public/create/design/index.html
+- public/create/games/index.html
+- public/create/index.html
+- public/create/projects/index.html
+- public/create/worlds/index.html
+- public/dream-beyond/agent-team/index.html
+- public/dream-beyond/dream-spaces/index.html
+- public/dream-beyond/ecosystem/index.html
+- public/dream-beyond/index.html
+- public/dream-beyond/main-pal/index.html
+- public/dream-beyond/vision/index.html
+- public/dreambox/index.html
+- public/explore/index.html
+- public/index.html
+- public/live/agent-teams/index.html
+- public/live/create-agents/index.html
+- public/live/index.html
+- public/live/marketplace/index.html
+- public/live/plans/index.html
+- public/live/publishing/index.html
+- public/live/train-agents/index.html
+- public/studiobrain/index.html
+- public/technology/dream-cloud/index.html
+- public/technology/dream-code/index.html
+- public/technology/dream-deploy/index.html
+- public/technology/dream-guard/index.html
+- public/technology/dream-memory/index.html
+- public/technology/green-guardians/index.html
+- public/technology/index.html
+- public/technology/native/index.html
+- public/values/community/index.html
+- public/values/green-guardians/index.html
+- public/values/index.html
+- public/values/opportunity/index.html
+- public/values/privacy/index.html
+- supabase/migrations/20261030000008_custom_groups.sql
+- supabase/migrations/20261030000009_account_credit_repair.sql
+- supabase/migrations/20261030000010_chat_message_order.sql
+
+Deletions: none. SQL08–10 and owner-verified UUID grant template are separate from automatic application startup. ZIP parts contain at most100 files each. Production outage and real OAuth/passkeys remain unverified.

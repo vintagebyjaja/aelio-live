@@ -79,12 +79,14 @@ export async function sb(
   const key = service
     ? env.SUPABASE_SERVICE_ROLE_KEY
     : resolveSupabaseConfig(env, builtPublicAuth).anonKey;
-  if (!key)
+  if (!key) {
+    console.error(JSON.stringify({event:'supabase_configuration_missing',operation:path.split('?')[0],credential:service?'SUPABASE_SERVICE_ROLE_KEY':'public_project_key'}));
     fail(
       503,
       "database_not_configured",
       "The account service needs its server configuration.",
     );
+  }
   let r;
   try {
     r = await fetch(base + path, {
@@ -103,6 +105,7 @@ export async function sb(
       body: data === undefined ? undefined : JSON.stringify(data),
     });
   } catch {
+    console.error(JSON.stringify({event:"supabase_network_failed",operation:path.split("?")[0].replace(/[a-f0-9-]{36}/g,"[id]")}));
     fail(
       503,
       "database_unavailable",
@@ -111,6 +114,7 @@ export async function sb(
   }
   const d = await r.json().catch(() => null);
   if (!r.ok) {
+    if(r.status===401&&service)fail(503,"server_credentials_rejected","Account storage is temporarily unavailable. Your sign-in is unchanged.");
     if (
       r.status === 401 &&
       /invalid api key|invalid.*apikey/i.test(
@@ -139,6 +143,7 @@ export async function sb(
     console.error(
       JSON.stringify({
         event: "supabase_failure",
+        operation:path.split("?")[0].replace(/[a-f0-9-]{36}/g,"[id]"),
         status: r.status,
         code: d?.code || "unknown",
       }),

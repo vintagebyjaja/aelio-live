@@ -346,7 +346,7 @@ export function createSupabaseAuth(
     },
 
     /** Google sign-in with PKCE: returns the URL to send the browser to. */
-    async oauthUrl(provider: "google", redirectTo: string): Promise<string> {
+    async oauthUrl(provider: "google" | "apple", redirectTo: string, link = false): Promise<string> {
       const raw = new Uint8Array(32);
       cr.getRandomValues(raw);
       const verifier = b64url(raw);
@@ -364,6 +364,15 @@ export function createSupabaseAuth(
         code_challenge: challenge,
         code_challenge_method: "s256",
       });
+      if(link){
+        q.set("skip_http_redirect","true");
+        const current=await this.session();if(!current)throw new AuthError(401,"Sign in before linking a provider.");
+        store.setItem(VERIFIER+":linked-user",current.user.id);
+        const response=await f(`${base}/user/identities/authorize?${q}`,{headers:{apikey:cfg.anonKey,authorization:"Bearer "+current.access_token}});
+        const result=await response.json();if(!response.ok||!result.url)throw new AuthError(response.status,"This provider could not be linked. Try signing in again, or use your existing method.");
+        const destination=new URL(result.url);if(destination.protocol!=="https:")throw new AuthError(400,"Invalid provider redirect.");return destination.href;
+      }
+      store.removeItem(VERIFIER+":linked-user");
       return `${base}/authorize?${q}`;
     },
 
@@ -381,14 +390,17 @@ export function createSupabaseAuth(
           400,
           "This sign-in link was started in another browser. Start again here.",
         );
-      return save(
-        await call("/token?grant_type=pkce", {
-          auth_code: code,
-          code_verifier: verifier,
-        }),
-      );
+      const result=await call("/token?grant_type=pkce",{auth_code:code,code_verifier:verifier});
+      const expected=store.getItem(VERIFIER+":linked-user");store.removeItem(VERIFIER+":linked-user");
+      if(expected&&result.user?.id!==expected)throw new AuthError(403,"This sign-in did not match your existing account. Your original session has been preserved.");
+      return save(result);
     },
 
+    async acceptSession(value: any): Promise<Session>{
+      const response=await f(base+"/user",{headers:{apikey:cfg.anonKey,authorization:"Bearer "+value.access_token}});
+      const verified=await response.json();if(!response.ok||verified.id!==value.user?.id)throw new AuthError(401,"This session could not be verified.");return save(value);
+    },
+    async signOutOthers():Promise<void>{const current=await this.session();if(!current)throw new AuthError(401,"Sign in again.");await call('/logout?scope=others',{}, {authorization:'Bearer '+current.access_token});},
     async signOut(): Promise<void> {
       const s = read();
       clear();

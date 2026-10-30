@@ -15,7 +15,7 @@ import { proxyToEngine } from "../edge/engine-proxy.js";
 
 const DIR = resolve(process.argv[2] || "public");
 const PORT = Number(process.argv[3] || 8790);
-const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".webp": "image/webp", ".png": "image/png" };
+const TYPES = { ".svg": "image/svg+xml", ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".webp": "image/webp", ".png": "image/png" };
 const read = (f) => (existsSync(f) ? readFileSync(f, "utf8") : "");
 const rules = read(join(DIR, "_redirects")).split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#")).map((l) => l.split(/\s+/));
 const headerBlocks = [];

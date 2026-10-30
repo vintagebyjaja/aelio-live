@@ -29,6 +29,7 @@ export function buildAuthConfig(
       JSON.stringify({
         engine: "",
         auth: "supabase",
+        passkeysEnabled: env.AELIO_PASSKEYS_ENABLED === "true",
         turnstileSiteKey: siteKey,
         supabase: {
           ...publicOnly,

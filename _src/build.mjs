@@ -3,6 +3,7 @@
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { groupDemo } from "./group-demo.mjs";
 import { publicPage } from "./public-experience.mjs";
 import { NAV, PAGES as SOURCE_PAGES, LINK_LABELS } from "./content.mjs";
 import { visual } from "./visuals.mjs";
@@ -71,7 +72,7 @@ const footer = () => `
 <div class="search" id="search" hidden><div class="search-card" role="dialog" aria-modal="true" aria-label="Search AELIO">
   <input id="searchIn" type="search" placeholder="Search AELIO: Green Guardians, Agent Transfer, University…" autocomplete="off">
   <div id="searchOut" class="search-out"></div></div></div>
-<script src="/assets/config.js?v=${VERSION}"></script><script src="/assets/site.js?v=${VERSION}" defer></script><script src="/assets/scene.js?v=${VERSION}" defer></script><script src="/assets/design.js?v=${VERSION}" defer></script>`;
+<link rel="stylesheet" href="/assets/dreambox-host.css?v=${VERSION}"><script src="/assets/dreambox-host.js?v=${VERSION}" defer></script><script src="/assets/config.js?v=${VERSION}"></script><script src="/assets/site.js?v=${VERSION}" defer></script><script src="/assets/group-demo.js?v=${VERSION}" defer></script><script src="/assets/scene.js?v=${VERSION}" defer></script><script src="/assets/design.js?v=${VERSION}" defer></script>`;
 
 function head(p, desc) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -81,7 +82,7 @@ function head(p, desc) {
 ${p.home ? `<script src="/assets/intro.js?v=${VERSION}"></script><link rel="preload" as="image" href="/assets/img/brand/dream-beyond-logo-675.webp">` : ""}
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=${VERSION}"><link rel="stylesheet" href="/assets/cine.css?v=${VERSION}"></head><body class="pub${p.green ? " green" : ""}" data-section="${p.home ? "home" : p.green ? "green" : p.nav || ""}" data-overview="${p.overview ? 1 : 0}">${p.home ? intro() : ""}`;
+<link rel="stylesheet" href="/assets/site.css?v=${VERSION}"><link rel="stylesheet" href="/assets/cine.css?v=${VERSION}"><link rel="stylesheet" href="/assets/editorial.css?v=${VERSION}"></head><body class="pub${p.green ? " green" : ""}" data-section="${p.home ? "home" : p.green ? "green" : p.nav || ""}" data-overview="${p.overview ? 1 : 0}">${p.home ? intro() : ""}`;
 }
 
 function crumbs(p) {
@@ -98,21 +99,9 @@ const CAMPUS_BLD = [
   { href: "/agent-campus/accountability/", label: "Accountability", gx: 1.4, gy: 4.2, h: 58 }, { href: "/agent-campus/community-service/", label: "Community Service", gx: 2.6, gy: 2, h: 46, accent: "#16301f" }];
 
 function sceneFor(p) {
-  const seed = Math.abs(hash(p.path)) % 997 + 1;
-  if (p.home) return scene("night", { seed: 11 });
-  const sub = !p.overview;
-  if (p.green) return scene("green", { seed });
-  switch (p.nav) {
-    case "aelio": return sub ? scene("night", { seed, emblem: false, stars: 200 }) : scene("sphere", {});
-    case "dream": return scene("dusk", { seed: sub ? seed : 21, sunX: sub ? 900 + (seed % 300) : 1060,
-      links: sub ? [] : [{ href: "/dream-beyond/vision/", label: "Vision" }, { href: "/dream-beyond/dream-spaces/", label: "Dream Spaces" }, { href: "/dream-beyond/ecosystem/", label: "Ecosystem" }] });
-    case "tech": return scene("hall", { seed: sub ? seed : 31 });
-    case "create": return scene("studio", {});
-    case "values": return sub ? scene("sunset", { seed, sunX: 1000 + (seed % 200) }) : scene("pavilion", {});
-    case "campus": return scene("campus", { buildings: CAMPUS_BLD.map(b => b.href === p.path ? { ...b, accent: "#ffb83e" } : b) });
-    case "live": return scene("market", { seed: sub ? seed : 61 });
-    default: return scene("night", { seed, emblem: false });
-  }
+  const images={home:'og-dark-waterfront',aelio:'chocolate-cream',dream:'og-light-waterfront',tech:'og-dark-waterfront',create:'chocolate-cream',values:'ocean-fresh',campus:'og-light-waterfront',live:'ocean-fresh'};
+  const image=p.green?'ocean-fresh':images[p.home?'home':p.nav]||'og-light-waterfront';
+  return `<div class="env photo-env" aria-hidden="true"><img src="/assets/dream/${image}.webp" alt="" fetchpriority="high"></div>`;
 }
 
 function hero(p) {
@@ -280,7 +269,7 @@ function home(p) {
       <p class="lede">Your intelligent partner for creating, learning and real-world impact: a network of specialised agents built to help you dream, build and go further.</p>
       <div class="actions"><a class="gold-btn" href="/aelio/">Explore the ecosystem →</a><a class="dark-btn" href="/dream-beyond/vision/">▶ Our vision</a></div></div><div></div></div></section>
   <section class="band"><div class="wrap"><div class="sec-h"><h2 class="h2">A connected <span class="gold">ecosystem.</span></h2><p>Six worlds, one AELIO. Each opens into its own place.</p></div>
-    <div class="worlds">${worlds.map(([h, c, t, d, v]) => `<a class="world ${c}" href="${h}"><div class="w-vis">${visual(v)}</div><small>Explore</small><b>${t}</b><span>${d}</span></a>`).join("")}</div></div></section>
+    <div class="worlds">${worlds.map(([h, c, t, d, v]) => `<a class="world ${c}" href="${h}"><div class="w-vis">${`<img src="/assets/dream/${c==='create'?'chocolate-cream':c==='tech'?'og-dark-waterfront':'og-light-waterfront'}.webp" alt="" loading="lazy">`}</div><small>Explore</small><b>${t}</b><span>${d}</span></a>`).join("")}</div></div></section>
   <section class="band"><div class="wrap"><div class="feature-split"><div class="fs-img"><img src="/assets/img/env/values-pavilion.webp" alt="A glass pavilion overlooking a city at sunset" loading="lazy" width="635" height="320"></div>
     <div class="fs-copy"><div class="eyebrow">Our values</div><h2 class="h2">A brighter <span class="gold">tomorrow.</span></h2><p class="lede">Technology should create more opportunities, stronger communities and a healthier planet. Built to walk beside people, not replace them.</p>
     <div class="actions"><a class="gold-btn" href="/values/">Our values →</a></div></div></div></div></section>
@@ -296,7 +285,9 @@ function home(p) {
 function page(p) {
   const desc = p.home ? "AELIO by Grooveville LLC. One mind. Infinite possibility." : p.lede;
   const body = p.home ? home(p) : p.overview ? overview(p) : subpage(p);
-  return head(p, desc) + header(p.nav) + `<main id="main">${body}</main>` + footer() + "</body></html>";
+  const teamDemo=p.home||['/dream-beyond/agent-team/','/live/agent-teams/'].includes(p.path)?groupDemo():'';
+  const people=['campus','aelio','values'].includes(p.nav)?`<section class="band"><div class="wrap"><div class="eyebrow">RECOGNIZABLE PERSONALITIES · YOUR OWN CONNECTION</div><h2 class="h2">Make room for different perspectives.</h2><div class="people-strip">${['naomi','angelo','oliver','simone','chloe','reggie'].map(name=>`<figure><img src="/assets/img/companions/${name}.webp" alt="${name.charAt(0).toUpperCase()+name.slice(1)}, AELIO companion" loading="lazy" width="160" height="160"><figcaption>${name.charAt(0).toUpperCase()+name.slice(1)}</figcaption></figure>`).join('')}</div></div></section>`:'';
+  return head(p, desc) + header(p.nav) + `<main id="main">${teamDemo?body.replace("</section>","</section>"+teamDemo):body}${people}</main>` + footer() + "</body></html>";
 }
 
 // ---------------------------------------------------------------- write

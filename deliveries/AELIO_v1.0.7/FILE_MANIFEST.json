@@ -1,0 +1,662 @@
+{
+  "version": "1.0.7",
+  "baseline": "5d03c46",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 8061,
+      "sha256": "f6ec293a2bb87ed60b5f5980c731086ecd36c6a3973527194bd88ee2985fe4e1"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 8164,
+      "sha256": "6c10ce5f30734dc001c4182ea4aa9ccd87238f09848f27a6557b6242dc7239db"
+    },
+    {
+      "path": "PROJECT_HANDOFF.md",
+      "bytes": 17603,
+      "sha256": "effddaa1ee5a8fe41686dddff5110f5ba42569e32a2e0646b46a50b10968c89a"
+    },
+    {
+      "path": "PROJECT_OVERVIEW.md",
+      "bytes": 8967,
+      "sha256": "0ad25bd99777d14c48bf2f4b50328833d0a4db14b9ebb1dce5911b871a556788"
+    },
+    {
+      "path": "RELEASE_MANIFEST.md",
+      "bytes": 15524,
+      "sha256": "614c0962b659b9785e5c7b4db98ca0c66557ec61c89925873853f63ae234c33a"
+    },
+    {
+      "path": "_src/brain/supabase-auth.ts",
+      "bytes": 14478,
+      "sha256": "6c55b8ea0fe971cdb40b420fa946c69e7076615dd45328b51ec8cca83a56df45"
+    },
+    {
+      "path": "_src/build-auth-config.mjs",
+      "bytes": 2129,
+      "sha256": "c14e377e728ae097f2e72f6c4bb9b91275f925d715b58dc58d1ae78f93973287"
+    },
+    {
+      "path": "_src/build-chat.mjs",
+      "bytes": 2367,
+      "sha256": "e07a91d6e916b319a3955dab60e5a9663e9a299759ab62c5832661c254908fa4"
+    },
+    {
+      "path": "_src/build.mjs",
+      "bytes": 32170,
+      "sha256": "db0e42447d17c525d8b842728313f1d3b7945889fbc4c90d92922ff28a67b5d9"
+    },
+    {
+      "path": "_src/chat/Auth.tsx",
+      "bytes": 12197,
+      "sha256": "e7620486f733b5284027ef7f46f1fff559ad7b05b2192546a2fd227d9cfbc458"
+    },
+    {
+      "path": "_src/chat/CalendarConnections.tsx",
+      "bytes": 1544,
+      "sha256": "64d051feac6e12aaa08d9245be19b846e8aef7bccc5c2e764cce69372018dc93"
+    },
+    {
+      "path": "_src/chat/ConnectedApps.tsx",
+      "bytes": 3612,
+      "sha256": "07a5d8934980305ab1b090eea8d84fe299b84c6ff8039c3ad42a4bb15387b79c"
+    },
+    {
+      "path": "_src/chat/DreamBox.tsx",
+      "bytes": 10033,
+      "sha256": "9bbf03b575d08f7a6ffaf93b8b50c3a024257065ebf9e7b53e1eb8f24c14e80c"
+    },
+    {
+      "path": "_src/chat/ModernAuth.tsx",
+      "bytes": 6120,
+      "sha256": "b4b0254e88bb57796ca0d83c842875c2e3780609e3245f6e338d71e921e47eab"
+    },
+    {
+      "path": "_src/chat/dreambox.css",
+      "bytes": 2881,
+      "sha256": "8712d2e72d0b1afb03b5926f5a15305acb420741e014d58bd3eacaca27959c87"
+    },
+    {
+      "path": "_src/chat/main.tsx",
+      "bytes": 92188,
+      "sha256": "a22f059319752d23b595222c52e80244ef7c0af62a5b9ff8f151ecc6fc9f8ee5"
+    },
+    {
+      "path": "_src/checks/browser_dreambox_stream.py",
+      "bytes": 2374,
+      "sha256": "fb2cf8d1574ff76dc778570018615bcc718ff326442f93745132f9a04984e1a9"
+    },
+    {
+      "path": "_src/checks/browser_sitewide.py",
+      "bytes": 5747,
+      "sha256": "967f308b35be418141407c115ea5c162a8d5c7bbd50c91d40aa858ee2abc79ea"
+    },
+    {
+      "path": "_src/checks/pages-emulator.mjs",
+      "bytes": 4734,
+      "sha256": "ab522819b548eaf73b7101572dae2ca9e073f0eedd73aae0a0210ab51ed24db3"
+    },
+    {
+      "path": "_src/checks/sql/local-bootstrap-regression.sql",
+      "bytes": 637,
+      "sha256": "c0142d09d2ab3959c3a7f5406aaaf740189ebf24e5aabb8113c459a206ab08ca"
+    },
+    {
+      "path": "_src/checks/sql/local-credit-regression.sql",
+      "bytes": 2420,
+      "sha256": "cc65df311c7bba851ddd6e1fdff801bf5c551e7a5fb08777156e6e2e1288b348"
+    },
+    {
+      "path": "_src/checks/test-groups.mjs",
+      "bytes": 2125,
+      "sha256": "772cf672a61c1060004b73cca499ded82cfc1075f558f4c358bad2089f773886"
+    },
+    {
+      "path": "_src/checks/test-openai.mjs",
+      "bytes": 6015,
+      "sha256": "8a67e8da29b8240cc7d7513d153b990af98015ab54dc41511df6a88e9d73a489"
+    },
+    {
+      "path": "_src/checks/test-platform-integration.mjs",
+      "bytes": 25789,
+      "sha256": "49294f05149e41f43349ac29dd22a8237947843c6ba769ffe0a26663ff74097e"
+    },
+    {
+      "path": "_src/checks/test-supabase-auth.mjs",
+      "bytes": 12170,
+      "sha256": "0f1bfa010811db5b470b211abda6b92805ef4a777dc8c9a54aac1aefec2705b2"
+    },
+    {
+      "path": "_src/group-demo.mjs",
+      "bytes": 2675,
+      "sha256": "7071a89bde3b8530e12e70fc40e7e2e2a89a02a3643182c7b0ad10cdc907d848"
+    },
+    {
+      "path": "_src/platform/index.js",
+      "bytes": 12930,
+      "sha256": "819715c19352de792a362a87090c68b8af6ba78242b72ea5a04117641e3d1584"
+    },
+    {
+      "path": "_src/platform/messaging.js",
+      "bytes": 33348,
+      "sha256": "ebc6fe9d1f5e67feb4efc628ab6d7a26819edf0e9c22bb637ea469caab8a5805"
+    },
+    {
+      "path": "_src/platform/providers/openai.js",
+      "bytes": 13382,
+      "sha256": "4248c1c94ba8c0f17a0432a5731c87dd018e3bc38fb6f5a089cd89d1569765a5"
+    },
+    {
+      "path": "_src/platform/shared.js",
+      "bytes": 9920,
+      "sha256": "d997c264b679719a8203faf0d5fda0571c9d1f0a63d3a060b682467474d51541"
+    },
+    {
+      "path": "_src/public-experience.mjs",
+      "bytes": 7767,
+      "sha256": "439da7be43617a3af6f92b687881ecb9b9bc9335ed2b3a7c146a536ff33d3edb"
+    },
+    {
+      "path": "_src/shared/companions.js",
+      "bytes": 5076,
+      "sha256": "4ff505895fcb213244afd645fdbe13ff219bf86c49d2079fe7cd2ab3b05caf9f"
+    },
+    {
+      "path": "_src/shared/experience.js",
+      "bytes": 2804,
+      "sha256": "ecc8e949563adc73de8d5e9109ef864aff1ea0695da78a27430127fa94d8bba6"
+    },
+    {
+      "path": "assets/references/visual-direction/01_Approved_Site_Direction_Diverse.png",
+      "bytes": 3301143,
+      "sha256": "9a0593edd33cbc65db606244da0d774382223146cf02269713a23f40b530495b"
+    },
+    {
+      "path": "assets/references/visual-direction/02_Original_Six_Page_Concept.png",
+      "bytes": 3266287,
+      "sha256": "655fc527080473a6aff8f88f2e5131320514897e9b26b07c6562adf0cf0f21b2"
+    },
+    {
+      "path": "assets/references/visual-direction/03_DreamBox_And_Sitewide_Concept.png",
+      "bytes": 3067552,
+      "sha256": "c1d98b9790319283f89839ebed72b57bae571e19f87aa45a4fd2ed0e17b54752"
+    },
+    {
+      "path": "assets/references/visual-direction/04_Explore_Standalone_Reference.png",
+      "bytes": 2158424,
+      "sha256": "36bd229e496b7739147305b4f6b724ddc8cd20f90600bab23a9577c4990777a5"
+    },
+    {
+      "path": "assets/references/visual-direction/05_Agent_Team_Clean_Influencer_Reference.png",
+      "bytes": 2025159,
+      "sha256": "944e9a65e36ebaeb26d6ccb34ee6d1580c05abfb4a057b3b408ad75f5e9612c6"
+    },
+    {
+      "path": "assets/references/visual-direction/SHA256SUMS.txt",
+      "bytes": 520,
+      "sha256": "79e1f7e78bb4a456f669a3d556e3e6c168089bd3f77b8cbd2204c878dfdff42d"
+    },
+    {
+      "path": "config/AELIO_v1.0.7.env.example",
+      "bytes": 805,
+      "sha256": "669d5e4798a5beabad27107e1e2a3456e32942dd843930fce7a71679ed6201ee"
+    },
+    {
+      "path": "config/GRANT_APPROVED_UNLIMITED.sql",
+      "bytes": 672,
+      "sha256": "9d8e73238a1a1da906b6fd7b45de5c04b2a7eaa88814aa244343c2b6f7741c20"
+    },
+    {
+      "path": "config/V1_0_7_REVIEW_SETUP.md",
+      "bytes": 9527,
+      "sha256": "af27e16c9b6e4969b816ecc82f62f5fa1a25209c2cc35e4e097878f487c8b970"
+    },
+    {
+      "path": "docs/assignments/AELIO_NEXT_UI_REFINEMENT_DEFERRED.md",
+      "bytes": 9473,
+      "sha256": "a2b99ee92102b5c05dfbd0fd356ee838a81052d950a3f0043f4d2b81447ae626"
+    },
+    {
+      "path": "docs/assignments/AELIO_v1.0.7_ACCOUNT_AUTH.md",
+      "bytes": 12190,
+      "sha256": "07b7bad1cc517794ad6c38d076ec996e7603440f8930170a000e953cbce215a4"
+    },
+    {
+      "path": "docs/assignments/AELIO_v1.0.7_GROUPS.md",
+      "bytes": 8782,
+      "sha256": "7bd56bb892bba2bb1f294641562a6a9c1ee76c85b5b391855c802a734cc24980"
+    },
+    {
+      "path": "docs/assignments/AELIO_v1.0.7_VISUAL_DREAMBOX.md",
+      "bytes": 9565,
+      "sha256": "8f8997da55552d2616e569805a4fcbcdf627a9576e125a71bae67016f94ae1c0"
+    },
+    {
+      "path": "docs/releases/AELIO_v1.0.7_VALIDATION.md",
+      "bytes": 8231,
+      "sha256": "13672ddeef7d79fc1464653d3fc76d27fe6f969188d7bb5350c0b19584e03258"
+    },
+    {
+      "path": "docs/review/v1.0.7/README.md",
+      "bytes": 1374,
+      "sha256": "fcb2d1f21be83dd983bf5aa60ffecbc761ec8484014f0c7a0f228ac24f272e74"
+    },
+    {
+      "path": "docs/review/v1.0.7/agent-team-desktop.png",
+      "bytes": 461983,
+      "sha256": "ea41b6e404e10b511149b18956cee2b10d6b2d13a12f2902e3354a395a4015b1"
+    },
+    {
+      "path": "docs/review/v1.0.7/agent-team-mobile.png",
+      "bytes": 224567,
+      "sha256": "53300e1162cca69d0b869606fad4094e9f48969fa27d4482c3c54be6c519259c"
+    },
+    {
+      "path": "docs/review/v1.0.7/dreambox-desktop.png",
+      "bytes": 1103667,
+      "sha256": "efdeb16881b05485e45699276bac392a59a4dd6a9aaf36226a5b72ebdab265f8"
+    },
+    {
+      "path": "docs/review/v1.0.7/dreambox-mobile.png",
+      "bytes": 265297,
+      "sha256": "93f47fc188fa54af8880366bfcce4e484149d189abd9c1f83ecf660f42a2ea9b"
+    },
+    {
+      "path": "docs/review/v1.0.7/signup-mobile.png",
+      "bytes": 66507,
+      "sha256": "3cf767aeea432ab35530086ae63be21959277c2f4355e9efe90c5444e0085fb3"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 16946,
+      "sha256": "3582507ba824344963c9d6c9f3c1b7be8f1253cf2402114efef6a55f5d258b1b"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1205,
+      "sha256": "b3b569c1f9de8ab3c5f3b9ecde89941e3c8089f315a8fb8aa0de1b0dfc4c380c"
+    },
+    {
+      "path": "public/404.html",
+      "bytes": 62645,
+      "sha256": "d97858ebc228e34211912dc6fb014dc4f1bf86117840ca8cca520905607710bb"
+    },
+    {
+      "path": "public/account/index.html",
+      "bytes": 578,
+      "sha256": "25ea7a0477af06c6986fc5dc588e670afc2d839805941fe50184861b6f079abe"
+    },
+    {
+      "path": "public/aelio/agent-transfer/index.html",
+      "bytes": 71731,
+      "sha256": "f9473a8cee5750deac961a6d3274780e61b03653928dda16e2247cf3dfeec73c"
+    },
+    {
+      "path": "public/aelio/conversation/index.html",
+      "bytes": 69421,
+      "sha256": "4b471bd5c59b682076dab23ed2b2c601b6003c4d6abc0917cf74f07824105b74"
+    },
+    {
+      "path": "public/aelio/how-it-works/index.html",
+      "bytes": 70974,
+      "sha256": "9af843147285b9107821679aefcfff81fd53f75de81efceb7f51e1cdcf58ddb8"
+    },
+    {
+      "path": "public/aelio/index.html",
+      "bytes": 78966,
+      "sha256": "f0fa282688dbb3f5f653d352283d3885e81ec2c6a042cd7822d4a371b81aee30"
+    },
+    {
+      "path": "public/aelio/main-pal/index.html",
+      "bytes": 70926,
+      "sha256": "1058b62ba8e83fe3e77ba5a1c27e1f29c5815611763a2e1dd57dd711fc936a74"
+    },
+    {
+      "path": "public/aelio/personalities/index.html",
+      "bytes": 67108,
+      "sha256": "6a276ecf5472ec3c290a618a7b2f86d9f0df9dcdece0b3f90d6077d6fb75f4cb"
+    },
+    {
+      "path": "public/aelio/teammate/index.html",
+      "bytes": 69325,
+      "sha256": "a40ef8d9ff37d443dee05119ff2caacfa386843f1ddc8ddf0e7a2cdcec6dec73"
+    },
+    {
+      "path": "public/agent-campus/accountability/index.html",
+      "bytes": 67743,
+      "sha256": "70d1683037543c7cbb2a2585ef12a7f339865adccbaf223c174293aeecbfa5c8"
+    },
+    {
+      "path": "public/agent-campus/community-service/index.html",
+      "bytes": 75005,
+      "sha256": "3ff1cc1044db6ad1b546ee79e1c7251b74baceee8cc1a7076892088e8f367f90"
+    },
+    {
+      "path": "public/agent-campus/draft-block/index.html",
+      "bytes": 71333,
+      "sha256": "a98059bb054daa01531ce419b54022cd184e703f346480de8ed76ec628e1a4d1"
+    },
+    {
+      "path": "public/agent-campus/index.html",
+      "bytes": 65718,
+      "sha256": "3081c8ca438378335b4a5ea5dff056b2d8697c8065d5a22f3365caaa4a82a037"
+    },
+    {
+      "path": "public/agent-campus/lobby/index.html",
+      "bytes": 69477,
+      "sha256": "363ebfcc42d111b072814ffa3a6f4c0c6dc9748d773d3ecea77ece864962ca52"
+    },
+    {
+      "path": "public/agent-campus/mentor-mentee/index.html",
+      "bytes": 69222,
+      "sha256": "2d1d494dd4037043c54d64d8ad6985d5cf1ea0bd2e5eeb9173eeae0f878defb2"
+    },
+    {
+      "path": "public/agent-campus/onboarding/index.html",
+      "bytes": 69573,
+      "sha256": "e58d30f30512f6aca28f3218b2b694b0c802b22ca75a6371d131a83b9b38f8f5"
+    },
+    {
+      "path": "public/agent-campus/reports/index.html",
+      "bytes": 82685,
+      "sha256": "04b8b5e2984f53d409c8a1600fbe4e2e585cf4650f1ff366620062ca196b4a42"
+    },
+    {
+      "path": "public/agent-campus/university/index.html",
+      "bytes": 69557,
+      "sha256": "2c097d7377ea862607474185cbbebeea40fc8502cdd30919d1d81df0f70e4e00"
+    },
+    {
+      "path": "public/assets/brain/app.js",
+      "bytes": 392045,
+      "sha256": "462ce8d4053cf9ecb5636904f667af3910cada7183c77460a76250add742f37f"
+    },
+    {
+      "path": "public/assets/chat/app.js",
+      "bytes": 422728,
+      "sha256": "0f9ac524fc4fa433364c2d35d471b58f1a9cc290ff930b11fafc7c1c385e474e"
+    },
+    {
+      "path": "public/assets/config.js",
+      "bytes": 361,
+      "sha256": "5876acb86f2fd8bf4729c5c58619ce648ade12bea570d68a851a1be2e0ac98ad"
+    },
+    {
+      "path": "public/assets/design.js",
+      "bytes": 3617,
+      "sha256": "f6e4658b26ab7e516075b6eb094c489dfb5dc1ae6fd67738db41012bb9b3a5f8"
+    },
+    {
+      "path": "public/assets/dreambox-host.css",
+      "bytes": 1648,
+      "sha256": "4794b885b400788238ff9de61cd0e806c0a1feb272b01b630ef51109455bd9e7"
+    },
+    {
+      "path": "public/assets/dreambox-host.js",
+      "bytes": 2038,
+      "sha256": "7d3dd6c8e4ca6d3d0def83db12027b5651b02a0723059f06ace8b9103a7a5a1b"
+    },
+    {
+      "path": "public/assets/dreambox/widget.css",
+      "bytes": 2881,
+      "sha256": "2fc936fc36a68d9088fec6df540a83a8c95c0fff964b5da23769eedae15e576c"
+    },
+    {
+      "path": "public/assets/dreambox/widget.js",
+      "bytes": 216220,
+      "sha256": "e42025d1d24c1cffb61cf5dad15eaf0d94ad4750514297080fb8b124f327e5f0"
+    },
+    {
+      "path": "public/assets/editorial.css",
+      "bytes": 8670,
+      "sha256": "f0f01218ede0256ed0b7ac0058989b79bd27d90596f7a811de15f87a43004176"
+    },
+    {
+      "path": "public/assets/group-demo.js",
+      "bytes": 836,
+      "sha256": "708ae5caf6d27665c4e13b2ef7a69bd343dc7c525b1f2869f106e6dcfaf06c52"
+    },
+    {
+      "path": "public/assets/img/demo/big-dre.svg",
+      "bytes": 506,
+      "sha256": "5f850e01ae4aead2a6b8fdb3e2297e892641d045acfc38809ff2e4ff8a4e1678"
+    },
+    {
+      "path": "public/assets/img/demo/marcus.svg",
+      "bytes": 504,
+      "sha256": "ccb3681a19442458d1df4a14a3183946bb75f8677346e475109ac8cce306a401"
+    },
+    {
+      "path": "public/assets/search-index.json",
+      "bytes": 8839,
+      "sha256": "04062afc7e6338f66c6f2301320c556b959d2681a026bd8991e20e9573e5d62c"
+    },
+    {
+      "path": "public/auth/callback/index.html",
+      "bytes": 578,
+      "sha256": "25ea7a0477af06c6986fc5dc588e670afc2d839805941fe50184861b6f079abe"
+    },
+    {
+      "path": "public/auth/reset/index.html",
+      "bytes": 578,
+      "sha256": "25ea7a0477af06c6986fc5dc588e670afc2d839805941fe50184861b6f079abe"
+    },
+    {
+      "path": "public/brain/index.html",
+      "bytes": 654,
+      "sha256": "aeecb80f518d34505e12960e9774c9f9890e07065f983162a16dee9104a70f67"
+    },
+    {
+      "path": "public/brain/my/index.html",
+      "bytes": 648,
+      "sha256": "09ed8b04f825ceec12ed68378374e669fe50b44c97959132c4cebd41f062a954"
+    },
+    {
+      "path": "public/chat/index.html",
+      "bytes": 578,
+      "sha256": "25ea7a0477af06c6986fc5dc588e670afc2d839805941fe50184861b6f079abe"
+    },
+    {
+      "path": "public/create/animation/index.html",
+      "bytes": 67992,
+      "sha256": "eb22238978febf3db2b946fc2bd98ac99042fdfbb3bcea0109140a10e63cff9a"
+    },
+    {
+      "path": "public/create/architecture/index.html",
+      "bytes": 67124,
+      "sha256": "8313e20c14b4a8c8159ea13a35f70fbeb13b30f85a7d3abffec037edf6db1221"
+    },
+    {
+      "path": "public/create/design/index.html",
+      "bytes": 67054,
+      "sha256": "900bc2df0ea81965724e799b4578fc830b188ed6bbe4b7725e1daa0dbd78a361"
+    },
+    {
+      "path": "public/create/games/index.html",
+      "bytes": 70102,
+      "sha256": "b00e72c85fc29299e94c209cf79b8e897680812f2fb998b78e433da4a703d5fc"
+    },
+    {
+      "path": "public/create/index.html",
+      "bytes": 74900,
+      "sha256": "d0bc7438623a6a5440ab86a93c6754abd9c7cec6c3b959b36ed50e418b190e4d"
+    },
+    {
+      "path": "public/create/projects/index.html",
+      "bytes": 68015,
+      "sha256": "af4436942de37fc8e1e4f65cd38194df26e6686547f88acc7e277bcc12cab511"
+    },
+    {
+      "path": "public/create/worlds/index.html",
+      "bytes": 73685,
+      "sha256": "5b8d09e658389a44e6e49f6b71f3c4003deaac32b849883e99a8e8511d4073c9"
+    },
+    {
+      "path": "public/dream-beyond/agent-team/index.html",
+      "bytes": 71048,
+      "sha256": "cea50a1336cb70764be4b1a28a8a412f94c12d2971afd28192c2525aa4bd225b"
+    },
+    {
+      "path": "public/dream-beyond/dream-spaces/index.html",
+      "bytes": 68091,
+      "sha256": "7ef586c58683477333353d9106bdcab6a41d9ac5a11389671aee235fe998f47d"
+    },
+    {
+      "path": "public/dream-beyond/ecosystem/index.html",
+      "bytes": 70222,
+      "sha256": "fcb0a646dd1b21e48a25f43b6270d6abbfe16fa143206a08a306c1409424f8b0"
+    },
+    {
+      "path": "public/dream-beyond/index.html",
+      "bytes": 65118,
+      "sha256": "46d279c20db72ed5a46cb29dacf6d7f1fb572266695922972591188c8a42fcc5"
+    },
+    {
+      "path": "public/dream-beyond/main-pal/index.html",
+      "bytes": 69429,
+      "sha256": "047852a929589076d96b40bf0b9dd360f83658bddc581ead8fa6e92dc9778db3"
+    },
+    {
+      "path": "public/dream-beyond/vision/index.html",
+      "bytes": 65318,
+      "sha256": "9a62267b7b3bbf1f2cfa9eff1512c6de59cde9f674ca2b2e525fa640c4baed3f"
+    },
+    {
+      "path": "public/dreambox/index.html",
+      "bytes": 448,
+      "sha256": "85a533a3c38162cf679c9a4a888dbd3291a83640cea456b68bebd32194645b9e"
+    },
+    {
+      "path": "public/explore/index.html",
+      "bytes": 85602,
+      "sha256": "c7f2387f4f5347da58689077d0deffdac4f78901f943992a333e8a987dd71bf4"
+    },
+    {
+      "path": "public/index.html",
+      "bytes": 540,
+      "sha256": "4128a0b1e7472f01415ab7ae7af2437efb3ec4b1b248a7c3044c5e1a1b3d4611"
+    },
+    {
+      "path": "public/live/agent-teams/index.html",
+      "bytes": 71108,
+      "sha256": "d52dd35dafe456fccaf91047801986dd83697f264f4d57c1a862afb68f0252b5"
+    },
+    {
+      "path": "public/live/create-agents/index.html",
+      "bytes": 67954,
+      "sha256": "5beed000723bef6e513c61deec4af961ef847f31031d31fdc6f4c3c3b56d6db8"
+    },
+    {
+      "path": "public/live/index.html",
+      "bytes": 64671,
+      "sha256": "2331b761ed701606ae2011b0b364313a87817ac7e3f0ae8dd5e9cdd8be2e5fc5"
+    },
+    {
+      "path": "public/live/marketplace/index.html",
+      "bytes": 70187,
+      "sha256": "316feb280532dc6ee2a158050c102ec66269ca406d85fa26e36068367eca3758"
+    },
+    {
+      "path": "public/live/plans/index.html",
+      "bytes": 70766,
+      "sha256": "776fd0e0f5d4a6649b6ef5cbe122df3787f045f2c9ee676a0285defd1260cf7d"
+    },
+    {
+      "path": "public/live/publishing/index.html",
+      "bytes": 67955,
+      "sha256": "c52bf94aa5c7c79da9d1c62cb210e87b44a3b844a2e2a8f43965436c22ac0188"
+    },
+    {
+      "path": "public/live/train-agents/index.html",
+      "bytes": 68309,
+      "sha256": "e61c4765ded6dc6204008ea6f69e4ab4a886621e0c8f983917bfc203bec77c56"
+    },
+    {
+      "path": "public/studiobrain/index.html",
+      "bytes": 661,
+      "sha256": "dd29dc353bf6222527f6e3e2b897d2923d691b288b91b20985db49270ba3536e"
+    },
+    {
+      "path": "public/technology/dream-cloud/index.html",
+      "bytes": 81612,
+      "sha256": "2a0d4e04be962bcd71549b9299e741417ac6b12764cec0a17ad63005d8de7031"
+    },
+    {
+      "path": "public/technology/dream-code/index.html",
+      "bytes": 66564,
+      "sha256": "dc02eac8e7d06167d715db60a50e7b77d810c62c1c8ccdd2ba267453608381c7"
+    },
+    {
+      "path": "public/technology/dream-deploy/index.html",
+      "bytes": 66504,
+      "sha256": "504809e017bfa09d9f8b990ad128c778cd58ef064e9a9b0359938558fe86888c"
+    },
+    {
+      "path": "public/technology/dream-guard/index.html",
+      "bytes": 66420,
+      "sha256": "d3bfb7c9d9e911639a901350f56378dd80b18710062fb0c62202d42f5a39f078"
+    },
+    {
+      "path": "public/technology/dream-memory/index.html",
+      "bytes": 66431,
+      "sha256": "036cdc8552625d90b07e6ba15936abc24ea6fd019770d14afcbdb0d166c4ba70"
+    },
+    {
+      "path": "public/technology/green-guardians/index.html",
+      "bytes": 67412,
+      "sha256": "03b0bff19308d53e7b57886d49543ae325b03d263c1aeb4e7e8c2b205d101d24"
+    },
+    {
+      "path": "public/technology/index.html",
+      "bytes": 65288,
+      "sha256": "896c973f2be0f39a2cdb1e823b28999165031f77e9f54a5753de3d1575538a5f"
+    },
+    {
+      "path": "public/technology/native/index.html",
+      "bytes": 69948,
+      "sha256": "c61ef4e412c8f45041f68e8a1fd03c074ef946cc2e6c3ac7c0b831a262b749e0"
+    },
+    {
+      "path": "public/values/community/index.html",
+      "bytes": 74688,
+      "sha256": "6b651e194e99c819be1111b61e0b61d3097d5cf79cd5aad27d96600e0ff03ddd"
+    },
+    {
+      "path": "public/values/green-guardians/index.html",
+      "bytes": 68538,
+      "sha256": "547d0aacdca2ad39da5f2f600b4cf561f9eca744d2f4ca3cf08897c842b3d436"
+    },
+    {
+      "path": "public/values/index.html",
+      "bytes": 73117,
+      "sha256": "21f0a3696657b34080a6975f96bfb8a0d4f0f338dccc8266a9bfcd3ce7697122"
+    },
+    {
+      "path": "public/values/opportunity/index.html",
+      "bytes": 71181,
+      "sha256": "75c7077888043486194e221b41fa16e99f77590d6d528268cd07be66747e85dd"
+    },
+    {
+      "path": "public/values/privacy/index.html",
+      "bytes": 67737,
+      "sha256": "c2f5d986b47a545f1ccb07392341f351f7d947100b75b34f16063627f33d7e57"
+    },
+    {
+      "path": "supabase/migrations/20261030000008_custom_groups.sql",
+      "bytes": 1308,
+      "sha256": "7e9e0d0619f82fac26d2473c5f0526960d0c52ca42f04b92d86b16871b8d4b14"
+    },
+    {
+      "path": "supabase/migrations/20261030000009_account_credit_repair.sql",
+      "bytes": 6912,
+      "sha256": "baa4fb5188c3837edc3d323cb1ce1c1df447673420a656c5c0c06b3754a5b22d"
+    },
+    {
+      "path": "supabase/migrations/20261030000010_chat_message_order.sql",
+      "bytes": 1321,
+      "sha256": "dae86e6ef28d439b17f988a36cdc7fa921e92bdca18e882b13864e35b1e31755"
+    }
+  ],
+  "deletions": []
+}

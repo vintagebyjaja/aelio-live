@@ -1,5 +1,5 @@
 import {consumerMessage} from "../shared/experience.js";
-import {companion,coordinateTeam} from "../shared/companions.js";
+import {companion,coordinateTeam,coordinateGroup} from "../shared/companions.js";
 import {milaStyleInstruction} from "../shared/mila-style.js";
 import {openAIResponses} from "./providers/openai.js";
 import { ecosystemHandoff } from "../shared/ecosystem.js";
@@ -196,7 +196,8 @@ export async function chatRoutes(req, env, path) {
   if (path === "/agents") {
     if (!u) fail(401, "authentication_required", "Sign in to manage agents.");
     if (req.method === "GET") {
-      await sb(env,"/rest/v1/rpc/app_account_bootstrap",{token:u.token,method:"POST",data:{}});
+      try{await sb(env,"/rest/v1/rpc/app_account_bootstrap",{token:u.token,method:"POST",data:{}});}catch(error){console.error(JSON.stringify({event:"agent_bootstrap_unavailable",code:error.code||"unknown"}));}
+      // Read existing owned agents even if optional account initialization is unavailable.
       return reply({
         agents: await table(
           env,
@@ -414,6 +415,19 @@ export async function chatRoutes(req, env, path) {
       if(c.permanent_key==='dream-team'&&((fields.title!==undefined&&fields.title!==c.title)||(fields.subtitle!==undefined&&fields.subtitle!==c.subtitle)))fail(403,"permanent_conversation","Dream Team keeps its name. You can customize its appearance.");
       for (const k of ["pinned", "archived", "memory_enabled"])
         if (d[k] !== undefined) fields[k] = d[k] === true;
+      if (d.participants !== undefined) {
+        if(c.permanent_key)fail(403,"permanent_conversation","Permanent conversations keep their participants.");
+        if(!Array.isArray(d.participants)||!d.participants.length||d.participants.length>8||new Set(d.participants).size!==d.participants.length)fail(400,"invalid_participants","Choose one to eight different agents.");
+        const selected=await Promise.all(d.participants.map(id=>own(env,"app_agents",id,u)));
+        if(c.product==='pathd'&&selected.some(a=>!['aelio','mila'].includes(a.kind)))fail(403,"pathd_agents","PATHD offers AELIO and MILA only.");
+        fields.participants=d.participants;
+      }
+      if(d.group_image_file_id!==undefined){
+        if(c.permanent_key)fail(403,"permanent_conversation","Official conversation images stay protected.");
+        if(d.group_image_file_id!==null){const image=await own(env,"app_files",d.group_image_file_id,u);if(image.status!=='ready'||!image.mime.startsWith('image/'))fail(400,"invalid_image","Choose an uploaded image.");}
+        fields.group_image_file_id=d.group_image_file_id;
+      }
+      if(d.group_tone!==undefined){if(!['natural','professional','relaxed','debate'].includes(d.group_tone))fail(400,'invalid_group_tone','Choose an available conversation style.');fields.group_tone=d.group_tone;}
       if (d.appearance) {
         fields.appearance = appearance(d.appearance);
         if (fields.appearance.file_id) {
@@ -581,13 +595,14 @@ async function generate(req, env, c, u, suggest = false) {
   )
     fail(403, "pathd_agents", "PATHD offers AELIO and MILA only.");
   if(c.permanent_key==="dream-team"&&(!d.target||d.target==="group")){agents=coordinateTeam(agents,input);}
+  else if (c.participants.length>1&&(!d.target||d.target==="group")) {agents=coordinateGroup(agents,input);}
   else if (d.target && d.target !== "group") {
     agents = agents.filter((a) => a.id === d.target);
     if (!agents.length)
       fail(400, "invalid_target", "Choose a participant in this conversation.");
   } else if (d.target !== "group") agents = agents.slice(0, 1);
-  if (agents.length > (c.permanent_key==="dream-team"?6:4))
-    fail(400, "group_limit", "Address up to four agents at a time.");
+  if (agents.length > 8)
+    fail(400, "group_limit", "Address up to eight agents at a time.");
   const history = (
     await table(
       env,
@@ -660,6 +675,9 @@ async function generate(req, env, c, u, suggest = false) {
       Number(env.AELIO_GUEST_MESSAGES || 10),
       86400,
     );
+  let stage='credit_reservation';
+  const trace=(state,code)=>console.info(JSON.stringify({event:'chat_pipeline',request_id:rid,stage,state,...(code?{code}:{}),provider:env.AELIO_AI_PROVIDER||(env.OPENAI_API_KEY?'openai':'brain'),product:c.product}));
+  trace('started');
   let remaining;
   try{remaining = await rpc(env, "app_reserve_chat", {
     cid: c.id,
@@ -667,17 +685,21 @@ async function generate(req, env, c, u, suggest = false) {
     guest: c.guest_hash,
     allowance: Number(env.AELIO_GUEST_MESSAGES || 10),
     rid,
-  });}catch(error){if(error instanceof Problem&&error.code==='already_exists'){const replay=await replayAttempt();if(replay)return replay;}throw error;}
+  });trace('complete');}catch(error){trace('failed',error.code||'reservation_failed');error.requestId=rid;if(error instanceof Problem&&error.code==='already_exists'){const replay=await replayAttempt();if(replay)return replay;}throw error;}
   const job=new AbortController();const onAbort=()=>job.abort();if(req.signal.aborted)job.abort();req.signal.addEventListener('abort',onAbort,{once:true});
   let upstreamReader;
   let first;
   try {
+    stage="provider_adapter";trace("started");
     first = await engine(env, {
+      request_id:rid,
       user_token: u?.token || null,
       guest: c.guest_hash,
       conversation_id: c.id,
       agents,
       dream_team:c.permanent_key==="dream-team",
+      page_context:d.page_context&&typeof d.page_context==='object'?{path:text(d.page_context.path||"",300),title:text(d.page_context.title||"",160),description:text(d.page_context.description||"",1200)}:null,
+      group:c.participants.length>1?{title:c.title,tone:c.group_tone||"natural",participants:c.participants}:null,
       history,
       content: suggest
         ? "Suggest one short conversation subtitle. Return only the subtitle."
@@ -694,8 +716,9 @@ async function generate(req, env, c, u, suggest = false) {
       memory_enabled: c.memory_enabled,
     },job.signal);
   } catch (e) {
+    trace('failed',e.code||'provider_adapter_failed');e.requestId=rid;
     job.abort();req.signal.removeEventListener("abort",onAbort);
-    await rpc(env, "app_finish_chat", { rid, ok: false });
+    await rpc(env, "app_finish_chat", { rid, ok: false }).catch(error=>console.error(JSON.stringify({event:'chat_finalize_failure',request_id:rid,code:error.code||'unknown'})));
     throw e;
   }
   const enc = new TextEncoder();
@@ -705,6 +728,7 @@ async function generate(req, env, c, u, suggest = false) {
       const outputs = new Map();
       let done = false;
       try {
+        stage='provider_stream';trace('started');
         const reader = first.body.getReader();upstreamReader=reader;
         const decoder = new TextDecoder();
         let buf = "";
@@ -770,7 +794,8 @@ async function generate(req, env, c, u, suggest = false) {
           }
         }
         if (!done) throw new Error("The Brain response ended early.");
-        if (!suggest)
+        if (!suggest){
+          stage='message_persistence';trace('started');
           await rpc(env, "app_commit_chat", {
             rid,
             input,
@@ -779,7 +804,7 @@ async function generate(req, env, c, u, suggest = false) {
               speaker: agents.find((a) => a.id === id)?.name || "AELIO",
               content: content.slice(0, 32000),
             })),
-          });
+          });trace('complete');}
         ok = true;
         controller.enqueue(
           enc.encode(
@@ -792,6 +817,7 @@ async function generate(req, env, c, u, suggest = false) {
           JSON.stringify({
             event: "brain_stream_failure",
             request_id: rid,
+            stage,
             code: e instanceof Problem ? e.code : "generation_failed",
           }),
         );
@@ -800,6 +826,8 @@ async function generate(req, env, c, u, suggest = false) {
             enc.encode(
               JSON.stringify({
                 type: "error",
+                request_id:rid,
+                stage,
                 code: e instanceof Problem ? e.code : "brain_failure",
                 message:
                   consumerMessage(e instanceof Problem?e.code:"generation_failed",e instanceof Problem?e.message:"The reply could not be saved or completed. Please retry."),
@@ -810,7 +838,7 @@ async function generate(req, env, c, u, suggest = false) {
       } finally {
         job.abort();req.signal.removeEventListener("abort",onAbort);await upstreamReader?.cancel().catch(()=>{});
         try {
-          await rpc(env, "app_finish_chat", { rid, ok });
+          await rpc(env, "app_finish_chat", { rid, ok }).catch(error=>console.error(JSON.stringify({event:'chat_finalize_failure',request_id:rid,code:error.code||'unknown'})));
         } finally {
           try {
             controller.close();

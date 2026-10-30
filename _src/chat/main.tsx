@@ -1,3 +1,4 @@
+import {AccountSecurity} from "./ModernAuth";
 import {AgentAvatar,CompanionNavigation,CompanionLibrary} from "./Companions";
 import {companion} from "../shared/companions.js";
 import {AelioLoading,FeatureBoundary,ConnectionNotice,friendly} from "./Experience";
@@ -43,6 +44,10 @@ const SCENES: Record<string, string> = {
   "Luxury Penthouse": "aelio-architecture-scene.webp",
 };
 function App() {
+  const [support,setSupport]=useState<any>(null);
+  function recordFailure(error:any,stage:string,reference?:string){const details={code:typeof error?.code==='string'&&/^[a-z0-9_]{1,80}$/i.test(error.code)?error.code:'request_failed',request_id:error?.requestId||reference||null,stage:error?.stage||stage,time:new Date().toISOString()};setSupport(details);console.error(JSON.stringify({event:'aelio_support_reference',...details}));}
+  async function copySupport(){if(!support)return;try{await navigator.clipboard.writeText(JSON.stringify(support,null,2));}catch{setErr('Copy is unavailable. Your support reference is '+(support.request_id||'not available')+'.');}}
+
   const [keyboardOpen,setKeyboardOpen]=useState(false),[waiting,setWaiting]=useState<Record<string,boolean>>({}),[retryable,setRetryable]=useState<Record<string,boolean>>({});
   const generations=useRef<Record<string,AbortController>>({}),attempts=useRef<Record<string,any>>({}),followScroll=useRef(true),messageScroller=useRef<HTMLDivElement|null>(null);
   useEffect(()=>{
@@ -111,6 +116,7 @@ function App() {
     end = useRef<HTMLDivElement | null>(null),
     input = useRef<HTMLTextAreaElement | null>(null);
   function clearPrivateState(){
+    setSupport(null);
     Object.values(generations.current).forEach(controller=>controller.abort());
     setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setBackgroundURL('');
     cache.current={};backgroundCache.current.forEach(url=>URL.revokeObjectURL(url));backgroundCache.current.clear();
@@ -123,17 +129,17 @@ function App() {
       const identityChanged=!!session&&(!s||session.user?.id!==s.user?.id);
       if(identityChanged)clearPrivateState();
       setSession(s || null);
+      if(new URLSearchParams(location.search).get("newGroup")==="1") {setPanel(s?"new":"account");setHome(false);}
       if (s) {
         try {
-          const a = await call("/account").catch(error=>{setAccountError(friendly(error));return null;});
+          const a = await call("/account").catch(error=>{recordFailure(error,"account_load");setAccountError(friendly(error));return null;});
           setAccount(a);
           if(a){setGlobalAppearance(a.preferences.appearance || {});setConsent(a.preferences.external_ai_consent);}
-          const [as, cs] = await Promise.all([
-            call("/agents"),
-            call("/conversations"),
-          ]);
-          setAgents(as.agents);
-          setThreads(cs.conversations);
+          const [agentResult,chatResult]=await Promise.allSettled([call("/agents"),call("/conversations")]);
+          const as=agentResult.status==='fulfilled'?agentResult.value:{agents:identityChanged?[]:agents};
+          const cs=chatResult.status==='fulfilled'?chatResult.value:{conversations:identityChanged?[]:threads};
+          if(agentResult.status==='fulfilled')setAgents(as.agents);else {recordFailure(agentResult.reason,'agent_load');setAccountError(friendly(agentResult.reason));}
+          if(chatResult.status==='fulfilled')setThreads(cs.conversations);else {recordFailure(chatResult.reason,'history_load');setAccountError(friendly(chatResult.reason));}
           if (!cur || cur.guest_hash || identityChanged) {
             const q = new URLSearchParams(location.search);
             const mila = q.get("companion") === "mila";
@@ -333,7 +339,7 @@ function App() {
       if(r.ok)break;
       const detail=await r.json();
       if(detail.code==='retry_new_request'&&attempt===0){const oldId=requestId;requestId=crypto.randomUUID();attempts.current[id].request_id=requestId;setMessages(current=>({...current,[id]:(current[id]||[]).map(message=>message.local&&message.request_id===oldId?{...message,request_id:requestId,id:message.role==='user'?'local-user-'+requestId:message.id}:message)}));continue;}
-      throw new Error(detail.error||'The response could not start.');
+      throw Object.assign(new Error(detail.error||'The response could not start.'),{code:detail.code,requestId:detail.request_id||r.headers.get('x-request-id')||requestId});
       }
       let saved=false;
       if (!r.body) throw new Error("The response stream is missing.");
@@ -352,9 +358,7 @@ function App() {
           const ev = JSON.parse(line);
           if (ev.type === "error") {
             failed = true;
-            throw new Error(
-              ev.message || "The Brain could not complete the reply.",
-            );
+            throw Object.assign(new Error(ev.message || "The reply could not complete."),{code:ev.code,requestId:ev.request_id||requestId,stage:ev.stage});
           }
           if (ev.type === "ecosystem_handoff")
             setHandoffs((previous) => ({
@@ -406,6 +410,7 @@ function App() {
           .catch(error => setAccountError(friendly(error)));
       if (!suggest) await loadMessages(id, true);
     } catch (e: any) {
+      recordFailure(e,'chat_response',requestId);
       setErr(e.name==='AbortError'?'Generation stopped. Your draft is available to retry.':friendly(e));
       if (!suggest){setDrafts((d) => ({ ...d, [id]: content }));setRetryable(current=>({...current,[id]:true}));}
     } finally {
@@ -772,7 +777,7 @@ function App() {
               className={"thread " + (cur?.id === t.id ? "selected" : "")}
               onClick={() => select(t)}
             >
-              <AgentAvatar agent={agents.find(a=>a.id===t.participants[0])} group={t.participants.length>1}/>
+              {t.group_image_file_id?<GroupImage id={t.group_image_file_id}/>:<AgentAvatar agent={agents.find(a=>a.id===t.participants[0])} group={t.participants.length>1}/>}
               <span>
                 <b>
                   {t.pinned ? "★ " : ""}
@@ -841,6 +846,7 @@ function App() {
         {err && (
           <div className="error" role="alert">
             {err}
+            {support&&<button onClick={copySupport}>Copy support reference</button>}
             <button aria-label="Dismiss error" onClick={() => setErr("")}>
               ×
             </button>
@@ -849,6 +855,7 @@ function App() {
         {accountError && (
           <div className="error" role="alert">
             {accountError}
+            {support&&<button onClick={copySupport}>Copy support reference</button>}
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
@@ -1585,7 +1592,7 @@ function App() {
                         {a.name}
                       </option>
                     ))}
-                    <option value="group">{cur.permanent_key==='dream-team'?'The team chooses relevant speakers':'The group (up to four agents)'}</option>
+                    <option value="group">{cur.permanent_key==='dream-team'?'The team chooses relevant speakers':'Relevant voices choose when to join'}</option>
                   </select>
                 </label>
               )}
@@ -1726,6 +1733,7 @@ function App() {
                 onBlur={() => change({ subtitle: cur.subtitle })}
               />
             </label>
+            {session && !cur.permanent_key && <fieldset><legend>Group participants</legend>{agents.filter((a:any)=>cur.product!=='pathd'||['aelio','mila'].includes(a.kind)).map((a:any)=><label key={a.id}><input type="checkbox" checked={cur.participants.includes(a.id)} disabled={busy[cur.id]} onChange={(e:any)=>{const ids=e.target.checked?[...cur.participants,a.id]:cur.participants.filter((id:string)=>id!==a.id);if(ids.length&&ids.length<=8)change({participants:ids});}}/>{a.name}</label>)}<label>Conversation style<select value={cur.group_tone||'natural'} onChange={(e:any)=>change({group_tone:e.target.value})}>{['natural','professional','relaxed','debate'].map(t=><option key={t}>{t}</option>)}</select></label><label>Group image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async(e:any)=>{const file=e.target.files?.[0];if(!file)return;try{const saved=await upload(file,'agents');await change({group_image_file_id:saved.id});}catch(error:any){setErr(friendly(error));}e.target.value='';}}/></label>{cur.group_image_file_id&&<><GroupImage id={cur.group_image_file_id}/><button onClick={()=>change({group_image_file_id:null})}>Remove group image</button></>}</fieldset>}
             <button disabled={busy[cur.id]} onClick={() => send(true)}>
               Suggest subtitle with AI
             </button>
@@ -1933,6 +1941,7 @@ function relativeTime(value: string) {
         ? Math.floor(minutes / 60) + "h"
         : Math.floor(minutes / 1440) + "d";
 }
+function GroupImage({id}:{id:string}){const [url,setUrl]=useState('');useEffect(()=>{let live=true,value='';fileURL(id).then(u=>{value=u;if(live)setUrl(u);else URL.revokeObjectURL(u);}).catch(()=>{});return()=>{live=false;if(value)URL.revokeObjectURL(value);};},[id]);return url?<img src={url} alt="Group image" width="42" height="42" style={{objectFit:'cover',borderRadius:'50%'}}/>:<span aria-label="Group">◉</span>;}
 function NewChat({ agents, onCreate }: any) {
   const [ids, setIds] = useState<string[]>([]),
     [title, setTitle] = useState(""),
@@ -1940,6 +1949,7 @@ function NewChat({ agents, onCreate }: any) {
   return (
     <section className="panel">
       <h1>Start a conversation</h1>
+      <p>Create groups whenever you like. Choose up to eight companions in each group.</p>
       <form
         onSubmit={(e: any) => {
           e.preventDefault();
@@ -1967,7 +1977,7 @@ function NewChat({ agents, onCreate }: any) {
           </select>
         </label>
         {agents
-          .filter((a: any) => product === "aelio" || a.kind !== "custom")
+          .filter((a: any) => product === "aelio" || ["aelio","mila"].includes(a.kind))
           .map((a: any) => (
             <label key={a.id}>
               <input
@@ -1976,7 +1986,7 @@ function NewChat({ agents, onCreate }: any) {
                 onChange={(e: any) =>
                   setIds(
                     e.target.checked
-                      ? [...ids, a.id]
+                      ? ids.length<8?[...ids, a.id]:ids
                       : ids.filter((id) => id !== a.id),
                   )
                 }
@@ -2004,7 +2014,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
           Your sign-in is safe. I’m having trouble opening your account right now.
           Let’s try again.
         </p>
-        <button onClick={reload}>Retry</button>
+        <button onClick={reload}>Retry</button><AccountSecurity/>
       </section>
     );
   if (recover)
@@ -2044,7 +2054,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
           <p>
             {p.plan} ·{" "}
             {p.unlimited
-              ? "Approved personal/founder allowance"
+              ? "Unlimited credits"
               : p.credits + " message credits remaining this month"}
           </p>
           <a href={p.product === "pathd" ? "https://mypathd.com" : "/chat/"}>
@@ -2061,6 +2071,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
           Open existing Brain agents, wallet and earlier conversation history
         </a>
       </p>
+      <AccountSecurity/>
       <h2>Privacy & recovery</h2>
       {["external_ai_consent", "career_consent", "career_outside_mila"].map(
         (k) => (
