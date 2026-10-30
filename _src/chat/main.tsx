@@ -1,0 +1,1907 @@
+import React, { useState, useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
+import { auth, call, upload, fileURL, download } from "./client";
+import { AuthPanel } from "./Auth";
+import "./styles.css";
+import { DreamHome } from "./DreamHome";
+import { AppearanceControls } from "./Appearance";
+import { designOf, resolveAppearance, guestAppearance } from "./design-system";
+const BACKGROUNDS = [
+  "AELIO Original",
+  "Space & Galaxies",
+  "Nature & Waterfalls",
+  "City Skyline",
+  "Sunset & Beaches",
+  "Sports Lounge",
+  "Basketball Court",
+  "Football Stadium",
+  "Cigar Lounge",
+  "Executive Office",
+  "Luxury Penthouse",
+  "Minimal Black",
+  "Minimal White",
+  "Custom Upload",
+];
+const SCENES: Record<string, string> = {
+  "AELIO Original": "aelio-cinematic-home.webp",
+  "Space & Galaxies": "aelio-scene-1.webp",
+  "Nature & Waterfalls": "aelio-atmosphere-nature.webp",
+  "City Skyline": "aelio-atmosphere-city.webp",
+  "Sunset & Beaches": "aelio-scene-3.webp",
+  "Sports Lounge": "aelio-atmosphere-studio.webp",
+  "Basketball Court": "aelio-atmosphere-studio.webp",
+  "Football Stadium": "aelio-atmosphere-city.webp",
+  "Cigar Lounge": "aelio-atmosphere-studio.webp",
+  "Executive Office": "aelio-architecture-scene.webp",
+  "Luxury Penthouse": "aelio-architecture-scene.webp",
+};
+function App() {
+  const [homeDraft, setHomeDraft] = useState("");
+  const [home, setHome] = useState(
+    !new URLSearchParams(location.search).has("companion"),
+  );
+  const [collapsed, setCollapsed] = useState(false);
+  const [globalAppearance, setGlobalAppearance] =
+    useState<any>(guestAppearance);
+  const [globalPreview, setGlobalPreview] = useState<any>(null);
+  const [appearanceMessage, setAppearanceMessage] = useState("");
+  const [session, setSession] = useState<any>(undefined),
+    [account, setAccount] = useState<any>(null),
+    [accountError, setAccountError] = useState(""),
+    [agents, setAgents] = useState<any[]>([]),
+    [threads, setThreads] = useState<any[]>([]),
+    [cur, setCur] = useState<any>(null),
+    [messages, setMessages] = useState<Record<string, any[]>>({}),
+    [drafts, setDrafts] = useState<Record<string, string>>({}),
+    [remaining, setRemaining] = useState<number | null>(null),
+    [panel, setPanel] = useState(
+      location.pathname.startsWith("/account") ||
+        location.pathname.startsWith("/auth")
+        ? "account"
+        : "",
+    ),
+    [drawer, setDrawer] = useState(false),
+    [search, setSearch] = useState(""),
+    [err, setErr] = useState(""),
+    [busy, setBusy] = useState<Record<string, boolean>>({}),
+    [consent, setConsent] = useState(false),
+    [target, setTarget] = useState(""),
+    [attachments, setAttachments] = useState<any[]>([]),
+    [backgroundURL, setBackgroundURL] = useState(""),
+    [suggestion, setSuggestion] = useState(""),
+    [proposals, setProposals] = useState<Record<string, any[]>>({}),
+    [allowReminders, setAllowReminders] = useState(false);
+  const [editor, setEditor] = useState<any>(null),
+    [appearance, setAppearance] = useState<any>(null),
+    [items, setItems] = useState<any[]>([]),
+    [notifications, setNotifications] = useState<any[]>([]),
+    [careerRecords, setCareerRecords] = useState<any[]>([]),
+    [files, setFiles] = useState<any[]>([]);
+  const backgroundCache = useRef<Map<string, string>>(new Map()),
+    inflight = useRef<Set<string>>(new Set()),
+    cache = useRef<Record<string, any[]>>({}),
+    end = useRef<HTMLDivElement | null>(null),
+    input = useRef<HTMLTextAreaElement | null>(null);
+  async function reload() {
+    setAccountError("");
+    try {
+      const s = await auth?.session();
+      setSession(s || null);
+      if (s) {
+        try {
+          const a = await call("/account");
+          setAccount(a);
+          setGlobalAppearance(a.preferences.appearance || {});
+          setConsent(a.preferences.external_ai_consent);
+          const [as, cs] = await Promise.all([
+            call("/agents"),
+            call("/conversations"),
+          ]);
+          setAgents(as.agents);
+          setThreads(cs.conversations);
+          if (!cur || cur.guest_hash) {
+            const q = new URLSearchParams(location.search);
+            const mila = q.get("companion") === "mila";
+            const agent = as.agents.find(
+              (x: any) => x.kind === (mila ? "mila" : "aelio"),
+            );
+            const t = cs.conversations.find(
+              (c: any) =>
+                c.participants.length === 1 && c.participants[0] === agent?.id,
+            );
+            if (t) select(t);
+            else if (agent)
+              await newThread([agent.id], mila ? "MILA" : "AELIO");
+            setHome(!new URLSearchParams(location.search).has("companion"));
+          }
+        } catch (e: any) {
+          setAccountError(e.message);
+        }
+      } else {
+        setAccount(null);
+        const g = await call("/guest", "POST", {});
+        setCur(g.conversation);
+        setRemaining(g.remaining);
+        loadMessages(g.conversation.id);
+      }
+    } catch (e: any) {
+      setErr(e.message);
+      setSession(null);
+    }
+  }
+  useEffect(() => {
+    reload();
+  }, []);
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDrawer(false);
+        setPanel("");
+        setEditor(null);
+        setAppearance(null);
+      }
+    };
+    addEventListener("keydown", k);
+    return () => removeEventListener("keydown", k);
+  }, []);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end", behavior: "auto" });
+  }, [messages, cur?.id]);
+  useEffect(() => {
+    const scenes = new Set<string>();
+    for (const t of threads.slice(0, 30)) {
+      const f = SCENES[t.appearance?.background || "AELIO Original"];
+      if (f) scenes.add(f);
+      if (scenes.size === 4) break;
+    }
+    for (const f of scenes) {
+      const image = new Image();
+      image.src = "/assets/img/" + f;
+    }
+  }, [threads]);
+  useEffect(
+    () => () => {
+      for (const url of backgroundCache.current.values())
+        URL.revokeObjectURL(url);
+    },
+    [],
+  );
+  async function loadMessages(id: string, force = false) {
+    try {
+      const r = await call("/conversations/" + id + "/messages");
+      if (inflight.current.has(id) && !force) return;
+      cache.current[id] = r.messages;
+      setMessages((m) => ({ ...m, [id]: r.messages }));
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  function select(t: any) {
+    setHome(false);
+    setPanel("");
+    setCur(t);
+    setAppearance(null);
+    setDrawer(false);
+    setTarget("");
+    setAttachments([]);
+    setErr("");
+    setSuggestion("");
+    if (cache.current[t.id])
+      setMessages((m) => ({ ...m, [t.id]: cache.current[t.id] }));
+    if (!busy[t.id]) loadMessages(t.id);
+    input.current?.focus();
+  }
+  async function newThread(ids: string[], title: string, product = "aelio") {
+    try {
+      const r = await call("/conversations", "POST", {
+        participants: ids,
+        title,
+        product,
+      });
+      setThreads((ts) => [r.conversation, ...ts]);
+      select(r.conversation);
+      setPanel("");
+      return r.conversation;
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  async function change(fields: any) {
+    try {
+      const r = await call("/conversations/" + cur.id, "PATCH", fields);
+      setCur(r.conversation);
+      setThreads((ts) => ts.map((t) => (t.id === cur.id ? r.conversation : t)));
+      setAppearance(null);
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  async function remove() {
+    if (!confirm("Delete this conversation and its message history?")) return;
+    try {
+      await call("/conversations/" + cur.id, "DELETE");
+      setThreads((ts) => ts.filter((t) => t.id !== cur.id));
+      setCur(null);
+      setPanel("agents");
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  async function send(suggest = false) {
+    if (!cur || busy[cur.id]) return;
+    const id = cur.id,
+      content = drafts[id] || "";
+    if (!content.trim() && !suggest) return;
+    if (!consent) {
+      setErr("Please accept the AI disclosure before sending.");
+      return;
+    }
+    setErr("");
+    inflight.current.add(id);
+    setBusy((b) => ({ ...b, [id]: true }));
+    if (!suggest) {
+      setDrafts((d) => ({ ...d, [id]: "" }));
+      setMessages((m) => ({
+        ...m,
+        [id]: [
+          ...(m[id] || []),
+          { id: crypto.randomUUID(), role: "user", content },
+        ],
+      }));
+    }
+    const streams: Record<string, string> = {};
+    let subtitle = "";
+    let failed = false;
+    try {
+      const t = await auth?.accessToken();
+      const r = await fetch(
+        "/api/platform/conversations/" +
+          id +
+          (suggest ? "/suggest-subtitle" : "/respond"),
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(t ? { authorization: "Bearer " + t } : {}),
+          },
+          body: JSON.stringify({
+            content,
+            consent: true,
+            target: target || undefined,
+            file_ids: attachments.map((f) => f.id),
+            allow_reminders: allowReminders,
+          }),
+        },
+      );
+      if (!r.ok) {
+        const d = await r.json();
+        throw new Error(d.error);
+      }
+      if (!r.body) throw new Error("The response stream is missing.");
+      const reader = r.body.getReader(),
+        decoder = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const r = await reader.read();
+        if (r.done) break;
+        buf += decoder.decode(r.value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i);
+          buf = buf.slice(i + 1);
+          if (!line) continue;
+          const ev = JSON.parse(line);
+          if (ev.type === "error") {
+            failed = true;
+            throw new Error(
+              ev.message || "The Brain could not complete the reply.",
+            );
+          }
+          if (ev.type === "reminder_proposal") {
+            setProposals((ps) => ({
+              ...ps,
+              [id]: [
+                ...(ps[id] || []),
+                { ...ev.proposal, proposal_id: crypto.randomUUID() },
+              ],
+            }));
+          }
+          if (ev.type === "delta") {
+            if (suggest) {
+              subtitle += ev.text;
+              setSuggestion(subtitle);
+              continue;
+            }
+            const key = "stream-" + id + "-" + (ev.agent_id || "aelio");
+            streams[key] = (streams[key] || "") + ev.text;
+            setMessages((m) => ({
+              ...m,
+              [id]: [
+                ...(m[id] || []).filter((x) => x.id !== key),
+                {
+                  id: key,
+                  role: "assistant",
+                  speaker: ev.speaker,
+                  content: streams[key],
+                },
+              ],
+            }));
+          }
+          if (ev.type === "saved" && session === null)
+            setRemaining(ev.remaining);
+        }
+      }
+      setAttachments([]);
+      if (session)
+        call("/account")
+          .then(setAccount)
+          .catch(() => {});
+      if (!suggest) await loadMessages(id, true);
+    } catch (e: any) {
+      setErr(e.message);
+      if (!suggest) setDrafts((d) => ({ ...d, [id]: content }));
+    } finally {
+      inflight.current.delete(id);
+      setBusy((b) => ({ ...b, [id]: false }));
+    }
+  }
+  async function show(p: string) {
+    setErr("");
+    setPanel(p);
+    try {
+      if (p === "reminders") {
+        const [a, n, c] = await Promise.all([
+          call("/career/reminders"),
+          call("/career/notifications"),
+          call("/career/records"),
+        ]);
+        setItems(a.items);
+        setNotifications(n.items);
+        setCareerRecords(c.items);
+      }
+      if (p === "files") setFiles((await call("/files")).files);
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  const activeAgents =
+    cur?.participants
+      ?.map((id: string) => agents.find((a) => a.id === id))
+      .filter(Boolean) || [];
+  const isMila = activeAgents.some((a: any) => a.kind === "mila");
+  const globalAP = globalPreview || globalAppearance;
+  const conversationAP = appearance || cur?.appearance || {};
+  const ap =
+    home || panel === "appearance"
+      ? globalAP
+      : resolveAppearance(
+          globalAP,
+          activeAgents.length === 1 ? activeAgents[0] : null,
+          conversationAP,
+        );
+  const design = designOf(ap);
+  async function startTopic(topic: any) {
+    if (!topic) return;
+    let t = cur;
+    if (session) {
+      const a = agents.find((a) => a.kind === "aelio");
+      if (!a) {
+        setErr("Your Main Pal is still loading. Retry the account connection.");
+        return;
+      }
+      t = await newThread([a.id], topic[0]);
+    }
+    if (!t) {
+      setErr("Chat is still connecting. Try again shortly.");
+      return;
+    }
+    setDrafts((d) => ({ ...d, [t.id]: topic[2] }));
+    setHome(false);
+    setPanel("");
+    requestAnimationFrame(() => input.current?.focus());
+  }
+  async function saveGlobal() {
+    try {
+      const next = globalPreview || globalAppearance;
+      if (session) await call("/account", "PATCH", { appearance: next });
+      else localStorage.setItem("aelio.appearance", JSON.stringify(next));
+      setGlobalAppearance(next);
+      setGlobalPreview(null);
+      setAppearanceMessage(
+        "Appearance saved. Agents using your default will follow it.",
+      );
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  const minimalBackground = ["Minimal Black", "Minimal White"].includes(
+    ap.background,
+  );
+  const bg = minimalBackground
+    ? ""
+    : backgroundURL ||
+      (SCENES[ap.background || ""]
+        ? "/assets/img/" + SCENES[ap.background || ""]
+        : design.scene
+          ? "/assets/dream/" + design.scene
+          : "");
+  useEffect(() => {
+    let live = true;
+    const id = ap.file_id;
+    setBackgroundURL(id ? backgroundCache.current.get(id) || "" : "");
+    if (id && !backgroundCache.current.has(id))
+      fileURL(id)
+        .then((v) => {
+          backgroundCache.current.set(id, v);
+          while (backgroundCache.current.size > 8) {
+            const first = backgroundCache.current.keys().next().value!;
+            URL.revokeObjectURL(backgroundCache.current.get(first)!);
+            backgroundCache.current.delete(first);
+          }
+          if (live) setBackgroundURL(v);
+        })
+        .catch((e: any) => setErr(e.message));
+    return () => {
+      live = false;
+    };
+  }, [ap.file_id]);
+  if (session === undefined)
+    return <main className="loading">Opening your space…</main>;
+  if (panel === "account" && !session)
+    return (
+      <main className="auth-page">
+        <AuthPanel onDone={reload} />
+      </main>
+    );
+  if (session && account && !account.user.recovery_enrolled)
+    return (
+      <main className="auth-page">
+        <AuthPanel enroll onDone={reload} />
+      </main>
+    );
+  return (
+    <div
+      className={
+        "dream-app " +
+        (design.light ? "light " : "") +
+        (collapsed ? "collapsed " : "") +
+        (home ? "at-home" : "")
+      }
+      data-design={design.id}
+      data-motion={ap.motion || "system"}
+      style={
+        {
+          "--home-scene": design.scene
+            ? `url(/assets/dream/${design.scene})`
+            : "none",
+        } as any
+      }
+    >
+      <header className="topbar">
+        <button
+          aria-label="Open conversations"
+          aria-expanded={drawer || (!collapsed && innerWidth > 900)}
+          onClick={() => {
+            if (matchMedia("(min-width: 901px)").matches)
+              setCollapsed(!collapsed);
+            else setDrawer(!drawer);
+          }}
+        >
+          ☰
+        </button>
+        <a className="brand" href="/">
+          AELIO
+        </a>
+        <nav>
+          <button
+            onClick={() => {
+              setHome(true);
+              setPanel("");
+            }}
+          >
+            Home
+          </button>
+          <button
+            onClick={() => {
+              setHome(false);
+              setPanel("");
+              history.replaceState(null, "", "/chat/");
+            }}
+          >
+            Chat
+          </button>
+          {session && (
+            <>
+              <button onClick={() => show("agents")}>Agents</button>
+              <button onClick={() => show("reminders")}>Reminders</button>
+              <button onClick={() => show("files")}>Files</button>
+            </>
+          )}
+          <a href="/brain/">Brain</a>
+          <button onClick={() => show("appearance")}>Appearance</button>
+          <button onClick={() => show("account")}>
+            {session ? "Account" : "Sign in"}
+          </button>
+        </nav>
+      </header>
+      {drawer && (
+        <button
+          className="drawer-backdrop"
+          aria-label="Close conversations"
+          onClick={() => setDrawer(false)}
+        />
+      )}
+      <aside className={"sidebar " + (drawer ? "open" : "")}>
+        <nav className="home-nav" aria-label="AELIO navigation">
+          <button
+            onClick={() => {
+              setHome(true);
+              setPanel("");
+              setDrawer(false);
+            }}
+          >
+            ⌂ Home
+          </button>
+          <button
+            onClick={() => {
+              setHome(false);
+              setPanel("");
+              setDrawer(false);
+            }}
+          >
+            ◌ Chat
+          </button>
+          <button
+            onClick={() => {
+              show(session ? "agents" : "account");
+              setDrawer(false);
+            }}
+          >
+            ♧ Agents
+          </button>
+          <a href="/agent-campus/">▣ Campus</a>
+          <a href="/live/">▤ Live</a>
+          <a href="/brain/">◈ Brain</a>
+          <a href="/explore/">Explore AELIO</a>
+        </nav>
+        <div className="side-head">
+          <h2>Your conversations</h2>
+          <button
+            aria-label="Close conversations"
+            onClick={() => setDrawer(false)}
+          >
+            ×
+          </button>
+        </div>
+        <button
+          className="primary"
+          onClick={() => (session ? show("new") : show("account"))}
+        >
+          ＋ New chat
+        </button>
+        <label className="search">
+          Search
+          <input
+            value={search}
+            placeholder="Search conversations"
+            onChange={(e: any) => setSearch(e.target.value)}
+          />
+        </label>
+        <button
+          className="permanent"
+          onClick={() => {
+            const a = agents.find((a) => a.kind === "aelio");
+            const t = threads.find(
+              (t) => t.participants.length === 1 && t.participants[0] === a?.id,
+            );
+            if (t) select(t);
+            else if (a) newThread([a.id], "AELIO");
+            else setPanel("");
+          }}
+        >
+          <b>AELIO</b>
+          <small>Your Original Main Pal · Permanent</small>
+        </button>
+        {session && (
+          <button
+            className="mila-shortcut"
+            onClick={() => {
+              const a = agents.find((a) => a.kind === "mila");
+              const t = threads.find(
+                (t) =>
+                  t.participants.length === 1 && t.participants[0] === a?.id,
+              );
+              if (t) select(t);
+              else if (a) newThread([a.id], "MILA");
+            }}
+          >
+            MILA <small>Career & Life Companion</small>
+          </button>
+        )}
+        {[...threads]
+          .filter(
+            (t) =>
+              !t.archived &&
+              [t.title, t.subtitle]
+                .join(" ")
+                .toLowerCase()
+                .includes(search.toLowerCase()),
+          )
+          .sort((a, b) => Number(b.pinned) - Number(a.pinned))
+          .map((t) => (
+            <button
+              key={t.id}
+              className={"thread " + (cur?.id === t.id ? "selected" : "")}
+              onClick={() => select(t)}
+            >
+              <span className="avatar">{t.title.slice(0, 1)}</span>
+              <span>
+                <b>
+                  {t.pinned ? "★ " : ""}
+                  {t.title}
+                </b>
+                <small>
+                  {t.subtitle ||
+                    agents.find((a) => a.id === t.participants[0])?.subtitle ||
+                    "Your conversation"}
+                </small>
+                <small>
+                  {(messages[t.id] || cache.current[t.id])
+                    ?.slice(-1)[0]
+                    ?.content?.slice(0, 70) ||
+                    t.app_messages?.[0]?.content?.slice(0, 70) ||
+                    "Open conversation"}
+                </small>
+                <small>{relativeTime(t.updated_at || t.created_at)}</small>
+              </span>
+            </button>
+          ))}
+        {threads.some((t) => t.archived) && (
+          <details>
+            <summary>Archived</summary>
+            {threads
+              .filter((t) => t.archived)
+              .map((t) => (
+                <button className="thread" key={t.id} onClick={() => select(t)}>
+                  {t.title}
+                </button>
+              ))}
+          </details>
+        )}
+        <nav className="side-tools">
+          {session && (
+            <>
+              <button onClick={() => show("agents")}>Your agents</button>
+              <button onClick={() => show("reminders")}>
+                Reminders & career context
+              </button>
+              <button onClick={() => show("files")}>Private files</button>
+              <button onClick={() => show("account")}>
+                Account & recovery
+              </button>
+            </>
+          )}
+        </nav>
+        <footer>
+          One Mind. Your Energy.
+          <br />
+          {session
+            ? "Free plans · Paid plans coming soon"
+            : remaining === null
+              ? "Guest chat"
+              : remaining + " guest messages remaining"}
+        </footer>
+      </aside>
+      <main className="workspace">
+        {err && (
+          <div className="error" role="alert">
+            {err}
+            <button aria-label="Dismiss error" onClick={() => setErr("")}>
+              ×
+            </button>
+          </div>
+        )}
+        {accountError && (
+          <div className="error" role="alert">
+            {accountError}
+            <button onClick={reload}>Retry account connection</button>
+          </div>
+        )}
+        {panel === "appearance" ? (
+          <section className="panel appearance-panel">
+            <button
+              onClick={() => {
+                setGlobalPreview(null);
+                setPanel("");
+                setHome(true);
+              }}
+            >
+              Back to Dream Box
+            </button>
+            <h1>Your AELIO appearance</h1>
+            <p>
+              Preview the whole interface. Chat backgrounds are separate. Your
+              conversations and companions stay exactly where you left them.
+            </p>
+            <AppearanceControls
+              value={globalAP}
+              onChange={(v: any) => {
+                setGlobalPreview(v);
+                setAppearanceMessage("Preview — save to keep this design.");
+              }}
+              backgrounds={BACKGROUNDS}
+              allowFile={!!session}
+              onUpload={async (f: File) => {
+                try {
+                  const file = await upload(f, "users");
+                  setGlobalPreview({
+                    ...globalAP,
+                    background: "Custom Upload",
+                    file_id: file.id,
+                  });
+                } catch (e: any) {
+                  setErr(e.message);
+                }
+              }}
+            />
+            <button onClick={saveGlobal}>Save global appearance</button>
+            <button
+              onClick={() => {
+                setGlobalPreview(null);
+                setAppearanceMessage("Preview cancelled.");
+              }}
+            >
+              Cancel preview
+            </button>
+            <p role="status">{appearanceMessage}</p>
+          </section>
+        ) : panel === "account" && session ? (
+          <Account
+            account={account}
+            reload={reload}
+            setPanel={setPanel}
+            setErr={setErr}
+          />
+        ) : panel === "agents" ? (
+          <section className="panel">
+            <h1>Your companions</h1>
+            <p>
+              AELIO is always AELIO. Your other agents have their own
+              identities, memories and specialties.
+            </p>
+            <button
+              onClick={() => {
+                setEditor({
+                  name: "",
+                  subtitle: "",
+                  specialty: "",
+                  personality: "The Homie",
+                  instructions: "",
+                  memories: [],
+                  memory_enabled: false,
+                });
+                setPanel("edit-agent");
+              }}
+            >
+              Create agent
+            </button>
+            {agents.map((a) => (
+              <article key={a.id}>
+                <h2>
+                  {a.name} {a.kind !== "custom" && <small>Permanent</small>}
+                </h2>
+                <p>{a.subtitle}</p>
+                <p>
+                  {a.specialty} {a.personality && " · " + a.personality}
+                </p>
+                <button onClick={() => newThread([a.id], a.name)}>
+                  Open chat
+                </button>
+                {a.kind === "custom" && (
+                  <button
+                    onClick={() => {
+                      setEditor(a);
+                      setPanel("edit-agent");
+                    }}
+                  >
+                    Edit agent
+                  </button>
+                )}
+              </article>
+            ))}
+          </section>
+        ) : panel === "edit-agent" && editor ? (
+          <section className="panel">
+            <h1>{editor.id ? "Edit" : "Create"} agent</h1>
+            <form
+              onSubmit={async (e: any) => {
+                e.preventDefault();
+                try {
+                  const r = await call(
+                    "/agents" + (editor.id ? "/" + editor.id : ""),
+                    editor.id ? "PATCH" : "POST",
+                    editor,
+                  );
+                  setAgents((as) => [
+                    ...as.filter((a) => a.id !== r.agent.id),
+                    r.agent,
+                  ]);
+                  setPanel("agents");
+                } catch (e: any) {
+                  setErr(e.message);
+                }
+              }}
+            >
+              {["name", "subtitle", "specialty", "instructions"].map((k) => (
+                <label key={k}>
+                  {k === "subtitle" ? "Chat Focus / Subtitle" : k}
+                  <input
+                    required={k === "name"}
+                    maxLength={
+                      k === "instructions"
+                        ? 4000
+                        : k === "specialty"
+                          ? 1000
+                          : k === "name"
+                            ? 80
+                            : 160
+                    }
+                    value={editor[k]}
+                    onChange={(e: any) =>
+                      setEditor({ ...editor, [k]: e.target.value })
+                    }
+                  />
+                </label>
+              ))}
+              <label>
+                Personality
+                <select
+                  value={editor.personality || ""}
+                  onChange={(e: any) =>
+                    setEditor({
+                      ...editor,
+                      personality: e.target.value || null,
+                    })
+                  }
+                >
+                  <option value="">Adaptive</option>
+                  {[
+                    "The Homie",
+                    "Proper British",
+                    "Classy Gyal",
+                    "Creative",
+                    "Analytical",
+                    "Mindful",
+                  ].map((p) => (
+                    <option key={p}>{p}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={editor.memory_enabled}
+                  onChange={(e: any) =>
+                    setEditor({ ...editor, memory_enabled: e.target.checked })
+                  }
+                />
+                Use these approved agent memories when conversation memory is
+                enabled
+              </label>
+              <label>
+                Approved memories (one per line)
+                <textarea
+                  value={editor.memories?.join("\n") || ""}
+                  onChange={(e: any) =>
+                    setEditor({
+                      ...editor,
+                      memories: e.target.value.split("\n").filter(Boolean),
+                    })
+                  }
+                />
+              </label>
+              <h2>This agent’s environment</h2>
+              <label>
+                Appearance
+                <select
+                  value={editor.appearance_mode || "inherit"}
+                  onChange={(e: any) =>
+                    setEditor({ ...editor, appearance_mode: e.target.value })
+                  }
+                >
+                  <option value="inherit">Use AELIO Default</option>
+                  <option value="custom">Customize This Agent</option>
+                </select>
+              </label>
+              <p>
+                Visual settings never change personality, specialty or memory.
+                Saved custom settings remain available when you switch back.
+              </p>
+              {editor.appearance_mode === "custom" && (
+                <AppearanceControls
+                  value={editor.appearance || {}}
+                  onChange={(v: any) => setEditor({ ...editor, appearance: v })}
+                  backgrounds={BACKGROUNDS}
+                  allowFile={!!session}
+                  onUpload={async (f: File) => {
+                    try {
+                      const file = await upload(f, "users");
+                      setEditor({
+                        ...editor,
+                        appearance: {
+                          ...editor.appearance,
+                          background: "Custom Upload",
+                          file_id: file.id,
+                        },
+                      });
+                    } catch (e: any) {
+                      setErr(e.message);
+                    }
+                  }}
+                />
+              )}
+              <button>Save agent</button>
+            </form>
+            {editor.id && (
+              <>
+                <button
+                  onClick={async () => {
+                    try {
+                      const r = await call(
+                        "/agents/" + editor.id + "/publish",
+                        "POST",
+                        { description: editor.specialty },
+                      );
+                      download(
+                        JSON.stringify(r.publication, null, 2),
+                        "agent-publication-draft.json",
+                        "application/json",
+                      );
+                    } catch (e: any) {
+                      setErr(e.message);
+                    }
+                  }}
+                >
+                  Export marketplace profile draft
+                </button>
+                <p>
+                  No private messages, memories, files or credentials are
+                  included. Publishing is not enabled.
+                </p>
+              </>
+            )}
+          </section>
+        ) : panel === "new" ? (
+          <NewChat agents={agents} onCreate={newThread} />
+        ) : panel === "reminders" ? (
+          <Career
+            items={items}
+            notifications={notifications}
+            records={careerRecords}
+            refresh={() => show("reminders")}
+            setErr={setErr}
+          />
+        ) : panel === "files" ? (
+          <section className="panel">
+            <h1>Your private files</h1>
+            <label>
+              Upload document or media
+              <input
+                type="file"
+                onChange={async (e: any) => {
+                  try {
+                    if (e.target.files?.[0]) {
+                      await upload(e.target.files[0]);
+                      await show("files");
+                    }
+                  } catch (e: any) {
+                    setErr(e.message);
+                  }
+                }}
+              />
+            </label>
+            <p>
+              25 MB per file. 250 MB total. Files remain private. Inference
+              currently accepts text, JSON and PDF up to 1 MB; media storage
+              does not imply voice or vision inference.
+            </p>
+            {files.map((f) => (
+              <article key={f.id}>
+                <b>{f.name}</b>
+                <p>
+                  {Math.ceil(f.size_bytes / 1024)} KB · {f.category}
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      const url = await fileURL(f.id);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = f.name;
+                      a.click();
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    } catch (e: any) {
+                      setErr(e.message);
+                    }
+                  }}
+                >
+                  Download
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await call("/files/" + f.id, "DELETE");
+                      show("files");
+                    } catch (e: any) {
+                      setErr(e.message);
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </article>
+            ))}
+          </section>
+        ) : home ? (
+          <DreamHome
+            name={account?.user?.display_name}
+            direct={homeDraft}
+            setDirect={setHomeDraft}
+            appearance={globalAP}
+            onTopic={startTopic}
+            onAppearance={(id?: string) => {
+              if (id)
+                setGlobalPreview({
+                  ...globalAppearance,
+                  design: id,
+                  mode: designOf({ design: id }).light ? "light" : "dark",
+                });
+              show("appearance");
+            }}
+            recent={threads.find((t) => !t.archived)}
+            onResume={select}
+          />
+        ) : (
+          <section
+            className="chat"
+            style={
+              {
+                "--scene": bg ? `url("${bg}")` : "none",
+                "--chat-base":
+                  ap.background === "Minimal Black"
+                    ? "#08090d"
+                    : ap.background === "Minimal White"
+                      ? "#fffdf8"
+                      : "var(--page)",
+                "--dim": (ap.dim ?? 45) / 100,
+                "--blur": (ap.blur || 0) + "px",
+                "--outgoing":
+                  ap.outgoing ||
+                  (design.id === "ocean-fresh"
+                    ? "#296d85"
+                    : design.id === "chocolate-cream"
+                      ? "#795139"
+                      : "#d95713"),
+                "--incoming":
+                  ap.incoming ||
+                  (design.light
+                    ? "#fff8f1"
+                    : design.id === "chocolate-cream"
+                      ? "#31211c"
+                      : "#181b23"),
+                "--message-text":
+                  ap.text || (design.light ? "#17191f" : "#fff9f0"),
+              } as any
+            }
+          >
+            <div className="chat-header">
+              <div>
+                <h1>{cur?.title || "AELIO"}</h1>
+                <p>
+                  {cur?.subtitle ||
+                    activeAgents.map((a: any) => a.subtitle).join(" · ") ||
+                    "Your Original Main Pal"}
+                </p>
+              </div>
+              {isMila && (
+                <a className="path-link" href="https://mypathd.com">
+                  Go to Your PATH ↗
+                </a>
+              )}
+              {session && cur && (
+                <button
+                  onClick={() => show("settings")}
+                  aria-label="Conversation settings"
+                >
+                  ⚙
+                </button>
+              )}
+            </div>
+            <div
+              className="messages"
+              aria-live="polite"
+              aria-busy={!!busy[cur?.id]}
+            >
+              {!(messages[cur?.id] || []).length && (
+                <div className="welcome">
+                  <h2>{isMila ? "Hey, I’m MILA." : "Hey, I’m AELIO."}</h2>
+                  <p>
+                    {isMila
+                      ? account?.preferences?.mila_welcomed
+                        ? "Your career matters. So does your life outside of it. What are we working toward?"
+                        : "My Inspiration, Life & Ambition. Your homegirl who wants to see you win — in your career and in life. What are we working toward?"
+                      : "What’s on your mind today?"}
+                  </p>
+                  {isMila && !account?.preferences?.mila_welcomed && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await call("/account", "PATCH", {
+                            mila_welcomed: true,
+                          });
+                          reload();
+                        } catch (e: any) {
+                          setErr(e.message);
+                        }
+                      }}
+                    >
+                      Got it — skip introduction
+                    </button>
+                  )}
+                  <div className="prompts">
+                    {[
+                      "Help me untangle an idea",
+                      "Let’s plan my week",
+                      "I could use some motivation",
+                    ].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() =>
+                          setDrafts((d) => ({ ...d, [cur?.id]: s }))
+                        }
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(messages[cur?.id] || []).map((m: any) => (
+                <article key={m.id} className={"bubble " + m.role}>
+                  {m.role === "assistant" && <b>{m.speaker || "AELIO"}</b>}
+                  <p>{m.content}</p>
+                  {m.role === "assistant" && session && (
+                    <button
+                      className="save-output"
+                      onClick={async () => {
+                        try {
+                          await upload(
+                            new File([m.content], "agent-output.txt", {
+                              type: "text/plain",
+                            }),
+                            "generated-assets",
+                            cur.id,
+                          );
+                          setErr("Output saved to your private files.");
+                        } catch (e: any) {
+                          setErr(e.message);
+                        }
+                      }}
+                    >
+                      Save output
+                    </button>
+                  )}
+                </article>
+              ))}
+              {busy[cur?.id] && (
+                <p className="writing" role="status">
+                  Writing…
+                </p>
+              )}
+              <div ref={end} />
+            </div>
+            <div className="compose-area">
+              {(proposals[cur?.id] || []).map((p) => (
+                <article key={p.proposal_id}>
+                  <b>Reminder draft: {p.title}</b>
+                  <p>
+                    {new Date(p.due_at).toLocaleString()} · {p.timezone} ·{" "}
+                    {p.recurrence}
+                  </p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await call("/career/reminders", "POST", {
+                          title: p.title,
+                          due_at: p.due_at,
+                          timezone: p.timezone,
+                          recurrence: p.recurrence,
+                        });
+                        setProposals((ps) => ({
+                          ...ps,
+                          [cur.id]: (ps[cur.id] || []).filter(
+                            (x) => x.proposal_id !== p.proposal_id,
+                          ),
+                        }));
+                        setErr(
+                          "Reminder confirmed and saved. View Reminders for its schedule.",
+                        );
+                      } catch (e: any) {
+                        setErr(e.message);
+                      }
+                    }}
+                  >
+                    Confirm reminder
+                  </button>
+                </article>
+              ))}
+              {isMila && (
+                <label className="disclosure">
+                  <input
+                    type="checkbox"
+                    checked={allowReminders}
+                    onChange={(e: any) => setAllowReminders(e.target.checked)}
+                  />
+                  Allow MILA to draft reminders for my confirmation
+                </label>
+              )}
+              {activeAgents.length > 1 && (
+                <label>
+                  Address
+                  <select
+                    value={target}
+                    onChange={(e: any) => setTarget(e.target.value)}
+                  >
+                    <option value="">{activeAgents[0]?.name}</option>
+                    {activeAgents.slice(1).map((a: any) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                    <option value="group">The group (up to four agents)</option>
+                  </select>
+                </label>
+              )}
+              {!consent && (
+                <label className="disclosure">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e: any) => {
+                      setConsent(e.target.checked);
+                      if (session)
+                        call("/account", "PATCH", {
+                          external_ai_consent: e.target.checked,
+                        }).catch((x) => setErr(x.message));
+                    }}
+                  />
+                  I agree to send these messages and selected files to the
+                  configured external AI provider. Replies may be inaccurate.
+                  AELIO Native is still in research.
+                </label>
+              )}
+              <form
+                className="composer"
+                onSubmit={(e: any) => {
+                  e.preventDefault();
+                  send();
+                }}
+              >
+                {session && (
+                  <label
+                    className="attach"
+                    title="Attach a text, JSON or PDF file"
+                  >
+                    ＋
+                    <input
+                      aria-label="Attach file"
+                      type="file"
+                      accept=".txt,.md,.json,.pdf"
+                      onChange={async (e: any) => {
+                        try {
+                          if (e.target.files?.[0]) {
+                            const f = await upload(
+                              e.target.files[0],
+                              "documents",
+                              cur.id,
+                            );
+                            setAttachments((a) => [...a, f].slice(0, 3));
+                          }
+                        } catch (e: any) {
+                          setErr(e.message);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+                <textarea
+                  ref={input}
+                  aria-label="Message"
+                  rows={2}
+                  value={drafts[cur?.id] || ""}
+                  placeholder={"Message " + (cur?.title || "AELIO") + "…"}
+                  onChange={(e: any) =>
+                    setDrafts((d) => ({ ...d, [cur?.id]: e.target.value }))
+                  }
+                  onKeyDown={(e: any) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                />
+                <button
+                  aria-label="Send message"
+                  disabled={!cur || busy[cur.id] || !drafts[cur.id]?.trim()}
+                >
+                  ↗
+                </button>
+              </form>
+              {attachments.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() =>
+                    setAttachments((a) => a.filter((x) => x.id !== f.id))
+                  }
+                >
+                  {f.name} ×
+                </button>
+              ))}
+              {!session && (
+                <p className="guest-note">
+                  {remaining ?? 10} guest messages remaining ·{" "}
+                  <button onClick={() => show("account")}>
+                    Sign in to save your conversation
+                  </button>
+                </p>
+              )}
+              {session && (
+                <button
+                  className="text-button"
+                  onClick={async () => {
+                    try {
+                      const r = await call("/guest/claim", "POST", {});
+                      setErr(r.count + " guest conversation saved.");
+                      reload();
+                    } catch (e: any) {
+                      setErr(e.message);
+                    }
+                  }}
+                >
+                  Import my eligible guest conversation
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+        {panel === "settings" && cur && (
+          <section className="settings-panel panel">
+            <button onClick={() => setPanel("")}>Close settings</button>
+            <h2>My Pal, My Space</h2>
+            <label>
+              Conversation title
+              <input
+                value={cur.title}
+                onChange={(e: any) => setCur({ ...cur, title: e.target.value })}
+                onBlur={() => change({ title: cur.title })}
+              />
+            </label>
+            <label>
+              Conversation topic / subtitle
+              <input
+                value={cur.subtitle}
+                onChange={(e: any) =>
+                  setCur({ ...cur, subtitle: e.target.value })
+                }
+                onBlur={() => change({ subtitle: cur.subtitle })}
+              />
+            </label>
+            <button disabled={busy[cur.id]} onClick={() => send(true)}>
+              Suggest subtitle with AI
+            </button>
+            {suggestion && (
+              <div>
+                <p>{suggestion}</p>
+                <button
+                  onClick={() => {
+                    change({ subtitle: suggestion.slice(0, 160) });
+                    setSuggestion("");
+                  }}
+                >
+                  Apply suggestion
+                </button>
+              </div>
+            )}
+            <label>
+              <input
+                type="checkbox"
+                checked={cur.memory_enabled}
+                onChange={(e: any) =>
+                  change({ memory_enabled: e.target.checked })
+                }
+              />
+              Use this agent’s approved memories
+            </label>
+            <p>
+              Conversation overrides → custom agent → your global AELIO
+              appearance. Group chats use the global default unless overridden
+              here.
+            </p>
+            <AppearanceControls
+              value={conversationAP}
+              onChange={setAppearance}
+              backgrounds={BACKGROUNDS}
+              allowFile={!!session}
+              onUpload={async (f: File) => {
+                try {
+                  const file = await upload(f, "users");
+                  setAppearance({
+                    ...conversationAP,
+                    background: "Custom Upload",
+                    file_id: file.id,
+                  });
+                } catch (e: any) {
+                  setErr(e.message);
+                }
+              }}
+            />
+            <button onClick={() => change({ appearance: conversationAP })}>
+              Save appearance
+            </button>
+            <button onClick={() => setAppearance(null)}>Cancel preview</button>
+            <button onClick={() => change({ appearance: {} })}>
+              Use inherited appearance
+            </button>
+            <button onClick={() => change({ pinned: !cur.pinned })}>
+              {cur.pinned ? "Unpin" : "Pin"} conversation
+            </button>
+            <button onClick={() => change({ archived: !cur.archived })}>
+              {cur.archived ? "Unarchive" : "Archive"}
+            </button>
+            <button onClick={remove}>Delete conversation</button>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
+function relativeTime(value: string) {
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return "";
+  const minutes = Math.max(0, Math.floor((Date.now() - time) / 60000));
+  return minutes < 1
+    ? "Just now"
+    : minutes < 60
+      ? minutes + "m"
+      : minutes < 1440
+        ? Math.floor(minutes / 60) + "h"
+        : Math.floor(minutes / 1440) + "d";
+}
+function NewChat({ agents, onCreate }: any) {
+  const [ids, setIds] = useState<string[]>([]),
+    [title, setTitle] = useState(""),
+    [product, setProduct] = useState("aelio");
+  return (
+    <section className="panel">
+      <h1>Start a conversation</h1>
+      <form
+        onSubmit={(e: any) => {
+          e.preventDefault();
+          onCreate(ids, title || "New conversation", product);
+        }}
+      >
+        <label>
+          Conversation name
+          <input
+            value={title}
+            onChange={(e: any) => setTitle(e.target.value)}
+          />
+        </label>
+        <label>
+          Space
+          <select
+            value={product}
+            onChange={(e: any) => {
+              setProduct(e.target.value);
+              setIds([]);
+            }}
+          >
+            <option value="aelio">AELIO</option>
+            <option value="pathd">PATHD Career Space</option>
+          </select>
+        </label>
+        {agents
+          .filter((a: any) => product === "aelio" || a.kind !== "custom")
+          .map((a: any) => (
+            <label key={a.id}>
+              <input
+                type="checkbox"
+                checked={ids.includes(a.id)}
+                onChange={(e: any) =>
+                  setIds(
+                    e.target.checked
+                      ? [...ids, a.id]
+                      : ids.filter((id) => id !== a.id),
+                  )
+                }
+              />
+              {a.name} · {a.subtitle}
+            </label>
+          ))}
+        <button disabled={!ids.length}>
+          Create {ids.length > 1 ? "group chat" : "chat"}
+        </button>
+      </form>
+    </section>
+  );
+}
+function Account({ account, reload, setPanel, setErr }: any) {
+  const [name, setName] = useState(account?.user.display_name || ""),
+    [recover, setRecover] = useState(false),
+    [confirmDelete, setConfirmDelete] = useState(false),
+    [pw, setPw] = useState("");
+  if (!account)
+    return (
+      <section className="panel">
+        <h1>Account connection unavailable</h1>
+        <p>
+          Your sign-in session is independent of the Brain. Retry the account
+          service configuration.
+        </p>
+        <button onClick={reload}>Retry</button>
+      </section>
+    );
+  if (recover)
+    return (
+      <AuthPanel
+        enroll
+        onDone={() => {
+          setRecover(false);
+          reload();
+        }}
+      />
+    );
+  return (
+    <section className="panel">
+      <h1>Your account</h1>
+      <p>{account.user.email}</p>
+      <label>
+        Display name
+        <input value={name} onChange={(e: any) => setName(e.target.value)} />
+      </label>
+      <button
+        onClick={async () => {
+          try {
+            await call("/account", "PATCH", { display_name: name });
+            reload();
+          } catch (e: any) {
+            setErr(e.message);
+          }
+        }}
+      >
+        Save name
+      </button>
+      <h2>Connected Apps</h2>
+      {account.plans.map((p: any) => (
+        <article key={p.product}>
+          <b>{p.product.toUpperCase()} — Connected</b>
+          <p>
+            {p.plan} ·{" "}
+            {p.unlimited
+              ? "Approved personal/founder allowance"
+              : p.credits + " message credits remaining this month"}
+          </p>
+          <a href={p.product === "pathd" ? "https://mypathd.com" : "/chat/"}>
+            Open {p.product.toUpperCase()}
+          </a>
+        </article>
+      ))}
+      <p>Subscriptions and usage stay separate. Paid plans are Coming Soon.</p>
+      {account.role === "founder" && (
+        <a href="/studiobrain/">Open Studio Brain (MFA required)</a>
+      )}
+      <p>
+        <a href="/brain/my/">
+          Open existing Brain agents, wallet and earlier conversation history
+        </a>
+      </p>
+      <h2>Privacy & recovery</h2>
+      {["external_ai_consent", "career_consent", "career_outside_mila"].map(
+        (k) => (
+          <label key={k}>
+            <input
+              type="checkbox"
+              checked={!!account.preferences[k]}
+              onChange={async (e: any) => {
+                try {
+                  await call("/account", "PATCH", { [k]: e.target.checked });
+                  reload();
+                } catch (e: any) {
+                  setErr(e.message);
+                }
+              }}
+            />
+            {
+              {
+                external_ai_consent: "Allow external AI processing",
+                career_consent:
+                  "Allow MILA to use my authorized PATHD career context",
+                career_outside_mila: "Allow career context outside MILA chats",
+              }[k]
+            }
+          </label>
+        ),
+      )}
+      <button onClick={() => setRecover(true)}>
+        Update recovery methods (reauthentication required)
+      </button>
+      <button
+        onClick={async () => {
+          try {
+            download(
+              JSON.stringify(await call("/account/export"), null, 2),
+              "AELIO-data-export.json",
+              "application/json",
+            );
+          } catch (e: any) {
+            setErr(e.message);
+          }
+        }}
+      >
+        Export my data
+      </button>
+      <button onClick={() => setConfirmDelete(!confirmDelete)}>
+        Delete shared account…
+      </button>
+      {confirmDelete && (
+        <div>
+          <p>
+            This removes your shared AELIO and PATHD identity and owned data. It
+            affects both websites.
+          </p>
+          <input
+            type="password"
+            aria-label="Confirm password for account deletion"
+            value={pw}
+            onChange={(e: any) => setPw(e.target.value)}
+          />
+          <button
+            onClick={async () => {
+              const phrase = prompt(
+                "Enter DELETE MY SHARED ACCOUNT to confirm.",
+              );
+              if (!phrase) return;
+              try {
+                await call("/account/delete", "POST", {
+                  confirm: phrase,
+                  password: pw,
+                });
+                await auth?.signOut();
+                location.assign("/chat/");
+              } catch (e: any) {
+                setErr(e.message);
+              }
+            }}
+          >
+            Confirm shared account deletion
+          </button>
+        </div>
+      )}
+      <button
+        onClick={async () => {
+          await auth?.signOut();
+          location.assign("/chat/");
+        }}
+      >
+        Sign out
+      </button>
+      <button onClick={() => setPanel("")}>Back to Chat</button>
+    </section>
+  );
+}
+function Career({ items, notifications, records, refresh, setErr }: any) {
+  const [title, setTitle] = useState(""),
+    [due, setDue] = useState(""),
+    [recurrence, setRecurrence] = useState("once"),
+    [source, setSource] = useState(""),
+    [recordTitle, setRecordTitle] = useState(""),
+    [kind, setKind] = useState("goal"),
+    [detail, setDetail] = useState("");
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  async function act(fn: () => Promise<any>) {
+    try {
+      await fn();
+      refresh();
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+  return (
+    <section className="panel">
+      <h1>Career & life reminders</h1>
+      <p>
+        In-app reminders use your timezone: {zone}. Job-search criteria can be
+        saved; automatic job monitoring is unavailable until an authorized
+        provider is connected.
+      </p>
+      <form
+        onSubmit={(e: any) => {
+          e.preventDefault();
+          act(() =>
+            call("/career/reminders", "POST", {
+              title,
+              due_at: new Date(due).toISOString(),
+              timezone: zone,
+              recurrence,
+              source_id: source || null,
+            }),
+          );
+        }}
+      >
+        <label>
+          Reminder
+          <input
+            required
+            value={title}
+            onChange={(e: any) => setTitle(e.target.value)}
+          />
+        </label>
+        <label>
+          When
+          <input
+            required
+            type="datetime-local"
+            value={due}
+            onChange={(e: any) => setDue(e.target.value)}
+          />
+        </label>
+        <label>
+          Repeat
+          <select
+            value={recurrence}
+            onChange={(e: any) => setRecurrence(e.target.value)}
+          >
+            <option>once</option>
+            <option>daily</option>
+            <option>weekly</option>
+          </select>
+        </label>
+        <label>
+          Related opportunity
+          <select
+            value={source}
+            onChange={(e: any) => setSource(e.target.value)}
+          >
+            <option value="">None</option>
+            {records.map((r: any) => (
+              <option key={r.id} value={r.id}>
+                {r.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button>Create reminder</button>
+      </form>
+      {items.map((r: any) => (
+        <article key={r.id}>
+          <h2>{r.title}</h2>
+          <p>
+            {new Date(r.due_at).toLocaleString()} · {r.recurrence}{" "}
+            {r.paused ? "· Paused" : ""}
+          </p>
+          <button
+            onClick={() =>
+              act(() =>
+                call("/career/reminders/" + r.id, "PATCH", {
+                  paused: !r.paused,
+                }),
+              )
+            }
+          >
+            {r.paused ? "Resume" : "Pause"}
+          </button>
+          <button
+            onClick={() => {
+              const t = prompt("Reminder title", r.title);
+              if (t)
+                act(() =>
+                  call("/career/reminders/" + r.id, "PATCH", { title: t }),
+                );
+            }}
+          >
+            Edit title
+          </button>
+          <button
+            onClick={() => {
+              const t = prompt(
+                "New date and time with timezone (ISO format)",
+                r.due_at,
+              );
+              if (t)
+                act(() =>
+                  call("/career/reminders/" + r.id, "PATCH", { due_at: t }),
+                );
+            }}
+          >
+            Reschedule
+          </button>
+          <button
+            onClick={() =>
+              act(() => call("/career/reminders/" + r.id, "DELETE"))
+            }
+          >
+            Delete
+          </button>
+        </article>
+      ))}
+      <h2>Notifications</h2>
+      {!notifications.length && <p>No notifications yet.</p>}
+      {notifications.map((n: any) => (
+        <article key={n.id}>
+          {n.title} · {new Date(n.scheduled_for).toLocaleString()}
+          {!n.read_at && (
+            <button
+              onClick={() =>
+                act(() => call("/career/notifications/" + n.id, "PATCH", {}))
+              }
+            >
+              Mark read
+            </button>
+          )}
+        </article>
+      ))}
+      <h2>Career context</h2>
+      <form
+        onSubmit={(e: any) => {
+          e.preventDefault();
+          act(() =>
+            call("/career/records", "POST", {
+              kind,
+              title: recordTitle,
+              data: { notes: detail },
+            }),
+          );
+        }}
+      >
+        <label>
+          Type
+          <select value={kind} onChange={(e: any) => setKind(e.target.value)}>
+            {["profile", "job", "application", "event", "goal", "search"].map(
+              (k) => (
+                <option key={k}>{k}</option>
+              ),
+            )}
+          </select>
+        </label>
+        <label>
+          Title
+          <input
+            required
+            value={recordTitle}
+            onChange={(e: any) => setRecordTitle(e.target.value)}
+          />
+        </label>
+        <label>
+          Details
+          <textarea
+            value={detail}
+            onChange={(e: any) => setDetail(e.target.value)}
+          />
+        </label>
+        <button>Save career record</button>
+      </form>
+      {records.map((r: any) => (
+        <article key={r.id}>
+          <b>{r.title}</b>
+          <p>{r.kind}</p>
+          <button
+            onClick={() => act(() => call("/career/records/" + r.id, "DELETE"))}
+          >
+            Delete
+          </button>
+        </article>
+      ))}
+    </section>
+  );
+}
+createRoot(document.getElementById("root")!).render(<App />);

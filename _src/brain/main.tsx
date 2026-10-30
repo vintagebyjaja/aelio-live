@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { api, ApiError, currentUser, firebaseAuth, isDev, post, setDevToken, signOut, supa } from "./api";
+import { api, ApiError, currentUser, isDev, post, setDevToken, signOut, supa } from "./api";
 import { AgentTransferAdmin, CreditsBilling, UsageAccess } from "./founder";
 import { BrainGame } from "./game";
 import { Core } from "./core";
@@ -54,10 +54,7 @@ function SignIn({ onDone, note }: any) {
           if (r.confirmEmail) { setMsg("Check your email to confirm your account, then sign in."); setBusy(false); return; }
         } else await supa.signInWithPassword(email, pw);
       }
-      else {
-        const auth = await firebaseAuth(); const F = (window as any).firebase;
-        if (kind === "google") await auth.signInWithPopup(new F.auth.GoogleAuthProvider()); else await auth.signInWithEmailAndPassword(email, pw);
-      }
+      else { throw new Error("Supabase sign-in is not configured. Open Account for connection details."); }
       onDone();
     } catch (e: any) { setErr(e.message || String(e)); }
     setBusy(false);
@@ -73,7 +70,7 @@ function SignIn({ onDone, note }: any) {
       {isDev() && <><label htmlFor="si-c">Authenticator code (dev)</label><input id="si-c" inputMode="numeric" value={code} onChange={(e: any) => setCode(e.target.value)} /></>}
       <button className="dark-btn wide" disabled={busy || !email || !pw} onClick={() => fb("email")}>{mode === "up" ? "Create account" : "Sign in"}</button>
       {supa && <p className="small dim">
-        {mode === "in" ? <>New here? <button className="link" onClick={() => setMode("up")}>Create an account</button> · <button className="link" disabled={!email} onClick={() => fb("reset")}>Forgot password</button></>
+        {mode === "in" ? <>New here? <button className="link" onClick={() => location.assign("/account/?mode=signup")}>Create an account</button> · <button className="link" disabled={!email} onClick={() => location.assign("/account/?mode=recover")}>Forgot password</button></>
           : <>Have an account? <button className="link" onClick={() => setMode("in")}>Sign in</button></>}
         <br />The same account works on aelio.live and mypathd.com.</p>}
       {msg && <p className="small" role="status">{msg}</p>}
@@ -103,8 +100,8 @@ function BrainEntry() {
         {state.loading ? <p className="dim">Checking your account…</p>
           : !state.signedIn ? <SignIn onDone={check} note="Have an AELIO account? Sign in to reach your AELIO. Everyone else, enjoy the game." />
           : <div className="card"><div className="eyebrow">Brain</div>
-              {state.visitor ? <><h2>Almost there.</h2><p>AELIO accounts aren't open to the public yet. When they are, this button will take you to your own AELIO: your history, your agents and more. Enjoy the game in the meantime.</p></>
-                : <><h2>Can't reach AELIO</h2><p>{state.error}</p><button className="dark-btn" onClick={check}>Try again</button></>}
+              {state.visitor ? <><h2>Almost there.</h2><p>Open Chat to talk to AELIO, or Account to manage your profile and recovery.</p></>
+                : <><h2>Can't reach AELIO</h2><p>{state.error}</p><p><a href="/account/">Open your account dashboard</a> · <a href="/chat/">Open Chat</a></p><button className="dark-btn" onClick={check}>Try again</button></>}
               <button className="ghost" onClick={async () => { await signOut(); check(); }}>Sign out</button></div>}
       </aside>
     </div>);

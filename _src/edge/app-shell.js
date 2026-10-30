@@ -1,7 +1,7 @@
 // Brain app deep links: /brain/my/<anything> and /studiobrain/<anything> load that app's shell (index.html),
 // and the app routes on the client. Used by the Worker (wrangler.jsonc) and by Pages Functions, so neither needs
 // _redirects rewrites (which can loop on Workers static assets with trailing-slash handling).
-export const APP_SHELLS = ["/brain/my/", "/studiobrain/"];
+export const APP_SHELLS = ["/chat/", "/account/", "/auth/callback/", "/auth/reset/", "/brain/my/", "/studiobrain/"];
 
 export function shellFor(pathname) {
   return APP_SHELLS.find((p) => pathname === p.slice(0, -1) || pathname.startsWith(p)) || null;

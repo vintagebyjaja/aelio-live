@@ -14,7 +14,7 @@
 
 const HOP_BY_HOP = ["connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade", "te", "trailer", "proxy-authorization", "host", "content-length"];
 // Headers a browser must never be able to set on the engine request.
-const CLIENT_FORBIDDEN = ["x-aelio-proxy-secret", "x-aelio-client-ip", "x-forwarded-for", "x-forwarded-host", "x-forwarded-proto", "x-real-ip", "cf-connecting-ip", "cookie", "forwarded"];
+const CLIENT_FORBIDDEN = ["x-aelio-messaging-secret", "x-aelio-proxy-secret", "x-aelio-client-ip", "x-forwarded-for", "x-forwarded-host", "x-forwarded-proto", "x-real-ip", "cf-connecting-ip", "cookie", "forwarded"];
 const ALLOWED_PREFIXES = ["/api/", "/webhooks/"];
 
 function json(status, data) {
@@ -23,10 +23,12 @@ function json(status, data) {
 
 export async function proxyToEngine({ request, env }) {
   const url = new URL(request.url);
+  if (url.pathname.startsWith("/api/internal/")) return json(404, {error:"not found"});
   if (!ALLOWED_PREFIXES.some(p => url.pathname.startsWith(p))) return json(404, { error: "not found" });
   const binding = env && env.AELIO_ENGINE && typeof env.AELIO_ENGINE.fetch === "function" ? env.AELIO_ENGINE : null;
   const origin = env && env.AELIO_ENGINE_ORIGIN ? String(env.AELIO_ENGINE_ORIGIN).replace(/\/$/, "") : "";
   if (!binding && !origin) {
+    console.error(JSON.stringify({event:"engine_configuration_missing",code:"engine_not_connected"}));
     return json(503, { error: "The AELIO engine isn't connected to this site yet.", code: "engine_not_connected" });
   }
   const target = (binding ? "http://aelio-engine.internal" : origin) + url.pathname + url.search;
@@ -49,6 +51,7 @@ export async function proxyToEngine({ request, env }) {
   try {
     res = binding ? await binding.fetch(new Request(target, init)) : await fetch(target, init);
   } catch (e) {
+    console.error(JSON.stringify({event:"engine_upstream_failed",code:"engine_unreachable"}));
     return json(502, { error: "The AELIO engine isn't reachable right now.", code: "engine_unreachable" });
   }
   const out = new Headers();

@@ -50,8 +50,8 @@ def test_engine_overview_founder_only_and_secret_free(fbclient, monkeypatch):
     monkeypatch.setenv("AELIO_PROXY_SECRET", SECRET)
     d = c.get("/api/brain/engine", headers={**h, "x-aelio-proxy-secret": SECRET}).json()
     names = {x["name"]: x for x in d["checks"]}
-    assert {"Database", "Firebase sign-in", "OpenAI (GPT)", "Code sandbox", "Reached through aelio.live"} <= set(names)
+    assert {"Database", "Supabase sign-in", "OpenAI (GPT)", "Code sandbox", "Reached through aelio.live"} <= set(names)
     assert names["OpenAI (GPT)"]["status"] == "ok" and names["Reached through aelio.live"]["status"] == "ok"
-    assert names["Firebase sign-in"]["detail"] == "project aelio-0820"
+    assert names["Supabase sign-in"]["detail"] == "SUPABASE_URL configured"
     blob = json.dumps(d)
     assert "SHOULDNEVERAPPEAR" not in blob and SECRET not in blob

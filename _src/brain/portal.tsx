@@ -264,7 +264,7 @@ export function MyChat({ agentId }: any) {
     <div className="chat">
       <div className="spread"><div><div className="eyebrow">Conversation</div><h1>{agent?.name || "Chat"}</h1></div>
         <div className="row">
-          {info && <select aria-label="Personality" style={{ width: "auto" }} value={persona} onChange={async (e: any) => { setPersona(e.target.value); try { await put("/api/my/settings", { personality_id: e.target.value }); } catch { /* keep local choice */ } }}>
+          {info && agent?.kind !== "main_pal" && <select aria-label="Personality" style={{ width: "auto" }} value={persona} onChange={async (e: any) => { setPersona(e.target.value); try { await put("/api/my/settings", { personality_id: e.target.value }); } catch { /* keep local choice */ } }}>
             <option value="">Agent's own style</option>{info.personalities.filter((p: any) => p.id !== "default").map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>}
           <select aria-label="Agent" style={{ width: "auto" }} value={aid || ""} onChange={(e: any) => { setCid(null); setMsgs([]); go(`/brain/my/chat/${e.target.value}`); }}>{(agents.data?.agents || []).map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div></div>
       {info?.paused && <div className="notice">AELIO's AI features are paused right now. Nothing will be charged.</div>}

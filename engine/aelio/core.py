@@ -47,11 +47,13 @@ def services() -> dict:
     s = ai_settings.get()
     route = ai_settings.choose("chat", "", None, None, s)            # what an ordinary request would use right now
     reasoning_ready = providers.get(route["provider"]).configured() and not s["paused"]
+    last=db.q1("SELECT MAX(ts) t FROM ai_requests WHERE provider=? AND model=? AND status='ok'",(route["provider"],route["model"]))
+    inference_status=("test_only" if route["provider"]=="test" else "recently_verified" if last and last["t"] and time.time()-last["t"]<600 else "configured_unverified") if reasoning_ready else "not_connected"
     voices_ready = bool(db.q1("SELECT 1 FROM voices WHERE status='approved' AND native_checkpoint_id IS NOT NULL"))
     return {
-        "reasoning": {"status": "operational" if reasoning_ready else "not_connected",
+        "reasoning": {"status": inference_status,
                       "detail": "Intelligence Gateway" + (" (paused by founder)" if s["paused"] else "")},
-        "coding": {"status": "operational" if reasoning_ready else "not_connected",
+        "coding": {"status": inference_status,
                    "detail": "Gateway coding route; file edits go through Code Studio review"},
         "memory": {"status": "operational", "detail": "Per-person, per-product saved facts (keyword recall)"},
         "vision": {"status": "not_available", "detail": "Image understanding isn't connected yet"},
@@ -148,7 +150,7 @@ def respond(req: dict, caller: dict, product: str) -> dict:
     steps = plan(req)
     status = services()
     for svc in ("vision", "voice", "agents"):
-        if svc in steps and status[svc]["status"] != "operational":
+        if svc in steps and status[svc]["status"] not in ("operational","configured_unverified","recently_verified","test_only"):
             raise CoreError(501, "service_unavailable", f"AELIO can't handle {svc} requests yet. Nothing was charged.",
                             service=svc, service_status=status[svc]["status"])
     uid = caller["user_id"]

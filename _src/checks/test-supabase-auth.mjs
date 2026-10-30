@@ -55,7 +55,7 @@ test("PATHD signup records the product; same credentials then work on aelio.live
   const [pathd] = client(M, "pathd");
   const r = await pathd.signUp("pat@x.dev", "correct horse battery");
   assert.equal(r.confirmEmail, true);
-  assert.deepEqual(M.users.get("pat@x.dev").meta, { signup_product: "pathd" });
+  assert.deepEqual(M.users.get("pat@x.dev").meta, { signup_product: "pathd", display_name: "" });
   await assert.rejects(pathd.signInWithPassword("pat@x.dev", "correct horse battery"), /Confirm your email/);
   M.users.get("pat@x.dev").confirmed = true;
   const [aelio] = client(M, "aelio");                     // different site, separate storage

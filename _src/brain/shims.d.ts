@@ -20,5 +20,4 @@ declare namespace JSX {
   interface IntrinsicElements { [name: string]: any }
   interface Element {}
 }
-declare const firebase: any;
 declare module "*.css";

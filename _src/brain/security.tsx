@@ -97,7 +97,7 @@ export function MySecurity({ me }: any) {
   return (<div className="grid">
     <div><div className="eyebrow">My AELIO</div><h1>Security</h1></div>
     <div className="card"><h2>Your account</h2>
-      <p>Signed in as <b>{me.email}</b> with Firebase. {me.level === "personal_founder" && <Badge kind="gold">Founder</Badge>}</p>
+      <p>Signed in as <b>{me.email}</b> with Supabase. {me.level === "personal_founder" && <Badge kind="gold">Founder</Badge>}</p>
       {me.level === "personal_founder" && <div className="notice good" style={{ marginBottom: 8 }}>Founder perks on this account: Founder badge, unlimited usage (with a daily safety cap), early access and preview features as they're released. Studio Brain stays on jaja@vybr8.live only.</div>}
       <p className="dim small">Password and Google sign-in are managed by your AELIO login. Extra sign-in protection (authenticator app or passkey) for every account is planned; it's optional and never uses Studio Brain's security questions.</p></div>
     {r?.is_recovery_account && <div className="card"><h2>Emergency recovery for Studio Brain</h2>

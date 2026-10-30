@@ -1,59 +1,29 @@
-// Talks to the AELIO engine with a Bearer token from the active sign-in provider:
-//   AELIO_CONFIG.auth === "supabase"  -> Supabase access token (target; shared with mypathd.com)
-//   otherwise                         -> Firebase ID token (current; kept until Supabase passes every test)
-// or a local session token in development (config.dev === true only).
+// Supabase-only browser identity; the existing engine remains a separate same-origin service.
 import { createSupabaseAuth } from "./supabase-auth";
 const CFG: any = (window as any).AELIO_CONFIG || {};
-export const provider: "supabase" | "firebase" = CFG.auth === "supabase" && CFG.supabase?.url ? "supabase" : "firebase";
-export const supa = provider === "supabase" ? createSupabaseAuth({ url: CFG.supabase.url, anonKey: CFG.supabase.anonKey, product: "aelio" }) : null;
-// Same origin by default: the Brain calls aelio.live/api/..., which Cloudflare forwards privately to the AELIO engine.
-// Only local development sets AELIO_CONFIG.engine (e.g. http://localhost:8787).
+export const provider = "supabase";
+export const supa = CFG.supabase?.url && CFG.supabase?.anonKey ? createSupabaseAuth({url:CFG.supabase.url,anonKey:CFG.supabase.anonKey,product:"aelio"}) : null;
 export const ENGINE: string = (CFG.engine || "").replace(/\/$/, "");
-const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
-let fbReady: Promise<any> | null = null;
-
-function loadScript(src: string): Promise<void> {
-  return new Promise((res, rej) => {
-    if (document.querySelector(`script[src="${src}"]`)) return res();
-    const s = document.createElement("script");
-    s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error("Couldn't load sign-in. Check your connection."));
-    document.head.appendChild(s);
-  });
-}
-
-export function firebaseAuth(): Promise<any> {
-  if (!fbReady) fbReady = (async () => {
-    await loadScript(FB + "firebase-app-compat.js");
-    await loadScript(FB + "firebase-auth-compat.js");
-    const fb = (window as any).firebase;
-    if (!fb.apps.length) fb.initializeApp(CFG.firebase);
-    return fb.auth();
-  })();
-  return fbReady;
-}
-
 export const isDev = () => CFG.dev === true;
 const DEV_KEY = "aelio_dev_token";
 
 export async function token(): Promise<string | null> {
   if (isDev()) { try { return localStorage.getItem(DEV_KEY); } catch { return null; } }
   if (supa) return supa.accessToken();
-  const auth = await firebaseAuth();
-  return auth.currentUser ? auth.currentUser.getIdToken() : null;
+  return null;
 }
 
 export function setDevToken(t: string | null) { try { t ? localStorage.setItem(DEV_KEY, t) : localStorage.removeItem(DEV_KEY); } catch { /* ignore */ } }
 
-/** Resolves once we know whether someone is signed in (Firebase restores sessions asynchronously). */
+/** Resolves once we know whether someone is signed in (Supabase restores the locally persisted session). */
 export async function currentUser(): Promise<{ email: string } | null> {
   if (isDev()) return (await token()) ? { email: "dev" } : null;
   if (supa) { const s = await supa.session(); return s ? { email: s.user.email || "" } : null; }
-  const auth = await firebaseAuth();
-  return new Promise(res => { const off = auth.onAuthStateChanged((u: any) => { off(); res(u ? { email: u.email } : null); }); });
+  return null;
 }
 
 export async function signOut() {
-  if (isDev()) setDevToken(null); else if (supa) await supa.signOut(); else (await firebaseAuth()).signOut();
+  if (isDev()) setDevToken(null); else if (supa) await supa.signOut();
 }
 
 export class ApiError extends Error {

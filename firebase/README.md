@@ -1,3 +1,9 @@
+# Historical migration evidence — not active configuration
+
+AELIO v1.0.1 uses Supabase only. Do not deploy these rules or initialize Firebase. Preserve historical data/backups until migration verification is complete. Current setup is in config/SETUP.md at the repository root.
+
+---
+
 # Firebase rules for AELIO Studio
 
 Founder: **jaja@vybr8.live** · UID **0RcUhRBDI4hGWisgzuyezqGVVZC3**

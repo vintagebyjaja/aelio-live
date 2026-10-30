@@ -7,6 +7,7 @@ docs/ARCHITECTURE.md. Every write goes through `tx()` so it is atomic.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -244,6 +245,17 @@ _initialized: set[str] = set()
 
 
 def _connect() -> sqlite3.Connection:
+    url=os.environ.get("DATABASE_URL")
+    if url:
+        from .postgres import Connection
+        conn=getattr(_local,"conn",None)
+        if conn is not None and getattr(_local,"path",None)==url:
+            return conn
+        conn=Connection(url)
+        _local.conn,_local.path=conn,url
+        return conn
+    if os.environ.get("AELIO_DATABASE", "postgres") != "sqlite":
+        raise RuntimeError("DATABASE_URL is required; select AELIO_DATABASE=sqlite only for isolated offline tests or export.")
     path = str(get_settings().db_path)
     conn = getattr(_local, "conn", None)
     if conn is not None and getattr(_local, "path", None) == path:
@@ -267,6 +279,9 @@ def _connect() -> sqlite3.Connection:
 
 
 def reset_connection_cache() -> None:
+    conn=getattr(_local,"conn",None)
+    if conn is not None:
+        conn.close()
     _local.__dict__.clear()
     _initialized.clear()
 
@@ -275,6 +290,8 @@ def reset_connection_cache() -> None:
 def tx() -> Iterator[sqlite3.Connection]:
     conn = _connect()
     conn.execute("BEGIN IMMEDIATE")
+    if os.environ.get("DATABASE_URL"):
+        conn.execute("SELECT pg_advisory_xact_lock(14873821)")
     try:
         yield conn
         conn.execute("COMMIT")

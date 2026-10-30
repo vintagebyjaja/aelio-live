@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
+import uuid
 import sqlite3
 import time
 from pathlib import Path
@@ -36,10 +39,13 @@ def _counts(conn: sqlite3.Connection) -> dict:
 
 
 def create(label: str = "manual") -> dict:
+    if os.environ.get("DATABASE_URL"):
+        from . import postgres_backup
+        return postgres_backup.create(label,_dir(),_sha)
     src = db._connect()
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     safe = "".join(ch for ch in label if ch.isalnum() or ch in "-_")[:40] or "backup"
-    out = _dir() / f"aelio-{stamp}-{safe}.sqlite3"
+    out = _dir() / f"aelio-{stamp}-{safe}-{uuid.uuid4().hex[:8]}.sqlite3"
     dst = sqlite3.connect(out)
     with dst:
         src.backup(dst)
@@ -56,7 +62,11 @@ def create(label: str = "manual") -> dict:
 
 
 def verify(name: str) -> dict:
+    if not re.fullmatch(r"aelio-[A-Za-z0-9_.-]+",name): raise ValueError("Invalid backup name")
     p = _dir() / name
+    if name.endswith(".pg.json"):
+        from . import postgres_backup
+        return postgres_backup.verify(p,_sha)
     m = json.loads(p.with_suffix(".json").read_text())
     conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
     ok = _sha(p) == m["sha256"] and conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok" and _counts(conn) == m["row_counts"]
@@ -65,11 +75,15 @@ def verify(name: str) -> dict:
 
 
 def listing() -> list[dict]:
-    return [json.loads(p.read_text()) for p in sorted(_dir().glob("aelio-*.json"), reverse=True)]
+    return [json.loads(p.read_text()) for p in sorted(_dir().glob("aelio-*.json"), reverse=True) if not p.name.endswith(".pg.json")]
 
 
 def restore(name: str) -> dict:
     """Roll back to a backup. Takes a safety backup of the current database first."""
+    if name.endswith(".pg.json"):
+        if not re.fullmatch(r"aelio-[A-Za-z0-9_.-]+",name): raise ValueError("Invalid backup name")
+        from . import postgres_backup
+        return postgres_backup.restore(_dir()/name,_dir(),_sha)
     v = verify(name)
     if not v["ok"]:
         raise RuntimeError("backup failed verification; not restoring")

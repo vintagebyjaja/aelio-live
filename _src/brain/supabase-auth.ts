@@ -43,6 +43,7 @@ export function createSupabaseAuth(cfg: SupaConfig, deps: { fetch?: typeof fetch
   const KEY = cfg.storageKey || "aelio.auth";
   const VERIFIER = KEY + ".pkce";
   const listeners = new Set<(s: Session | null) => void>();
+  let memorySession: Session | null = null;
   let refreshing: Promise<Session | null> | null = null;
 
   async function call(path: string, body: any, extra: Record<string, string> = {}) {
@@ -56,16 +57,17 @@ export function createSupabaseAuth(cfg: SupaConfig, deps: { fetch?: typeof fetch
   }
 
   function read(): Session | null {
-    try { const s = JSON.parse(store.getItem(KEY) || "null"); return s && s.access_token && s.refresh_token ? s : null; } catch { return null; }
+    try { const s = JSON.parse(store.getItem(KEY) || "null"); return s && s.access_token && s.refresh_token ? s : memorySession; } catch { return memorySession; }
   }
   function save(d: any): Session {
     const s: Session = { access_token: d.access_token, refresh_token: d.refresh_token,
       expires_at: d.expires_at || Math.floor(now()) + (d.expires_in || 3600), user: { id: d.user?.id, email: d.user?.email } };
+    memorySession = s;
     try { store.setItem(KEY, JSON.stringify(s)); } catch { /* private mode: session lasts for this page only */ }
     listeners.forEach(l => l(s));
     return s;
   }
-  function clear() { try { store.removeItem(KEY); } catch { /* ignore */ } listeners.forEach(l => l(null)); }
+  function clear() { memorySession = null; try { store.removeItem(KEY); } catch { /* ignore */ } listeners.forEach(l => l(null)); }
 
   async function refresh(s: Session): Promise<Session | null> {
     if (!refreshing) refreshing = (async () => {
@@ -90,15 +92,25 @@ export function createSupabaseAuth(cfg: SupaConfig, deps: { fetch?: typeof fetch
     },
 
     /** New account. Every signup also gets an AELIO identity (database trigger); `product` says which site it came from. */
-    async signUp(email: string, password: string, redirectTo?: string): Promise<{ session: Session | null; confirmEmail: boolean }> {
+    async signUp(email: string, password: string, redirectTo?: string, displayName = "", captchaToken?: string): Promise<{ session: Session | null; confirmEmail: boolean }> {
       const d = await call("/signup" + (redirectTo ? "?redirect_to=" + encodeURIComponent(redirectTo) : ""),
-        { email: email.trim(), password, data: { signup_product: cfg.product || "aelio" } });
+        { email: email.trim(), password, data: { signup_product: cfg.product || "aelio", display_name: displayName }, gotrue_meta_security: {captcha_token:captchaToken} });
       if (d.access_token) return { session: save(d), confirmEmail: false };
       return { session: null, confirmEmail: true };
     },
 
     async resetPassword(email: string, redirectTo: string): Promise<void> {
-      await call("/recover?redirect_to=" + encodeURIComponent(redirectTo), { email: email.trim() });
+      const raw = new Uint8Array(32); cr.getRandomValues(raw);
+      const verifier = b64url(raw);
+      const challenge = b64url(await cr.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
+      store.setItem(VERIFIER, verifier);
+      await call("/recover?redirect_to=" + encodeURIComponent(redirectTo), { email: email.trim(), code_challenge: challenge, code_challenge_method:"s256" });
+    },
+
+    async updatePassword(password: string) {
+      const s=await this.session(); if(!s) throw new AuthError(401,"Sign in again.");
+      const r=await f(base+"/user",{method:"PUT",headers:{apikey:cfg.anonKey,authorization:"Bearer "+s.access_token,"content-type":"application/json"},body:JSON.stringify({password})});
+      if(!r.ok) throw new AuthError(r.status,"Password could not be updated.");
     },
 
     /** Google sign-in with PKCE: returns the URL to send the browser to. */

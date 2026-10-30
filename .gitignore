@@ -1,0 +1,11 @@
+node_modules/
+.env*
+!.env.example
+.wrangler/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+engine/var/
+var/
+engine/web/dist/
+web/dist/

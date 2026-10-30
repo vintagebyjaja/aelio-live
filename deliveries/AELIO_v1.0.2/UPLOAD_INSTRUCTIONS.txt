@@ -1,0 +1,9 @@
+AELIO_v1.0.2 SOURCE UPDATE — NOT A COMPLETE REPOSITORY
+
+Base required: the complete AELIO_v1.0.1 candidate. This delta cannot replace the original unmodified Git main by itself. The preserved local migration Git branch contains the complete cumulative work.
+Extract all GitHub ZIP parts, if split, over the AELIO project root, preserving relative paths. Each ZIP contains at most100 files. No deletions are needed since v1.0.1. The older v1.0.1 migration still removes its two legacy Firebase runtime modules as documented there.
+The GitHub ZIP intentionally excludes generated HTML/JS/CSS and unchanged files. Run npm ci, npm run build, npm run typecheck, npm test and npm run check. Do not upload source into public/. The preserved marketing homepage builds at /explore/; Dream Box builds at /.
+SQL.zip contains only migration04 and execution instructions. Apply manually in staging after prerequisites, never create another Supabase project. Config.zip contains changed headers and the new setup notes; no real keys.
+If manually uploading to GitHub, use codex/migration-v1.0.2 and preserve main. Disable all automatic Cloudflare branch/preview deployments before any push/upload. No workflow in the source automatically deploys, but dashboard integrations are unverified.
+PATHD remains at its already-preserved v1.0.1 implementation; this update does not change its code or subscriptions.
+The user alone controls any eventual production rollout. Local fixture tests do not verify live services.

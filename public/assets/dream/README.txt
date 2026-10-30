@@ -1,0 +1,2 @@
+AELIO v1.0.2 local photographic assets.
+Eight new AI-generated photographs were created for the approved style direction: coastal terrace, nighttime penthouse, and six lifestyle topic photographs. They contain no embedded interface or text. Images were converted to optimized WebP for local static serving. They are new assets inspired by the references, not exact copies of the supplied layouts or live depictions of nearby venues.

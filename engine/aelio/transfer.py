@@ -411,12 +411,14 @@ def log_import(uid: str, method: str, fmt: str, status: str, error_kind: str | N
 # ---------------------------------------------------------------- agents
 def ensure_main_pal(uid: str) -> None:
     if not db.q1("SELECT id FROM user_agents WHERE user_id=? AND kind='main_pal'", (uid,)):
-        create_agent(uid, {"name": "Main Pal", "kind": "main_pal", "description": "Your everyday AELIO companion.",
-                           "profile": {"personality": "warm, curious, helpful"}, "memories": [], "voice_id": "aelio-voice-groove"},
+        create_agent(uid, {"name": "AELIO", "kind": "main_pal", "description": "Your everyday AELIO companion.",
+                           "profile": {}, "memories": [], "voice_id": "aelio-voice-groove"},
                      default=True)
 
 
 def create_agent(uid: str, d: dict, default: bool = False) -> str:
+    if d.get("kind") != "main_pal" and str(d.get("name", "")).strip().lower() == "aelio":
+        raise ValueError("AELIO is reserved for your permanent Main Pal")
     aid = db.new_id("agt")
     kind = d.get("kind", "custom")
     if kind not in ("main_pal", "imported", "custom", "team"):
@@ -434,6 +436,8 @@ def get_agent(uid: str, aid: str) -> dict:
     a = db.q1("SELECT * FROM user_agents WHERE id=? AND user_id=?", (aid, uid))
     if not a:
         raise FileNotFoundError(aid)
+    if a["kind"]=="main_pal":
+        a["name"]="AELIO"
     a["profile"] = db.loads(a["profile"], {}); a["memories"] = db.loads(a["memories"], [])
     return a
 
@@ -447,7 +451,9 @@ def export_agent(uid: str, aid: str) -> dict:
 
 
 def delete_agent(uid: str, aid: str) -> None:
-    get_agent(uid, aid)
+    agent=get_agent(uid, aid)
+    if agent["kind"]=="main_pal":
+        raise ValueError("The original AELIO Main Pal cannot be deleted")
     for s in db.q("SELECT * FROM agent_sources WHERE agent_id=? AND user_id=?", (aid, uid)):
         if s["stored_path"]:
             try:

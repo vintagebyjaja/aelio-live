@@ -6,7 +6,7 @@ import platform
 import shutil
 import time
 
-from . import db, firebase_auth
+from . import db, identity
 from .config import get_settings
 from .server import J, founder, route
 
@@ -44,13 +44,12 @@ def overview(req) -> dict:
     openai_ok = providers.get("openai").configured()
     pay = payments.configured()
     checks = [
-        _check("Database", True, f"SQLite, {db_path.stat().st_size / 1e6:.1f} MB" if db_path.exists() else "SQLite", "engine"),
+        _check("Database", True, "PostgreSQL (Supabase)" if os.environ.get("DATABASE_URL") else (f"SQLite, {db_path.stat().st_size / 1e6:.1f} MB" if db_path.exists() else "SQLite (offline)"), "engine"),
         _check("Disk", disk.free > 2e9, f"{disk.free / 1e9:.1f} GB free of {disk.total / 1e9:.1f} GB", "engine"),
         _check("Reached through aelio.live", bool(req.scope.get("aelio_proxied")) or None,
                "requests arrive through the same-origin proxy" if req.scope.get("aelio_proxied")
                else "AELIO_PROXY_SECRET not set (fine for local development)", "engine"),
-        _check("Firebase sign-in", bool(firebase_auth.project_id()) or None,
-               f"project {firebase_auth.project_id()}" if firebase_auth.project_id() else "FIREBASE_PROJECT_ID not set", "accounts"),
+        _check("Supabase sign-in", bool(identity.supabase_url()) or None, "SUPABASE_URL configured" if identity.supabase_url() else "SUPABASE_URL missing", "accounts"),
         _check("OpenAI (GPT)", openai_ok or None, "key present on the engine" if openai_ok else "OPENAI_API_KEY not set", "intelligence"),
         _check("AI requests", not st["paused"], "paused by founder" if st["paused"] else "accepting requests", "intelligence"),
         _check("Code sandbox", sb not in ("none", "unavailable"), f"backend: {sb}", "code"),

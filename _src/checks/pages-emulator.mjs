@@ -5,6 +5,7 @@
 // Also runs the Pages Functions for /api/* and /webhooks/* (the same-origin engine proxy), with env from
 // AELIO_ENGINE_ORIGIN and AELIO_PROXY_SECRET, exactly as Cloudflare would call them.
 // Usage: node _src/checks/pages-emulator.mjs <folder> <port>
+import { platform, publicConfig } from "../platform/index.js";
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, extname, resolve } from "node:path";
@@ -35,7 +36,8 @@ async function runFunction(req, res) {
   const init = { method: req.method, headers };
   if (!["GET", "HEAD"].includes(req.method)) { init.body = Readable.toWeb(req); init.duplex = "half"; }
   const env = { AELIO_ENGINE_ORIGIN: process.env.AELIO_ENGINE_ORIGIN, AELIO_PROXY_SECRET: process.env.AELIO_PROXY_SECRET };
-  const r = await proxyToEngine({ request: new Request(url, init), env });
+  const request = new Request(url, init);
+  const r = url.pathname.startsWith("/api/platform/") ? await platform(request, {...process.env,AELIO_LOCAL_TEST:"1"}) : await proxyToEngine({ request, env });
   res.writeHead(r.status, Object.fromEntries(r.headers));
   if (!r.body) return res.end();
   for await (const chunk of r.body) res.write(chunk);
@@ -47,6 +49,7 @@ createServer((req, res) => {
   if (path.startsWith("/api/") || path.startsWith("/webhooks/")) {
     return runFunction(req, res).catch((e) => { res.writeHead(500); res.end(String(e)); });
   }
+  if (path === "/assets/config.js" && process.env.SUPABASE_PUBLISHABLE_KEY) { const r=publicConfig(process.env); res.writeHead(200,Object.fromEntries(r.headers)); return r.text().then(t=>res.end(t)); }
   if (path === "/assets/config.js" && process.env.AELIO_DEV_CONFIG === "1") {   // local testing only: dev sign-in, same origin
     res.writeHead(200, { "content-type": "text/javascript" });
     return res.end('window.AELIO_CONFIG={engine:"",dev:true,firebase:{}};');

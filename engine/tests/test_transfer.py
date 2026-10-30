@@ -99,7 +99,7 @@ def test_api_flow_access_control_and_deletion(fbclient):
     other = c.tok("someone-else", "fan@example.com")
     assert c.get(f"/api/my/agents/{aid}", headers=other).status_code == 403          # visitor
     from aelio import db
-    db.run("UPDATE agent_sources SET agent_id=? WHERE user_id=?", (aid, "fb_" + PERSONAL_UID))
+    db.run("UPDATE agent_sources SET agent_id=? WHERE user_id=?", (aid, "sb_" + PERSONAL_UID))
     src = db.q1("SELECT * FROM agent_sources WHERE agent_id=?", (aid,))
     assert src["stored_path"] and open(src["stored_path"], "rb").read()[:5] != b"## Pr"   # encrypted at rest
     exp = c.get(f"/api/my/agents/{aid}/export", headers=h).json()

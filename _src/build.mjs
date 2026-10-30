@@ -47,11 +47,12 @@ function header(cur) {
   <nav aria-label="Main"><ul class="nav">${items}</ul></nav>
   <div class="head-actions">
     <button class="icon-btn" id="searchBtn" aria-label="Search AELIO"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2"/></svg></button>
+    <a class="brain-btn" href="/chat/">Chat</a>
     <a class="brain-btn" href="/brain/" title="Brain"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3h0V4zm6 0a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3V4z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Brain</a>
     <button class="outline-btn" data-early>Get Early Access →</button>
     <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
   </div></div>
-  <div class="m-panel" id="mPanel" hidden><a href="/" class="m-home">Home</a>${mobile}<a href="/brain/" class="m-brain">Brain</a><button class="gold-btn" data-early>Get Early Access →</button></div>
+  <div class="m-panel" id="mPanel" hidden><a href="/" class="m-home">Home</a>${mobile}<a href="/chat/" class="m-brain">Chat</a><a href="/brain/" class="m-brain">Brain</a><button class="gold-btn" data-early>Get Early Access →</button></div>
 </header>`;
 }
 
@@ -308,6 +309,7 @@ for (const p of PAGES) {
   const out = join(ROOT, p.path, "index.html");
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, page(p));
+  if (p.home) { mkdirSync(join(ROOT,'explore'),{recursive:true}); writeFileSync(join(ROOT,'explore','index.html'),page(p)); }
 }
 writeFileSync(join(ROOT, "assets", "search-index.json"), JSON.stringify(PAGES.filter(p => !p.home).map(p => ({
   url: p.path, title: p.title, section: (NAV.find(n => n.key === p.nav) || {}).label || "", text: p.lede }))));

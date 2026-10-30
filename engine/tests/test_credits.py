@@ -260,7 +260,7 @@ def test_20_chat_after_purchase_keeps_conversation(fbclient, monkeypatch):
     r1 = c.post(f"/api/my/agents/{aid}/chat", headers=h, json={"message": "one"}).json()
     r2 = c.post(f"/api/my/agents/{aid}/chat", headers=h, json={"message": "two", "conversation_id": r1["conversation_id"]})
     assert r2.status_code == 402 and r2.json()["code"] == "limit_reached"
-    usage.grant("fb_member2", 10, "purchased", "stripe-webhook", "test purchase", "purchase")
+    usage.grant("sb_member2", 10, "purchased", "stripe-webhook", "test purchase", "purchase")
     r3 = c.post(f"/api/my/agents/{aid}/chat", headers=h, json={"message": "two", "conversation_id": r1["conversation_id"]})
     assert r3.status_code == 200 and r3.json()["conversation_id"] == r1["conversation_id"]
     conv = c.get(f"/api/my/conversations/{r1['conversation_id']}", headers=h).json()

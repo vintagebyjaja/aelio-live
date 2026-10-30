@@ -333,7 +333,8 @@ def test_streaming_chat_end_to_end(fbclient, monkeypatch, fake_openai):
     assert evs[0]["type"] == "meta" and evs[0]["provider"] == "openai"
     assert "".join(e["text"] for e in evs if e["type"] == "delta") == "Hello from fake GPT"
     assert evs[-1]["type"] == "done" and evs[-1]["conversation_id"]
-    assert "The Homie" in fake_openai.seen[0]["body"]["instructions"]
+    assert "The Homie" not in fake_openai.seen[0]["body"]["instructions"]
+    assert "permanent Original Main Pal" in fake_openai.seen[0]["body"]["instructions"]
     cid = evs[-1]["conversation_id"]
     with c.stream("POST", f"/api/my/agents/{aid}/chat/stream", headers=h, json={"message": "again", "conversation_id": cid}) as r:
         list(r.iter_lines())

@@ -60,6 +60,8 @@ def _stripe(path: str, params: dict) -> dict:
 
 
 def create_checkout(uid: str, package_id: str, return_to: str, site: str) -> dict:
+    if os.environ.get("AELIO_PAID_PLANS_OPEN", "0") != "1":
+        raise PaymentError("Paid plans are Coming Soon.")
     cfg = configured()
     if not cfg["configured"]:
         raise PaymentError("Payments aren't set up yet (founder: add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET).")

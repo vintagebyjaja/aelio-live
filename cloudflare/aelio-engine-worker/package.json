@@ -1,0 +1,9 @@
+{
+  "name":"aelio-private-engine",
+  "private":true,
+  "type":"module",
+  "version":"1.0.1",
+  "dependencies":{"@cloudflare/containers":"0.0.30"},
+  "devDependencies":{"wrangler":"4.45.0"},
+  "scripts":{"check":"wrangler deploy --dry-run --outdir /tmp/aelio-engine-worker-check"}
+}

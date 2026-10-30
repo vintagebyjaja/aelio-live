@@ -5,13 +5,17 @@
   "name": "aelio-live",
   "main": "_src/edge/worker.js",
   "compatibility_date": "2026-10-23",
+  "services": [{"binding":"AELIO_ENGINE","service":"aelio-engine"}],
+  "r2_buckets": [{ "binding": "AELIO_STORAGE", "bucket_name": "aelio-storage" }],
+  "vars": { "SUPABASE_URL": "https://xkpzabgpesishxcluxkp.supabase.co" },
+  "triggers": { "crons": ["* * * * *"] },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
     // Only these paths run the Worker; every other request is a plain static file.
-    "run_worker_first": ["/api/*", "/webhooks/*", "/brain/my/*", "/studiobrain/*"]
+    "run_worker_first": ["/api/*", "/webhooks/*", "/assets/config.js", "/chat/*", "/account/*", "/auth/*", "/brain/my/*", "/studiobrain/*"]
   }
   // When the private engine Worker exists (cloudflare/aelio-engine-worker), connect it here, then add the secret:
   //   "services": [{ "binding": "AELIO_ENGINE", "service": "aelio-engine" }]

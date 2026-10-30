@@ -1,7 +1,7 @@
 """AELIO Studio HTTP server (private back office + internal API gateway).
 
 Route families and who can reach them:
-  /api/auth/*     sign-in (Firebase or local), MFA
+  /api/auth/*     sign-in (Supabase or explicit offline local mode), MFA
   /api/*          founder session with MFA completed; CSRF header on writes
   /v1/*           registered Grooveville applications (Bearer app key + scope)
   /public/v1/*    read-only list of founder-published models (for aelio.live)
@@ -22,7 +22,7 @@ from starlette.responses import FileResponse, JSONResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import db, deploy, firebase_auth, gateway, guardians, jobs, orchestrator, usage, voice
+from . import db, deploy, auth_roles, gateway, guardians, jobs, orchestrator, usage, voice
 from .codestudio import diagnose, projects, sandbox
 from .config import WEB_DIST, get_settings
 from .native import datasets, registry
@@ -53,7 +53,7 @@ def ip_of(req: Request) -> str:
 
 
 def auth_mode() -> str:
-    return os.environ.get("AELIO_AUTH", "firebase" if firebase_auth.project_id() else "local")
+    return os.environ.get("AELIO_AUTH", "supabase")
 
 
 async def body(req: Request) -> dict:
@@ -76,23 +76,26 @@ def _new_user(prefix: str, ident: dict) -> dict:
         email = f"{email}#{ident['uid'][:8]}"
     db.insert("users", {"id": uid, "email": email, "pw_hash": ident.get("provider", "idp"), "totp_secret": new_totp_secret(),
                         "mfa_enabled": 0, "role": ident["role"], "created_at": db.now(),
-                        "firebase_uid": ident["uid"] if ident.get("provider", "firebase") == "firebase" else None,
+                        "firebase_uid": None,
                         "unlimited": int(ident["unlimited"])})
-    db.audit("system", uid, "user.created", uid, {"role": ident["role"], "provider": ident.get("provider", "firebase")})
+    db.audit("system", uid, "user.created", uid, {"role": ident["role"], "provider": ident.get("provider", "supabase")})
     return db.q1("SELECT * FROM users WHERE id=?", (uid,))
 
 
 def ensure_user(ident: dict) -> dict:
     """Find or create the ONE AELIO user for a verified identity (any provider); allow-lists set the role."""
     from . import identity
-    ident = {"provider": "firebase", **ident}
-    u = identity.link(ident, _new_user)
+    ident = {"provider": "supabase", **ident}
+    try:
+        u = identity.link(ident, _new_user)
+    except identity.AuthError as exc:
+        raise HTTPError(409,str(exc),code="identity_mapping_required") from exc
     db.update("users", "id", u["id"], role=ident["role"], unlimited=int(ident["unlimited"]), last_seen=db.now())
     return db.q1("SELECT * FROM users WHERE id=?", (u["id"],))
 
 
 def principal(req: Request) -> dict | None:
-    """Who is calling: Firebase ID token (aelio.live), session token, or session cookie."""
+    """Who is calling: a verified Supabase token, or explicitly enabled offline local session."""
     tok = _bearer(req)
     if tok and tok.count(".") == 2:
         from . import identity
@@ -108,6 +111,8 @@ def principal(req: Request) -> dict | None:
         return {**base, "user_id": u["id"], "email": ident["email"], "role": ident["role"],
                 "unlimited": ident["unlimited"], "mfa_at": u["mfa_at"], "plan": u["plan"], "status": u["status"],
                 "mfa_enabled": u["mfa_enabled"]}
+    if auth_mode() != "local":
+        return None
     sess = get_session(tok) if tok else get_session(req.cookies.get(COOKIE))
     if not sess:
         return None
@@ -195,7 +200,7 @@ ROUTES: list = []
 
 @route("/api/auth/config")
 async def auth_config(req):
-    return J({"mode": auth_mode(), "firebase": firebase_auth.web_config()})
+    return J({"mode": "supabase", "supabase": {"url": os.environ.get("SUPABASE_URL", ""), "anonKey": os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")}})
 
 
 def _cookie(resp: Response, token: str) -> None:
@@ -203,42 +208,10 @@ def _cookie(resp: Response, token: str) -> None:
                     max_age=get_settings().session_hours * 3600, path="/")
 
 
-@route("/api/auth/firebase", ("POST",))
-async def auth_firebase(req):
-    if auth_mode() != "firebase":
-        raise HTTPError(400, "Firebase sign-in is not enabled")
-    ip = ip_of(req)
-    if login_blocked(ip):
-        raise HTTPError(429, "too many failed attempts; try again later")
-    d = await body(req)
-    try:
-        claims = firebase_auth.verify_id_token(str(d.get("idToken", "")))
-    except firebase_auth.AuthError as e:
-        record_login(ip, False)
-        db.audit("anonymous", None, "auth.firebase_denied", None, {"reason": str(e)}, ip)
-        raise HTTPError(403, str(e))
-    record_login(ip, True)
-    email = (claims.get("email") or claims["sub"]).lower()
-    u = db.q1("SELECT * FROM users WHERE email=?", (email,))
-    if not u:
-        uid = "fb_" + claims["sub"]
-        db.insert("users", {"id": uid, "email": email, "pw_hash": "firebase", "totp_secret": new_totp_secret(),
-                            "mfa_enabled": 0, "role": "founder", "created_at": db.now()})
-        u = db.q1("SELECT * FROM users WHERE id=?", (uid,))
-    token, csrf = create_session(u["id"], ip, req.headers.get("user-agent", ""), mfa_verified=False)
-    db.audit("founder", u["id"], "auth.firebase_ok", None, {"email": email}, ip)
-    out = {"ok": True, "csrf": csrf, "mfa": "enroll" if not u["mfa_enabled"] else "verify"}
-    if not u["mfa_enabled"]:
-        out.update(totp_secret=u["totp_secret"], totp_uri=totp_uri(u["totp_secret"], email))
-    resp = J(out)
-    _cookie(resp, token)
-    return resp
-
-
 @route("/api/auth/login", ("POST",))
 async def auth_local(req):
     if auth_mode() != "local":
-        raise HTTPError(400, "local password sign-in is disabled; use Firebase")
+        raise HTTPError(400, "local password sign-in is disabled; use Supabase")
     ip = ip_of(req)
     if login_blocked(ip):
         raise HTTPError(429, "too many failed attempts; try again later")
@@ -820,13 +793,13 @@ async def settings_route(req):
     s = founder(req)
     return J({"auth": {"mode": auth_mode(), "founder": s["email"], "mfa_fresh_minutes": get_settings().mfa_fresh_minutes,
                        "session_hours": get_settings().session_hours,
-                       "founder_allowlist_configured": bool(firebase_auth.allowlist()[0] or firebase_auth.allowlist()[1])},
+                       "founder_allowlist_configured": bool(auth_roles.allowlist()[0] or auth_roles.allowlist()[1])},
               "secrets": list_secret_names(),
               "policies": {"production_deploy": "founder + fresh MFA", "agent_self_permissions": "impossible (no route)",
                            "protected_suites": "hash-locked; relock only via server CLI",
                            "sandbox": sandbox.backend(), "guardians": "recommendation-only",
                            "external_ai": "none connected; external reference artifacts are labelled and excluded from training"},
-              "integrations": {"firebase": bool(firebase_auth.project_id()), "github_token": "GITHUB_TOKEN" in list_secret_names()}})
+              "integrations": {"supabase": bool(os.environ.get("SUPABASE_URL")), "github_token": "GITHUB_TOKEN" in list_secret_names()}})
 
 
 @route("/api/secrets", ("POST",))
@@ -961,11 +934,8 @@ async def api_404(req):
     return J({"error": "not found"}, 404)
 
 
-CSP = ("default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; "
-       "connect-src 'self' https://*.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com; "
-       "frame-src https://*.firebaseapp.com https://accounts.google.com; img-src 'self' data:; "
-       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; "
-       "frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+CSP = ("default-src 'self'; script-src 'self'; connect-src 'self' https://xkpzabgpesishxcluxkp.supabase.co; "
+       "style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'")
 
 
 def cors_origins() -> set[str]:
@@ -1054,6 +1024,7 @@ class SecurityHeaders:
 
 from . import routes_brain as _routes_brain  # noqa: E402,F401  (registers My AELIO + economy routes)
 from .intelligence import routes as _routes_ai  # noqa: E402,F401  (registers AI chat + Intelligence dashboard routes)
+from . import routes_messaging as _routes_messaging
 from . import routes_engine as _routes_engine  # noqa: E402,F401  (health + founder engine overview)
 from . import routes_security as _routes_security  # noqa: E402,F401  (Studio Brain challenge + emergency recovery)
 from . import routes_core as _routes_core  # noqa: E402,F401  (AELIO Core: product API for PATHD etc. + founder overview)

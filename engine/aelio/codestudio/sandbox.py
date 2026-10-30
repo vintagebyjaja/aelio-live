@@ -53,6 +53,8 @@ _backend_cache: str | None = None
 def backend() -> str:
     global _backend_cache
     want = get_settings().sandbox_backend
+    if want not in ("auto", "docker", "namespace"):
+        return "unavailable"
     if want in ("docker", "namespace"):
         return want
     if _backend_cache is None:

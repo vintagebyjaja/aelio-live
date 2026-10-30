@@ -83,6 +83,7 @@ def _prepare(p: dict, aid: str, d: dict, purpose: str = "chat"):
         if not conv:
             raise HTTPError(404, "conversation not found")
     pid = d.get("personality_id") or (conv or {}).get("personality_id") or _settings_row(uid)["personality_id"]
+    if agent.get("kind")=="main_pal": pid=None
     if pid and pid not in personalities.PERSONALITIES:
         raise HTTPError(400, "unknown personality")
     st = settings.get()

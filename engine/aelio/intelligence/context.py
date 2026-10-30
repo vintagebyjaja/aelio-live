@@ -47,6 +47,9 @@ def instructions(agent: dict, personality_id: str | None, provider: str, purpose
         POLICY,
         f"Personality: {p['name']}. Speaking style: {p['style']}",
     ]
+    if agent.get("kind")=="main_pal":
+        parts[0]="You are AELIO, the permanent Original Main Pal. One Mind. Your Energy."
+        parts[3]="Adapt naturally to the user's tone, humor, seriousness and emotional context. Be truthful and willing to disagree. You have no fixed named personality."
     if purpose == "code":
         parts.append("You are working as a coding assistant. Give complete, correct code. Say which files change. "
                      "You cannot run or save code from chat; Code Studio does that after the user reviews the change.")

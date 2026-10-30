@@ -101,23 +101,10 @@ def test_public_endpoint_lists_only_published(client):
 
 
 def test_founder_allowlist_requires_uid_and_email(env, monkeypatch):
-    import time
-    import jwt
-    from cryptography.hazmat.primitives.asymmetric import rsa
-    from aelio import firebase_auth as fa
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    monkeypatch.setenv("FIREBASE_PROJECT_ID", "p")
+    from aelio import auth_roles
     monkeypatch.setenv("AELIO_FOUNDER_EMAILS", "jaja@vybr8.live")
-    monkeypatch.setenv("AELIO_FOUNDER_UIDS", "0RcUhRBDI4hGWisgzuyezqGVVZC3")
-    monkeypatch.setattr(fa, "_certs", lambda: {"k": "x"})
-    monkeypatch.setattr(fa, "load_pem_x509_certificate", lambda b: type("C", (), {"public_key": lambda s: key.public_key()})())
-    t = int(time.time())
-
-    def tok(**o):
-        c = {"iss": "https://securetoken.google.com/p", "aud": "p", "sub": "0RcUhRBDI4hGWisgzuyezqGVVZC3", "iat": t,
-             "exp": t + 600, "email": "jaja@vybr8.live", "email_verified": True, **o}
-        return jwt.encode(c, key, algorithm="RS256", headers={"kid": "k"})
-    assert fa.verify_id_token(tok())["sub"] == "0RcUhRBDI4hGWisgzuyezqGVVZC3"
-    for bad in (tok(sub="someone-else"), tok(email="other@vybr8.live"), tok(email_verified=False)):
-        with pytest.raises(fa.AuthError):
-            fa.verify_id_token(bad)
+    monkeypatch.setenv("AELIO_FOUNDER_UIDS", "verified-supabase-id")
+    assert auth_roles.is_founder({"sub":"verified-supabase-id","email":"jaja@vybr8.live","email_verified":True})
+    assert not auth_roles.is_founder({"sub":"impostor","email":"jaja@vybr8.live"})
+    monkeypatch.delenv("AELIO_FOUNDER_UIDS")
+    assert not auth_roles.is_founder({"sub":"impostor","email":"jaja@vybr8.live"})

@@ -62,7 +62,7 @@ def test_both_credentials_are_required(c, case, status, code):
     if case == "not_member":
         hdr.update(c.user(products=("aelio",)))
     if case == "firebase":
-        hdr["X-AELIO-User-Token"] = c.tok()["Authorization"][7:]
+        hdr["X-AELIO-User-Token"] = "legacy.firebase.token"
     if case == "no_app_key":
         hdr.pop("Authorization")
     if case == "wrong_scope":
@@ -129,5 +129,5 @@ def test_founder_core_overview(c):
     ask(c, "hi")
     h = founder_mfa(c)
     d = c.get("/api/brain/core", headers=h).json()
-    assert d["services"]["reasoning"]["status"] == "operational" and d["services"]["vision"]["status"] == "not_available"
+    assert d["services"]["reasoning"]["status"] == "test_only" and d["services"]["vision"]["status"] == "not_available"
     assert d["requests_24h"] == {"pathd": 1}

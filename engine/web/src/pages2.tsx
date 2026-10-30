@@ -350,7 +350,7 @@ export function Settings({ me, reverify }: any) {
       {tab === "Security" && d && <div className="grid g2">
         <div className="card"><h2>Authentication</h2><div className="kv">
           <div>Mode</div><div>{d.auth.mode}</div><div>Founder</div><div>{d.auth.founder}</div>
-          <div>Founder allow-list</div><div>{d.auth.mode === "firebase" ? (d.auth.founder_allowlist_configured ? "configured" : <span className="err">not configured</span>) : "n/a (local)"}</div>
+          <div>Founder allow-list</div><div>{d.auth.mode === "supabase" ? (d.auth.founder_allowlist_configured ? "configured" : <span className="err">not configured</span>) : "n/a (local)"}</div>
           <div>Session length</div><div>{d.auth.session_hours} h</div><div>High-impact actions</div><div>authenticator code within {d.auth.mfa_fresh_minutes} min</div>
           <div>MFA right now</div><div>{me.mfa_fresh ? <Badge kind="ok">fresh</Badge> : <><Badge kind="warn">stale</Badge> <button onClick={reverify}>Re-verify</button></>}</div></div></div>
         <div className="card"><h2>Policies</h2><div className="kv">{Object.entries(d.policies).flatMap(([k, v]: any) => [<div key={k + ":k"}>{k.replace(/_/g, " ")}</div>, <div key={k + ":v"}>{v}</div>])}</div></div>

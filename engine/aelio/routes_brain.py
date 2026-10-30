@@ -86,6 +86,7 @@ async def my_agents(req):
         rows = db.q("SELECT id,name,kind,origin_label,avatar,description,voice_id,status,is_default,profile,created_at,updated_at,last_chat_at "
                     "FROM user_agents WHERE user_id=? ORDER BY is_default DESC, updated_at DESC", (uid,))
         for r in rows:
+            if r["kind"]=="main_pal": r["name"]="AELIO"
             prof = db.loads(r.pop("profile"), {})
             r["personality"] = (prof.get("personality") or prof.get("communication_style") or "")[:160]
         return J({"agents": rows})
@@ -111,6 +112,8 @@ async def my_agent(req):
         return J({"ok": True})
     a = transfer.get_agent(uid, aid)
     d = await body(req)
+    if a["kind"]=="main_pal" and any(k in d for k in ("name","status","profile")):
+        raise HTTPError(403,"AELIO's permanent identity and adaptive style cannot be changed")
     fields = {"updated_at": db.now()}
     for k in ("name", "description", "avatar", "voice_id"):
         if k in d:

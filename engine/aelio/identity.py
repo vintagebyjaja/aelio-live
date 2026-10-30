@@ -1,16 +1,6 @@
-"""Provider-neutral sign-in for AELIO: Supabase Auth (target) and Firebase Auth (during migration).
-
-    browser signs in with Supabase (or Firebase) -> sends its access/ID token as Bearer
-    -> verify(token): signature + issuer + audience + expiry, by the provider that issued it
-    -> resolve(claims): roles from the allow-lists (founder needs UID AND verified email)
-    -> link(): one AELIO user per person, whichever provider they used
-
-Every AELIO user keeps ONE id. A person's Firebase and Supabase identities both point to it
-(table `identities`), so Studio Brain security, the recovery link, wallet and history carry over.
-
-Supabase tokens are verified with the project's asymmetric signing keys (JWKS, ES256/RS256):
-    https://<project>.supabase.co/auth/v1/.well-known/jwks.json
-Only end-user tokens (role "authenticated") are accepted; anon and service_role keys never sign anyone in.
+"""Supabase-only runtime identity verification with server-controlled founder roles.
+Historical Firebase ID mapping remains an explicit offline migration operation, never a sign-in fallback.
+End-user JWTs require the configured project issuer, authenticated audience/role, expiry and asymmetric JWKS signature.
 """
 from __future__ import annotations
 
@@ -21,7 +11,7 @@ import urllib.request
 
 import jwt
 
-from . import db, firebase_auth
+from . import db, auth_roles
 
 _jwks_cache: dict = {"keys": None, "exp": 0.0, "url": None}
 JWKS_TTL = 600            # Supabase caches its JWKS for 10 minutes; never cache longer
@@ -56,16 +46,7 @@ def supabase_issuer() -> str | None:
 
 
 def providers_enabled() -> list[str]:
-    """AELIO_AUTH_PROVIDERS=supabase,firebase (default: whichever is configured)."""
-    raw = os.environ.get("AELIO_AUTH_PROVIDERS", "")
-    if raw.strip():
-        return [p.strip() for p in raw.split(",") if p.strip()]
-    out = []
-    if supabase_url():
-        out.append("supabase")
-    if firebase_auth.project_id():
-        out.append("firebase")
-    return out
+    return ["supabase"] if supabase_url() else []
 
 
 # ---------------------------------------------------------------- Supabase verification
@@ -128,27 +109,31 @@ def verify(token: str) -> dict:
             raise AuthError("Supabase sign-in is not enabled")
         c = _supabase_verify(token)
         app = c.get("app_metadata") or {}
-        # Supabase only issues sessions for confirmed emails when "Confirm email" is on (required for AELIO),
-        # and OAuth providers (Google) verify emails themselves.
+        confirmed=c.get("email_confirmed_at")
+        # A confirmed email is checked with GoTrue for the privileged account; JWT user_metadata is user-editable.
+        if confirmed is None and c["sub"] in auth_roles.allowlist()[1]:
+            key=os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")
+            if not key:
+                raise AuthError("Supabase publishable key is required to verify the founder account")
+            request=urllib.request.Request(supabase_url()+"/auth/v1/user",headers={"apikey":key,"Authorization":"Bearer "+token})
+            try:
+                with urllib.request.urlopen(request,timeout=10) as response:
+                    owner=json.loads(response.read())
+                confirmed=owner.get("email_confirmed_at") if owner.get("id")==c["sub"] else None
+            except Exception as exc:
+                raise AuthError("Founder identity verification unavailable") from exc
+
+        # Ordinary signup may be unconfirmed; privileged founder confirmation is verified separately above.
         return {"provider": "supabase", "sub": c["sub"], "email": (c.get("email") or "").lower(),
-                "email_verified": bool(c.get("email")), "products": list(app.get("products") or []),
+                "email_verified": bool(confirmed), "products": list(app.get("products") or []),
                 "aal": c.get("aal"), "raw": c}
-    if iss.startswith("https://securetoken.google.com/"):
-        if "firebase" not in enabled:
-            raise AuthError("Firebase sign-in is no longer enabled")
-        try:
-            c = firebase_auth.verify_token(token)
-        except firebase_auth.AuthError as e:
-            raise AuthError(str(e)) from e
-        return {"provider": "firebase", "sub": c["sub"], "email": (c.get("email") or "").lower(),
-                "email_verified": c.get("email_verified") is True, "products": ["aelio"], "aal": None, "raw": c}
     raise AuthError("token from an unknown issuer")
 
 
 def resolve(n: dict) -> dict:
     """Roles from the allow-lists. UID lists may hold both Firebase and Supabase UIDs for the same person."""
     claims = {"sub": n["sub"], "email": n["email"], "email_verified": n["email_verified"]}
-    ident = firebase_auth.identity(claims)      # same rules for every provider
+    ident = auth_roles.identity(claims)      # same rules for every provider
     return {**ident, "provider": n["provider"], "products": n.get("products") or [], "email_verified": n["email_verified"]}
 
 
@@ -167,14 +152,8 @@ def link(ident: dict, new_user) -> dict:
     target = None
     if prov == "firebase":                                       # accounts created before the identities table
         target = db.q1("SELECT * FROM users WHERE id=?", ("fb_" + sub,))
-    if not target and ident["email"]:
-        same = db.q1("SELECT * FROM users WHERE lower(email)=?", (ident["email"],))
-        # Carry an existing account over to the new provider only when the email is verified and the person
-        # has no identity with this provider yet. Allow-listed accounts must also match their UID list
-        # (already enforced by resolve()), so the founder account can't be claimed by email alone.
-        if same and not db.q1("SELECT 1 FROM identities WHERE user_id=? AND provider=?", (same["id"], prov)):
-            if ident.get("email_verified") and (_allowlisted(ident) or same["role"] not in ("founder",)):
-                target = same
+    if not target and ident.get("email") and db.q1("SELECT id FROM users WHERE lower(email)=?",(ident["email"],)):
+        raise AuthError("This existing account needs its reviewed identity migration mapping. Existing data has been preserved.")
     how = "existing"
     if not target:
         target = new_user({"firebase": "fb_", "supabase": "sb_"}.get(prov, "id_"), ident)

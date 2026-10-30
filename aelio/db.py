@@ -7,6 +7,7 @@ docs/ARCHITECTURE.md. Every write goes through `tx()` so it is atomic.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -126,7 +127,117 @@ CREATE TABLE IF NOT EXISTS agents (
   notes TEXT
 );
 CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT);
+
+-- ---------- usage limits & credits ----------
+CREATE TABLE IF NOT EXISTS plans (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, window_hours REAL NOT NULL, allowance INTEGER NOT NULL,
+  features TEXT NOT NULL, member_discount_pct REAL NOT NULL DEFAULT 0, updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cost_config (
+  op TEXT PRIMARY KEY, credits INTEGER NOT NULL, unit TEXT NOT NULL, note TEXT, est_cost_usd REAL,
+  updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS usage_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, ts REAL NOT NULL, op TEXT NOT NULL,
+  credits INTEGER NOT NULL, source TEXT NOT NULL, reservation_id TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_usage_user_ts ON usage_events(user_id, ts);
+CREATE TABLE IF NOT EXISTS credit_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, ts REAL NOT NULL, type TEXT NOT NULL,
+  bucket TEXT NOT NULL, amount INTEGER NOT NULL, ref TEXT, note TEXT, actor TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_ledger_user ON credit_ledger(user_id);
+CREATE TABLE IF NOT EXISTS reservations (
+  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, op TEXT NOT NULL, created_at REAL NOT NULL, estimate INTEGER NOT NULL,
+  allowance_part INTEGER NOT NULL, promo_part INTEGER NOT NULL, purchased_part INTEGER NOT NULL,
+  exempt INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL, final INTEGER
+);
+CREATE TABLE IF NOT EXISTS credit_packages (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, credits INTEGER NOT NULL, price_cents INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'usd', active INTEGER NOT NULL DEFAULT 0, approved INTEGER NOT NULL DEFAULT 0,
+  promo INTEGER NOT NULL DEFAULT 0, sort INTEGER NOT NULL DEFAULT 0, starts_at REAL, ends_at REAL,
+  updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS payments (
+  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, package_id TEXT NOT NULL, provider TEXT NOT NULL,
+  session_id TEXT UNIQUE, payment_intent TEXT, status TEXT NOT NULL, amount_cents INTEGER NOT NULL,
+  currency TEXT NOT NULL, credits INTEGER NOT NULL, credits_reversed INTEGER NOT NULL DEFAULT 0,
+  return_to TEXT, created_at REAL NOT NULL, updated_at REAL NOT NULL, receipt TEXT
+);
+CREATE TABLE IF NOT EXISTS webhook_events (
+  event_id TEXT PRIMARY KEY, type TEXT NOT NULL, received_at REAL NOT NULL, result TEXT
+);
+
+-- ---------- My AELIO: agents, conversations, Agent Transfer ----------
+CREATE TABLE IF NOT EXISTS user_agents (
+  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, name TEXT NOT NULL, kind TEXT NOT NULL, origin_label TEXT,
+  avatar TEXT, description TEXT, profile TEXT NOT NULL, memories TEXT NOT NULL, voice_id TEXT,
+  status TEXT NOT NULL, is_default INTEGER NOT NULL DEFAULT 0, created_at REAL NOT NULL, updated_at REAL NOT NULL,
+  last_chat_at REAL
+);
+CREATE INDEX IF NOT EXISTS ix_user_agents_user ON user_agents(user_id);
+CREATE TABLE IF NOT EXISTS agent_sources (
+  id TEXT PRIMARY KEY, agent_id TEXT, user_id TEXT NOT NULL, filename TEXT, kind TEXT NOT NULL, size INTEGER,
+  sha256 TEXT, stored_path TEXT, created_at REAL NOT NULL, expires_at REAL
+);
+CREATE TABLE IF NOT EXISTS agent_previews (
+  id TEXT PRIMARY KEY, agent_id TEXT NOT NULL, user_id TEXT NOT NULL, prompt TEXT NOT NULL, response TEXT,
+  performer TEXT, rating TEXT, created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS import_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, ts REAL NOT NULL, user_hash TEXT, method TEXT, format TEXT,
+  status TEXT NOT NULL, error_kind TEXT, bytes INTEGER, flags TEXT
+);
+CREATE TABLE IF NOT EXISTS problem_reports (
+  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, area TEXT NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL,
+  created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS conversations (
+  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, agent_id TEXT, title TEXT, created_at REAL NOT NULL,
+  updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, conversation_id TEXT NOT NULL, role TEXT NOT NULL, text TEXT NOT NULL,
+  performer TEXT, credits INTEGER, ts REAL NOT NULL
+);
+-- AELIO Intelligence Gateway: one row per model request. Never stores message content.
+CREATE TABLE IF NOT EXISTS ai_requests (
+  id TEXT PRIMARY KEY, ts REAL NOT NULL, user_id TEXT, purpose TEXT NOT NULL, tier TEXT NOT NULL,
+  provider TEXT, model TEXT, status TEXT NOT NULL, error_code TEXT, input_tokens INTEGER DEFAULT 0,
+  cached_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0, cost_usd REAL DEFAULT 0, credits INTEGER DEFAULT 0,
+  latency_ms INTEGER, ttft_ms INTEGER, conversation_id TEXT, reservation_id TEXT, exempt INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS ix_ai_requests_ts ON ai_requests(ts);
+CREATE INDEX IF NOT EXISTS ix_ai_requests_user ON ai_requests(user_id, ts);
+-- Code Studio: AI-proposed changes, stored until the founder applies or rejects them.
+CREATE TABLE IF NOT EXISTS code_proposals (
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id TEXT NOT NULL, instruction TEXT NOT NULL, summary TEXT,
+  changes TEXT NOT NULL, base TEXT NOT NULL, status TEXT NOT NULL, request_id TEXT, created_at REAL NOT NULL, decided_at REAL
+);
+-- Per-user preferences, including consent to send messages to an external AI provider.
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id TEXT PRIMARY KEY, external_ai_consent_at REAL, personality_id TEXT, preferences TEXT, updated_at REAL NOT NULL
+);
+-- Model price list (USD per 1M tokens). Founder-editable; used for cost estimates and credit charges.
+CREATE TABLE IF NOT EXISTS ai_models (
+  id TEXT PRIMARY KEY, provider TEXT NOT NULL, label TEXT, input_per_m REAL NOT NULL, cached_input_per_m REAL,
+  output_per_m REAL NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, price_source TEXT, updated_at REAL NOT NULL
+);
 """
+
+MIGRATIONS = [
+    "ALTER TABLE users ADD COLUMN mfa_at REAL",
+    "ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'",
+    "ALTER TABLE users ADD COLUMN unlimited INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active'",
+    "ALTER TABLE users ADD COLUMN firebase_uid TEXT",
+    "ALTER TABLE users ADD COLUMN last_seen REAL",
+    # Intelligence Gateway: what produced each message (additive, nullable)
+    "ALTER TABLE messages ADD COLUMN provider TEXT",
+    "ALTER TABLE messages ADD COLUMN model TEXT",
+    "ALTER TABLE messages ADD COLUMN status TEXT",
+    "ALTER TABLE conversations ADD COLUMN personality_id TEXT",
+]
 
 _local = threading.local()
 _init_lock = threading.Lock()
@@ -134,6 +245,17 @@ _initialized: set[str] = set()
 
 
 def _connect() -> sqlite3.Connection:
+    url=os.environ.get("DATABASE_URL")
+    if url:
+        from .postgres import Connection
+        conn=getattr(_local,"conn",None)
+        if conn is not None and getattr(_local,"path",None)==url:
+            return conn
+        conn=Connection(url)
+        _local.conn,_local.path=conn,url
+        return conn
+    if os.environ.get("AELIO_DATABASE", "postgres") != "sqlite":
+        raise RuntimeError("DATABASE_URL is required; select AELIO_DATABASE=sqlite only for isolated offline tests or export.")
     path = str(get_settings().db_path)
     conn = getattr(_local, "conn", None)
     if conn is not None and getattr(_local, "path", None) == path:
@@ -147,11 +269,19 @@ def _connect() -> sqlite3.Connection:
     with _init_lock:
         if path not in _initialized:
             conn.executescript(SCHEMA)
+            for m in MIGRATIONS:   # additive only: ALTER TABLE <t> ADD COLUMN <c>
+                table = m.split("ALTER TABLE ")[1].split()[0]
+                col = m.split("ADD COLUMN ")[1].split()[0]
+                if col not in {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}:
+                    conn.execute(m)
             _initialized.add(path)
     return conn
 
 
 def reset_connection_cache() -> None:
+    conn=getattr(_local,"conn",None)
+    if conn is not None:
+        conn.close()
     _local.__dict__.clear()
     _initialized.clear()
 
@@ -160,6 +290,8 @@ def reset_connection_cache() -> None:
 def tx() -> Iterator[sqlite3.Connection]:
     conn = _connect()
     conn.execute("BEGIN IMMEDIATE")
+    if os.environ.get("DATABASE_URL"):
+        conn.execute("SELECT pg_advisory_xact_lock(14873821)")
     try:
         yield conn
         conn.execute("COMMIT")

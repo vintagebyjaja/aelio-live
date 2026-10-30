@@ -1,0 +1,194 @@
+{
+  "version": "AELIO_v1.0.2",
+  "base_version": "AELIO_v1.0.1",
+  "complete_repository": false,
+  "baseline_manifest_sha256": "2e7f33498d2b9786196f602a0b62eb67f192e1ce3beaf3c2552a92c76ee1cd68",
+  "deletions": [],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "size": 3346,
+      "sha256": "4309e42299233b45e5e37c27aa87112f592d30db9a24f7e482fc57f31ef91ec7"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 2061,
+      "sha256": "0c921df24e0b4f1285020644132e77cb7463551a6f2c9a0367d007f11a8fbe36"
+    },
+    {
+      "path": "PROJECT_HANDOFF.md",
+      "size": 8532,
+      "sha256": "6fcc984f041822ebd4f3b062456247e8390e032c67c39ac8cc1272af605ed4e4"
+    },
+    {
+      "path": "PROJECT_OVERVIEW.md",
+      "size": 4715,
+      "sha256": "297ad8bfb9a70ef1e85da38060e1d3e36f6ffdeb51addf1175b86bf5466e371b"
+    },
+    {
+      "path": "RELEASE_MANIFEST.md",
+      "size": 2338,
+      "sha256": "56876d5f878de80d481c7ee65216f25a61d74c06534cc5d44f599e64e0c2f24e"
+    },
+    {
+      "path": "_headers",
+      "size": 910,
+      "sha256": "3bf861b1066d48836a0d47acd3b3744b95f7b57e8894f3a37e772dc08a999299"
+    },
+    {
+      "path": "_src/build-chat.mjs",
+      "size": 1172,
+      "sha256": "82c6162387dd9acc4a150b69b189f0b414cc28fbcc33cb6dc271a6eacc640f61"
+    },
+    {
+      "path": "_src/build.mjs",
+      "size": 31905,
+      "sha256": "c34b620c00ef25d14ec1865df21c5e765675c11aec0011e5e3970a67b4560d23"
+    },
+    {
+      "path": "_src/chat/Appearance.tsx",
+      "size": 4054,
+      "sha256": "57339ad4fa353c46bbd17e599bdfd52bcd139e2d94b62773ca0deb7979bcdc79"
+    },
+    {
+      "path": "_src/chat/DreamHome.tsx",
+      "size": 15874,
+      "sha256": "9110da45c106f704a77af974de83740dcf8e9fb94c7cb2508b24e3e5d4f12f07"
+    },
+    {
+      "path": "_src/chat/design-system.ts",
+      "size": 1862,
+      "sha256": "2ccc3ba59e10cf8cb747203350ea82b5880836f58dcc7c30663022784cf21037"
+    },
+    {
+      "path": "_src/chat/main.tsx",
+      "size": 62887,
+      "sha256": "cdb683408f1d88e7ca9bcac0b944792ac68e4434487afe19b01852f94b6706bc"
+    },
+    {
+      "path": "_src/chat/styles.css",
+      "size": 23443,
+      "sha256": "e620eb6aee59f628f96efc1e6778c87a4f5629ff730937035c068a05c07528a5"
+    },
+    {
+      "path": "_src/checks/browser_dreamhome.py",
+      "size": 4416,
+      "sha256": "d924bf4d545c3a86bc2d26b2fb6a670d04c37b068affe4ce4ce01e24541771b9"
+    },
+    {
+      "path": "_src/checks/browser_fixtures.py",
+      "size": 3396,
+      "sha256": "e3dbdfe566aa2791583b7101935e46ca99dd444f6c1d370e3a7ff6ef3360ba94"
+    },
+    {
+      "path": "_src/checks/browser_messaging.py",
+      "size": 3117,
+      "sha256": "5535d932d09d5ad464097e1163072b30ba9780c911e641dd2cd415d44f8c1ab5"
+    },
+    {
+      "path": "_src/checks/test-appearance.mjs",
+      "size": 3299,
+      "sha256": "be9fbe5606160ee0e05d052af68d724b8f18cd669549e61753083d74c98479e3"
+    },
+    {
+      "path": "_src/checks/test-platform-integration.mjs",
+      "size": 13066,
+      "sha256": "ead36acfd456f15df6310aabfc3d61dee55964ca6fa45d9d424b40053bb5223c"
+    },
+    {
+      "path": "_src/platform/discovery.js",
+      "size": 2691,
+      "sha256": "c33a9e421de46adc250750498ff15d46b8f7a80ad7e09f308a33ddeb7e26092f"
+    },
+    {
+      "path": "_src/platform/index.js",
+      "size": 11052,
+      "sha256": "78085e3e67d9b8e6de4216dbea523f157cb2ac65e74494e370a5718d5558aa85"
+    },
+    {
+      "path": "_src/platform/messaging.js",
+      "size": 23689,
+      "sha256": "58d1099e083319d89d7d5521ecf3300a70dadc8913f0087f82cff41ea25e750e"
+    },
+    {
+      "path": "config/DREAM_BOX.md",
+      "size": 4668,
+      "sha256": "8902801c87e89e95306b7b492dd98c6cd75ee5293e2fa9aa0cd9d91056fea2b7"
+    },
+    {
+      "path": "docs/assignments/AELIO_v1.0.2_REQUIREMENTS.md",
+      "size": 10061,
+      "sha256": "13b6341f53593ab5c489863c68aba6c68c8ee5a9f8b795024a7761195ac91929"
+    },
+    {
+      "path": "docs/releases/AELIO_v1.0.2_VALIDATION.md",
+      "size": 4326,
+      "sha256": "b9d3712a321426383b62a0cb521b8228ca5dd4ed055c966502739194e16ddaf9"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 16181,
+      "sha256": "54a0240a8343061364f7887e04390b0e9073139d93fb3a8f8c184e688836acbb"
+    },
+    {
+      "path": "package.json",
+      "size": 896,
+      "sha256": "fd31a0bce02431739be57a9637592bbfb26360f2d7d4f50a0e6c56ac9f808850"
+    },
+    {
+      "path": "public/assets/dream/README.txt",
+      "size": 433,
+      "sha256": "e3498442058615909c1d5705f13b760e8efba09fe801ddcd4e62184d5192ff66"
+    },
+    {
+      "path": "public/assets/dream/business.webp",
+      "size": 28170,
+      "sha256": "9e81bb94575a385942148f2ef46874458717901ea92e8a90cd7558b2f7664e0f"
+    },
+    {
+      "path": "public/assets/dream/chocolate-cream.webp",
+      "size": 190520,
+      "sha256": "e9c83a1edc0abae0e0459d3e9f301c85cba743024b7fe4a03456475eda966c5b"
+    },
+    {
+      "path": "public/assets/dream/date-night.webp",
+      "size": 37040,
+      "sha256": "bac8eefbce419a30c6086ce48673d2104a3605cfab4a6797a75c27fbc2b78955"
+    },
+    {
+      "path": "public/assets/dream/food.webp",
+      "size": 36706,
+      "sha256": "9f8a6aaede1f361e35fc3e7a1a2716672a2e09530d04eabec7ad0755cdd6f269"
+    },
+    {
+      "path": "public/assets/dream/just-chat.webp",
+      "size": 38866,
+      "sha256": "b09380ae3bbc3a750c7be9a3eaee3b71eb0988b524fd90dc0f066ca319b09249"
+    },
+    {
+      "path": "public/assets/dream/new-ideas.webp",
+      "size": 25224,
+      "sha256": "3ce475463e4f5ab651b23f4fbb99504db168c7924e834fdcb18bf141dbbb1be9"
+    },
+    {
+      "path": "public/assets/dream/ocean-fresh.webp",
+      "size": 223618,
+      "sha256": "68dd007c78894dbf00cbb5afc8fa381a2588dd22c2aad093e4a4efd9a8a3b628"
+    },
+    {
+      "path": "public/assets/dream/travel.webp",
+      "size": 19928,
+      "sha256": "02261ca0d02a58f37dde89779b33ce2f0c28c2e17793bac547779cfe345567f2"
+    },
+    {
+      "path": "supabase/migrations/20261029000004_appearance.sql",
+      "size": 884,
+      "sha256": "6613f68c4d4c51395d0c8c2723675f158643930d58600e3a1509f380b4137a4b"
+    },
+    {
+      "path": "tools/package_update.py",
+      "size": 7759,
+      "sha256": "d7f9e615e794e28135cccf5bfb5f689c854d2eec538752310cd2dbba2661a0bc"
+    }
+  ]
+}

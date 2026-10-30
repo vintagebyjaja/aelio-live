@@ -1,3 +1,9 @@
+# Current status: AELIO_v1.0.1 local delivery
+
+Read `PROJECT_HANDOFF.md` and `PROJECT_OVERVIEW.md` in the repository root, plus `config/SETUP.md`. Active authentication is Supabase-only; previous Firebase/branch/test/deployment instructions below are historical. No deployment, production migration or real-account verification was performed in this session.
+
+---
+
 # AELIO Native Studio 1.0
 
 The **AELIO engine**: the server behind the Brain on aelio.live (Studio Brain at `aelio.live/studiobrain/`, My AELIO at `aelio.live/brain/my/`, the brain game at `aelio.live/brain/`). Those pages live in the aelio-live repo and reach this engine at `aelio.live/api/…` through a private same-origin proxy. The engine has no public address of its own.

@@ -9,3 +9,5 @@ cryptography>=42
 playwright>=1.45        # Quality Lab browser tests (then run: python -m playwright install chromium)
 pytest>=8               # used by Quality Lab suites and the repo's own tests
 httpx>=0.27             # starlette TestClient (tests only)
+
+psycopg[binary]>=3.2  # Supabase PostgreSQL engine store

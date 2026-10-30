@@ -1,0 +1,11 @@
+{
+ "name":"aelio-engine",
+ "main":"index.js",
+ "compatibility_date":"2025-10-24",
+ "compatibility_flags":["nodejs_compat"],
+ "workers_dev":false,
+ "preview_urls":false,
+ "containers":[{"class_name":"AelioEngine","image":"../../Dockerfile.engine","max_instances":1}],
+ "durable_objects":{"bindings":[{"name":"ENGINE","class_name":"AelioEngine"}]},
+ "migrations":[{"tag":"v1","new_sqlite_classes":["AelioEngine"]}]
+}

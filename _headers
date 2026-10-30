@@ -1,10 +1,10 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(self), microphone=(self), display-capture=(self), geolocation=()
+  Permissions-Policy: camera=(self), microphone=(self), display-capture=(self), geolocation=(self)
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: SAMEORIGIN
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://engine.aelio.live https://*.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com; frame-src https://aelio-0820.firebaseapp.com https://accounts.google.com; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://challenges.cloudflare.com https://engine.aelio.live https://xkpzabgpesishxcluxkp.supabase.co; frame-src; base-uri 'self'; form-action 'self'
 
 /brain/*
   X-Robots-Tag: noindex, nofollow
@@ -14,3 +14,6 @@
   Cache-Control: no-store
 /_src/*
   X-Robots-Tag: noindex
+
+/assets/dream/*
+  Cache-Control: public, max-age=86400

@@ -1,3 +1,9 @@
+# Current status: AELIO_v1.0.1 local delivery
+
+Read `PROJECT_HANDOFF.md` and `PROJECT_OVERVIEW.md` in the repository root, plus `config/SETUP.md`. Active authentication is Supabase-only; previous Firebase/branch/test/deployment instructions below are historical. No deployment, production migration or real-account verification was performed in this session.
+
+---
+
 # AELIO Session Handoff
 
 **Read this, then `AELIO_PROGRESS.md`, then run `git status` and `git log --oneline -8`.**

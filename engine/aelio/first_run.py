@@ -200,53 +200,31 @@ def run_all(text_steps: int = 1500, code_steps: int = 1500) -> dict:
                     "existing_grooveville_apps_modified": False}
     _check(report, "integration: authenticated app request via gateway, scopes + audit enforced", integration_test)
 
-    def firebase_test():
-        import datetime
-
+    def supabase_test():
         import jwt
-        from cryptography import x509
-        from cryptography.hazmat.primitives import hashes, serialization
         from cryptography.hazmat.primitives.asymmetric import rsa
-        from cryptography.x509.oid import NameOID
-
-        from . import firebase_auth as fa
-        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "offline-test")])
-        now = datetime.datetime.now(datetime.timezone.utc)
-        cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
-                .serial_number(1).not_valid_before(now).not_valid_after(now + datetime.timedelta(days=1))
-                .sign(key, hashes.SHA256()))
-        f = get_settings().data_dir / "fb_test_certs.json"
-        f.write_text(json.dumps({"k1": cert.public_bytes(serialization.Encoding.PEM).decode()}))
-        old = {k: os.environ.get(k) for k in ("AELIO_FIREBASE_CERTS_FILE", "FIREBASE_PROJECT_ID", "AELIO_FOUNDER_EMAILS", "AELIO_FOUNDER_UIDS")}
-        os.environ.update(AELIO_FIREBASE_CERTS_FILE=str(f), FIREBASE_PROJECT_ID="aelio-offline-test",
-                          AELIO_FOUNDER_EMAILS="founder@example.com", AELIO_FOUNDER_UIDS="")
+        from . import identity
+        key=rsa.generate_private_key(public_exponent=65537,key_size=2048)
+        jwk=json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(key.public_key()));jwk.update(kid="offline",alg="RS256",use="sig")
+        f=get_settings().data_dir/"offline_supabase_jwks.json";f.write_text(json.dumps({"keys":[jwk]}))
+        names=("SUPABASE_URL","AELIO_SUPABASE_JWKS_FILE","AELIO_FOUNDER_EMAILS","AELIO_FOUNDER_UIDS")
+        old={n:os.environ.get(n) for n in names}
+        os.environ.update(SUPABASE_URL="https://offline.supabase.co",AELIO_SUPABASE_JWKS_FILE=str(f),AELIO_FOUNDER_EMAILS="founder@example.test",AELIO_FOUNDER_UIDS="offline-founder")
+        out={}
         try:
-            t = int(time.time())
-            def tok(**over):
-                c = {"iss": "https://securetoken.google.com/aelio-offline-test", "aud": "aelio-offline-test",
-                     "sub": "uid1", "iat": t, "exp": t + 3600, "email": "founder@example.com", "email_verified": True, **over}
-                return jwt.encode(c, key, algorithm="RS256", headers={"kid": "k1"})
-            cases = {"founder token": tok(), "other account": tok(email="someone@else.com", sub="uid2"),
-                     "wrong project": tok(aud="other-project"), "expired": tok(exp=t - 3600, iat=t - 7200),
-                     "unverified email": tok(email_verified=False)}
-            out = {}
-            for n, tk in cases.items():
-                try:
-                    fa.verify_id_token(tk); out[n] = "accepted"
-                except fa.AuthError as e:
-                    out[n] = f"rejected ({e})"
+            t=int(time.time())
+            for name,over in {"founder":{},"wrong UID":{"sub":"other"},"wrong audience":{"aud":"wrong"},"expired":{"exp":t-3600},"service role":{"role":"service_role"}}.items():
+                claims={"iss":"https://offline.supabase.co/auth/v1","sub":"offline-founder","email":"founder@example.test","email_confirmed_at":"2026-01-01","role":"authenticated","aud":"authenticated","iat":t,"exp":t+600,**over}
+                token=jwt.encode(claims,key,algorithm="RS256",headers={"kid":"offline"})
+                try:out[name]=identity.resolve(identity.verify(token))["role"]=="founder"
+                except identity.AuthError:out[name]=False
         finally:
-            f.unlink(missing_ok=True)
-            for k, v in old.items():
-                if v is None:
-                    os.environ.pop(k, None)
-                else:
-                    os.environ[k] = v
-        ok = out["founder token"] == "accepted" and all(v.startswith("rejected") for k, v in out.items() if k != "founder token")
-        return ok, {"note": "Offline verification with a locally generated signing key. A live Firebase project is not "
-                            "configured yet.", "results": out}
-    _check(report, "auth: Firebase ID-token verification + founder allow-list (offline keys)", firebase_test)
+            f.unlink(missing_ok=True);identity.purge_jwks_cache()
+            for n,v in old.items():
+                if v is None:os.environ.pop(n,None)
+                else:os.environ[n]=v
+        return out.get("founder") is True and all(not v for n,v in out.items() if n!="founder"), {"note":"Offline signed-token checks only, not a real Supabase login.","results":out}
+    _check(report,"auth: Supabase asymmetric tokens and administrative founder identity",supabase_test)
 
     report["finished"] = db.now()
     report["all_passed"] = all(t["passed"] for t in report["tests"].values())
