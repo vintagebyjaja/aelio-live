@@ -1,0 +1,5 @@
+AELIO_v1.0.3 deployment repair — apply over v1.0.2, not over the old original main.
+The GitHub ZIP includes only changed source/docs/config; no dependencies, cache, credentials or generated build files. Preserve paths when extracting. No deletions and no new SQL migration.
+wrangler.jsonc no longer requires a missing aelio-engine Worker. Existing R2 and all other settings remain. This lets the website deployment proceed independently; it does not make inference operational. Read config/CONNECT_BRAIN.md before deploying/connecting the real private backend.
+The user authorized updating main and its existing automatic Cloudflare deployment. No production SQL or secret changes were performed. Verify the next build before claiming live readiness.
+Earlier v1.0.1/v1.0.2 packages are unchanged. SHA256SUMS.txt covers the ZIPs. For the complete current source, use the corresponding Git branch/main after the authorized push.

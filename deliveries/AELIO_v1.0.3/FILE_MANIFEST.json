@@ -1,0 +1,60 @@
+{
+  "version": "AELIO_v1.0.3",
+  "base_version": "AELIO_v1.0.2",
+  "base_commit": "9262158",
+  "complete_repository": false,
+  "deletions": [],
+  "sql_required": false,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "size": 3902,
+      "sha256": "08d866dfa849a3966f24fb0955fcaa6b73ea423ef06abf3195c38be72a0d640b"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 2546,
+      "sha256": "aa60bfb528a372464fca43db3386a473fd1421b240a8f80bbedb6da95926fb55"
+    },
+    {
+      "path": "PROJECT_HANDOFF.md",
+      "size": 9799,
+      "sha256": "ec59b4d88ca0e8e2ef362e19467ff272f0ac2ac91043f705dcc43b777d576562"
+    },
+    {
+      "path": "PROJECT_OVERVIEW.md",
+      "size": 5163,
+      "sha256": "2cfb2a10c7374c3ae6a994fa30e47de58f27ab0313591915acfc785379ad8f96"
+    },
+    {
+      "path": "RELEASE_MANIFEST.md",
+      "size": 827,
+      "sha256": "47aea5458296a4bcfbb3c44e8beebea2eb976883551aa94017d23f8f81041cf5"
+    },
+    {
+      "path": "config/CONNECT_BRAIN.md",
+      "size": 4032,
+      "sha256": "1563597d6f06ec895d7039bad7797716cc7edd0d9f38770a8655f26264253877"
+    },
+    {
+      "path": "docs/releases/AELIO_v1.0.3_VALIDATION.md",
+      "size": 1996,
+      "sha256": "428c04e7b77f564b209b6d09913e5ab72e0bd20f2a544e41ab3a3bd33b3505da"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 16181,
+      "sha256": "0d7c8a172b69b5a6ec551d5eb6b68ec928219d399cc5c7ae4744e332dcd55404"
+    },
+    {
+      "path": "package.json",
+      "size": 896,
+      "sha256": "18429d88a08db4bbc8c6d1c1a064e7f4313b742a4105ee3db97a419a6cbebf4a"
+    },
+    {
+      "path": "wrangler.jsonc",
+      "size": 1451,
+      "sha256": "ffd08170e3d810748038f7b29ff1ee16c624baac613291ed06dc0f3883d02d22"
+    }
+  ]
+}

@@ -20,3 +20,7 @@ Read `PROJECT_OVERVIEW.md`, `PROJECT_HANDOFF.md`, `CHANGELOG.md`, `RELEASE_MANIF
 ## v1.0.2 continuity
 
 Read `docs/assignments/AELIO_v1.0.2_REQUIREMENTS.md` and `config/DREAM_BOX.md`. Four themes share tokens/components; visual hierarchy is conversation overrides > one custom agent > global AELIO. Inherit mode must retain saved custom settings. Theme changes never alter personalities. Dream Box is `/`; original marketing remains `/explore/`. Update ZIPs are deltas relative to the v1.0.1 delivery and exclude generated build output. A later user clarification authorizes only a Codex migration branch preserving main; never merge or invoke a deployment. GitHub write access was restored and verified with a non-mutating dry run; the user explicitly authorizes committing/pushing the versioned development branch only.
+
+## v1.0.3 deployment repair
+
+The user subsequently authorized updating main and triggering the existing Cloudflare deployment. That authorization supersedes earlier branch-only restrictions for the requested site rollout. It does not authorize production SQL or credential changes. Cloudflare log10143 confirms aelio-engine does not exist; default wrangler.jsonc must not require that missing target. Keep all Brain source and unavailable-service responses. Add its private service binding only after the real backend exists; see config/CONNECT_BRAIN.md.

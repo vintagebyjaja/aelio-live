@@ -1,3 +1,13 @@
+# Current handoff — AELIO_v1.0.3 deployment repair
+
+2026-10-30. The user explicitly authorized the tested main update to trigger the current Cloudflare integration. Main was updated to9262158; Cloudflare uploaded the changed assets but failed to publish with code10143: `AELIO_ENGINE` referenced missing Worker `aelio-engine`. v1.0.3 removes the premature service declaration from the default root deployment config, preserving R2 and every other setting. Brain source, private architecture and clear unavailable-engine errors remain unchanged.
+
+This patch does not deploy the backend, run production SQL or set secrets. The real Brain still needs deployment and secure runtime/database configuration. `config/CONNECT_BRAIN.md` gives the exact prerequisite order, binding snippet and runtime names. Dashboard build variables with Next.js names are not equivalent to the AELIO Worker's required runtime variables.
+
+Repair branch: `codex/deployment-fix-v1.0.3`. The user's main/deployment authorization remains in effect for this fix. Verify the next Cloudflare build before claiming the site is live. v1.0.1 and v1.0.2 immutable packages remain preserved. No SQL change is required by this repair; GitHub-source and configuration ZIPs are provided separately.
+
+---
+
 # AELIO current handoff — v1.0.2
 
 2026-10-29. This is an additive update to the preserved v1.0.1 candidate described below. The user's latest clarification authorizes a Codex migration branch in the existing Git repository, preserving main; no deployment or production modification is authorized. GitHub write access was restored after the earlier 403 and verified by a successful non-mutating dry run. The user authorizes committing/pushing `codex/migration-v1.0.2` only; no main merge or production operation is authorized.
