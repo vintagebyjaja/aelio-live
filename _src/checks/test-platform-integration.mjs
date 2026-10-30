@@ -78,6 +78,7 @@ const env = {
   },
 };
 globalThis.fetch = async (url, opts = {}) => {
+ if(new Headers(opts.headers).get('accept-profile')==='core')return new Response(JSON.stringify({code:'PGRST106',message:'Private schema is intentionally not exposed in this fixture.'}),{status:406,headers:{'content-type':'application/json'}});
   const s = String(url);
   if (s.startsWith(env.SUPABASE_URL + "/auth/v1/")) {
     const token = new Headers(opts.headers).get("authorization")?.slice(7);
@@ -127,7 +128,7 @@ async function call(path, method = "GET", data, uid = one, extra = {}) {
 }
 await test("real local RLS: isolated agents, two same-personality identities, per-chat themes, groups and storage lifecycle", async () => {
   const agents = (await call("/agents")).agents;
-  assert.equal(agents.filter((a) => a.kind !== "custom").length, 2);
+  assert.equal(agents.filter((a) => a.kind !== "custom").length, 8);
   const a = (
       await call("/agents", "POST", {
         name: "Chester",
@@ -326,6 +327,44 @@ await test('stable request IDs replay completed turns without a second AI call o
  const changed=await platform(request('/conversations/'+c.id+'/respond','POST',{content:'Different input',consent:true,request_id}),env);assert.equal(changed.status,409);
  const denied=await platform(request('/conversations/'+c.id+'/cancel','POST',{request_id},two),env);assert.equal(denied.status,404);
  await call('/conversations/'+c.id,'DELETE');
+});
+
+await test('owner bootstrap is independent of guest signing, idempotent and permanently preserves eight companions and nine chats',async()=>{
+ const local={...env,AELIO_SESSION_SECRET:'short',SUPABASE_SERVICE_ROLE_KEY:undefined};
+ const replies=await Promise.all(Array.from({length:3},()=>platform(request('/account'),local)));for(const reply of replies){assert.equal(reply.status,200);assert.equal((await reply.json()).user.id,one);}
+ const as=(await call('/agents')).agents,permanent=as.filter(a=>a.kind!=='custom');assert.equal(permanent.length,8);assert.equal(new Set(permanent.map(a=>a.kind)).size,8);
+ const chats=(await call('/conversations')).conversations.filter(c=>c.permanent_key);assert.equal(chats.length,9);assert.equal(new Set(chats.map(c=>c.permanent_key)).size,9);
+ const team=chats.find(c=>c.permanent_key==='dream-team');assert.equal(team.participants.length,6);assert.ok(!team.participants.includes(permanent.find(a=>a.kind==='aelio').id));
+ const before=chats.map(c=>c.id).sort();await call('/account');assert.deepEqual((await call('/conversations')).conversations.filter(c=>c.permanent_key).map(c=>c.id).sort(),before);
+ const removed=await platform(request('/agents/'+permanent[2].id,'DELETE'),env);assert.equal(removed.status,403);
+ const removedChat=await platform(request('/conversations/'+team.id,'DELETE'),env);assert.equal(removedChat.status,403);
+ const changed=await call('/agents/'+permanent[2].id,'PATCH',{appearance_mode:'custom',appearance:{design:'chocolate-cream'}});assert.equal(changed.agent.appearance.design,'chocolate-cream');
+ const renamed=await platform(request('/agents/'+permanent[2].id,'PATCH',{name:'Renamed'}),env);assert.equal(renamed.status,403);
+ const req=request('/agents');const pathd=new Request(req,{headers:{...Object.fromEntries(req.headers),'x-aelio-product':'pathd'}});const only=(await (await platform(pathd,env)).json()).agents;assert.deepEqual(only.map(a=>a.kind).sort(),['aelio','mila']);
+ const twoAccounts=await platform(request('/account','GET',undefined,two),local);assert.equal((await twoAccounts.json()).user.id,two);
+});
+await test('Dream Team coordinates direct mentions, streams correct speakers and preserves style and search privacy',async()=>{
+ const team=(await call('/conversations')).conversations.find(c=>c.permanent_key==='dream-team');
+ let response=await platform(request('/conversations/'+team.id+'/respond','POST',{content:'@Naomi help me build this app',consent:true}),env);assert.equal(response.status,200);assert.match(await response.text(),/Naomi/);assert.deepEqual(payloads.at(-1).agents.map(a=>a.kind),['naomi']);
+ response=await platform(request('/conversations/'+team.id+'/respond','POST',{content:'Everybody, share your perspective',consent:true}),env);assert.equal(response.status,200);await response.text();assert.equal(payloads.at(-1).agents.length,6);
+ await call('/account','PATCH',{mila_style:'advisor'});const mila=(await call('/conversations')).conversations.find(c=>c.permanent_key==='mila');response=await platform(request('/conversations/'+mila.id+'/respond','POST',{content:'Help me plan',consent:true}),env);await response.text();assert.match(payloads.at(-1).agents[0].instructions,/Thoughtful, practical, strategic/);
+ const results=await call('/conversations/search?q='+encodeURIComponent('@Naomi help'));assert.ok(results.conversations.some(c=>c.id===team.id));const hidden=await call('/conversations/search?q='+encodeURIComponent('@Naomi help'),'GET',undefined,two);assert.ok(!hidden.conversations.some(c=>c.id===team.id));
+});
+
+await test('legacy deletion barriers fail before deleting any owned R2 objects',async()=>{
+ const uploads=objects.size;
+ const response=await platform(request('/account/delete','POST',{confirm:'DELETE MY SHARED ACCOUNT',password:'fixture-password'}),env);
+ assert.equal(response.status,409);assert.equal((await response.json()).code,'account_deletion_requires_review');assert.equal(objects.size,uploads);
+ const denied=await original(rest+'/rpc/app_recovery_record',{method:'POST',headers:{authorization:'Bearer '+tokens[one],'content-type':'application/json'},body:JSON.stringify({uid:one})});assert.ok([401,403].includes(denied.status));
+});
+
+await test('custom portraits are owned and editable while permanent portraits and crops stay locked',async()=>{
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=','base64');
+ const uploaded=await platform(new Request('https://aelio.test/api/platform/files',{method:'POST',headers:{origin:'https://aelio.test',authorization:'Bearer '+tokens[one],'content-type':'image/png','x-file-name':'portrait.png','x-file-category':'agents','cf-connecting-ip':'127.0.0.1'},body:png}),env);assert.equal(uploaded.status,201);const file=(await uploaded.json()).file;
+ const agent=(await call('/agents','POST',{name:'Owned portrait fixture',avatar_file_id:file.id,avatar_crop:{x:25,y:40,zoom:1.5}})).agent;assert.equal(agent.avatar_file_id,file.id);assert.equal(agent.avatar_crop.zoom,1.5);
+ const stolen=await platform(request('/agents','POST',{name:'Unauthorized portrait fixture',avatar_file_id:file.id},two),env);assert.equal(stolen.status,404);
+ const system=(await call('/agents')).agents.find(a=>a.kind==='mila');const denied=await platform(request('/agents/'+system.id,'PATCH',{avatar_file_id:file.id,avatar_crop:{x:0,y:0,zoom:3}}),env);assert.equal(denied.status,403);
+ const reset=(await call('/agents/'+agent.id,'PATCH',{avatar_file_id:null,avatar_crop:{x:50,y:35,zoom:1}})).agent;assert.equal(reset.avatar_file_id,null);await call('/agents/'+agent.id,'DELETE');await call('/files/'+file.id,'DELETE');
 });
 
 globalThis.fetch = original;

@@ -171,3 +171,13 @@ test('secure guest/rate identity can derive only from a server-role secret, neve
  await assert.rejects(keyed({SUPABASE_SERVICE_ROLE_KEY:jwt('anon')},'guest:fixture'),/secure runtime configuration/);
  assert.equal(sessionSecretSource({AELIO_SESSION_SECRET:'too-short',SUPABASE_SERVICE_ROLE_KEY:service}),null);
 });
+
+test('modern API keys are never treated as Bearer JWTs in server database calls',async()=>{
+ const {sb}=await import('../platform/shared.js');const original=globalThis.fetch;const requests=[];
+ globalThis.fetch=async(url,init)=>{requests.push(init.headers);return new Response('[]',{headers:{'content-type':'application/json'}});};
+ try{
+  const env={SUPABASE_URL:'https://xkpzabgpesishxcluxkp.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture',SUPABASE_SERVICE_ROLE_KEY:'sb_secret_fake_fixture_only'};
+  await sb(env,'/rest/v1/app_preferences',{service:true});assert.equal(requests.at(-1).apikey,env.SUPABASE_SERVICE_ROLE_KEY);assert.equal(requests.at(-1).authorization,undefined);
+  await sb(env,'/rest/v1/app_preferences',{token:'verified-user-jwt'});assert.equal(requests.at(-1).authorization,'Bearer verified-user-jwt');assert.equal(requests.at(-1).apikey,env.SUPABASE_PUBLISHABLE_KEY);
+ }finally{globalThis.fetch=original;}
+});

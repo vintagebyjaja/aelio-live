@@ -1,3 +1,4 @@
+import {useAudioLevel} from "./AelioOrb";
 import { useState, useEffect, useRef } from "react";
 import { call } from "./client";
 import { Icon, Orb } from "./Icon";
@@ -174,6 +175,9 @@ export function DreamHome({
     [voiceError, setVoiceError] = useState(""),
     [actions, setActions] = useState(false),
     [uploading, setUploading] = useState(false);
+  const [microphone,setMicrophone]=useState<MediaStream|null>(null);
+  const audioLevel=useAudioLevel(microphone);
+  const microphoneRef=useRef<MediaStream|null>(null);
   const recognition = useRef<any>(null),
     homeInput = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => {
@@ -188,6 +192,7 @@ export function DreamHome({
     return () => {
       clearInterval(timer);
       recognition.current?.abort();
+      microphoneRef.current?.getTracks().forEach(track=>track.stop());
     };
   }, []);
   const context = dayContext(now),
@@ -218,13 +223,15 @@ export function DreamHome({
             .join(" ")
             .slice(0, 16000),
         );
-      r.onerror = () => {
+      const release=()=>{microphoneRef.current?.getTracks().forEach(track=>track.stop());microphoneRef.current=null;setMicrophone(null);};
+      r.onstart=async()=>{try{const stream=await navigator.mediaDevices?.getUserMedia({audio:true});if(!stream)return;if(recognition.current!==r||r.__ended){stream.getTracks().forEach(track=>track.stop());return;}microphoneRef.current=stream;setMicrophone(stream);}catch{/* Dictation can continue without a local audio meter. */}};
+      r.onerror = () => {release();
         setListening(false);
         setVoiceError(
           "The microphone or browser speech service is unavailable. You can type instead.",
         );
       };
-      r.onend = () => setListening(false);
+      r.onend = () => {r.__ended=true;release();setListening(false);};
       r.start();
       setListening(true);
       setVoiceError("");
@@ -256,14 +263,14 @@ export function DreamHome({
           </p>
         </div>
         <div className="orb-stage">
-          <Orb
+          <Orb audioLevel={audioLevel}
             state={
               listening
                 ? "listening"
                 : sending
                   ? "thinking"
                   : error
-                    ? "error"
+                    ? "idle"
                     : "idle"
             }
           />
@@ -819,7 +826,7 @@ function Today({ food, onTopic }: any) {
       >
         <span>
           <b>{food} Near You</b>
-          <small>Open VYBR8 · website handoff only</small>
+          <small>Explore VYBR8</small>
         </span>
         <span>↗</span>
       </a>
@@ -847,9 +854,7 @@ function Today({ food, onTopic }: any) {
       <details>
         <summary>VYBR8 experiences</summary>
         <p>
-          VYBR8 is available as a website handoff. APIs and private account
-          linking are not configured. No external account is linked
-          automatically.
+          Open VYBR8 to explore food, drinks and experiences. You choose what to share.
         </p>
         <a href="https://vybr8.live/" target="_blank" rel="noreferrer">
           Open VYBR8 ↗

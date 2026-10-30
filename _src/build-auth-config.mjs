@@ -1,3 +1,4 @@
+import {consumerMessage} from "./shared/experience.js";
 // Allowlisted PUBLIC config only. Never copy process.env or service-role credentials.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -32,7 +33,7 @@ export function buildAuthConfig(
         supabase: {
           ...publicOnly,
           configurationError: resolved.error
-            ? { code: resolved.errorCode, message: resolved.error }
+            ? { code: resolved.errorCode, message: consumerMessage(resolved.errorCode,resolved.error) }
             : null,
         },
       }) +

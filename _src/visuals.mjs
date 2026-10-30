@@ -155,7 +155,7 @@ export function visual(key) {
     case "memory": return icon("mm", "◎", "Dream Memory", "#5ad1e6");
     case "shield": return icon("sh", "⛉", "Security and control");
     case "cloud": return `<div class="cloud-art"><img src="/assets/img/hero-cloud.webp" alt="A figure stands on a cliff inside a glowing gold cloud, looking at an infinity sign over the sea" width="850" height="453"></div>`;
-    case "personas": return `<div class="persona-stage">${[1, 2, 3, 4, 5, 6].map(i => `<img src="/assets/img/persona-${i}.png" alt="" loading="lazy">`).join("")}</div>`;
+    case "personas": return `<div class="persona-stage">${[1, 2, 3, 4, 5, 6].map(i => `<img src="/assets/img/companions/${["naomi", "angelo", "oliver", "simone", "chloe", "reggie"][i-1]}.webp" alt="" loading="lazy">`).join("")}</div>`;
     default: return sphere();
   }
 }

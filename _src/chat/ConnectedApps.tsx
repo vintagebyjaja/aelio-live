@@ -1,74 +1,20 @@
 import { useState } from "react";
 import { ECOSYSTEM_APPS, ecosystemHandoff } from "../shared/ecosystem.js";
 import { Icon } from "./Icon";
-export function ConnectedApps() {
-  const [details, setDetails] = useState("");
-  return (
-    <section className="panel connected-workspace">
-      <p className="workspace-eyebrow">AELIO CONNECT</p>
-      <h1>Your world, connected thoughtfully.</h1>
-      <p>
-        Open familiar experiences without creating duplicate accounts. Private
-        account linking is available only after an integration is configured and
-        verified.
-      </p>
-      <div className="app-library">
-        {ECOSYSTEM_APPS.map((app) => (
-          <article key={app.id}>
-            <div className="app-card-heading">
-              <span className="app-symbol">
-                <Icon name={app.icon} />
-              </span>
-              <div>
-                <h2>{app.name}</h2>
-                <p>{app.description}</p>
-              </div>
-              <span className="connection-status">Available</span>
-            </div>
-            <ul>
-              {app.capabilities.map((c) => (
-                <li key={c}>{c}</li>
-              ))}
-            </ul>
-            <p className="muted">
-              {app.id === "pathd"
-                ? "AELIO and PATHD share identity, with separate website sessions and subscriptions."
-                : "Website handoff only. API access and account linking are not configured."}
-            </p>
-            <p className="muted">
-              Permissions granted: none. No synchronization or private data
-              access.
-            </p>
-            <div className="app-card-actions">
-              <a href={app.url} target="_blank" rel="noreferrer">
-                Open {app.name} <Icon name="arrow" size={16} />
-              </a>
-              <button
-                onClick={() => setDetails(details === app.id ? "" : app.id)}
-                aria-expanded={details === app.id}
-              >
-                Connection details
-              </button>
-            </div>
-            {details === app.id && (
-              <div className="connection-details">
-                <p>
-                  No linked credential is stored for this app, so there is no
-                  account connection to disconnect. We never link accounts by
-                  matching email alone.
-                </p>
-                <p>
-                  {app.id === "pathd"
-                    ? "Sign in independently with your shared Supabase account. Your AELIO plan does not change your PATHD plan."
-                    : "Verified API/OAuth documentation, provider registration, approved permission scopes and server-side encrypted token storage are required before account linking can be enabled."}
-                </p>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
+export function ConnectedApps({onPlan,onMila}:{onPlan?:(topic:string[])=>void;onMila?:()=>void}) {
+  return <section className="panel connected-workspace">
+    <p className="workspace-eyebrow">AELIO CONNECT</p><h1>More ways to follow your vibe.</h1>
+    <p>Plan here with AELIO, then open the experience you want to explore.</p>
+    <div className="app-library">{ECOSYSTEM_APPS.map(app=><article key={app.id}>
+      <div className="app-card-heading"><span className="app-symbol"><Icon name={app.icon}/></span><div><h2>{app.name}</h2><p>{app.description}</p></div></div>
+      <ul>{app.capabilities.map(c=><li key={c}>{c}</li>)}</ul>
+      <div className="app-card-actions"><a href={app.url} target="_blank" rel="noreferrer">{app.id==='vybr8'?'Explore VYBR8':'Open '+app.name}<Icon name="arrow" size={16}/></a>
+      {app.id==='groove-guide'&&onPlan&&<button onClick={()=>onPlan(['Plan a Trip','',"Help me plan a trip. Ask about where I’d like to go, my dates and my budget.",''])}>Plan a Trip</button>}
+      {app.id==='vybr8'&&onPlan&&<button onClick={()=>onPlan(['Find your vibe','',"Help me explore food, drinks and activities that fit my vibe. Ask about my preferences and location before making suggestions. Don’t invent live availability.",''])}>Explore ideas</button>}
+      {app.id==='pathd'&&onMila&&<button onClick={onMila}>Talk to MILA</button>}</div>
+      {app.id==='pathd'&&<small>Your PATHD plan stays separate from AELIO.</small>}
+    </article>)}</div>
+  </section>;
 }
 export function HandoffCard({ proposal, onMila }: any) {
   const [copied, setCopied] = useState(false),
@@ -81,15 +27,15 @@ export function HandoffCard({ proposal, onMila }: any) {
   }
   return (
     <article className="handoff-card">
-      <p className="workspace-eyebrow">OPTIONAL HANDOFF · NOT AN API RESULT</p>
+      <p className="workspace-eyebrow">YOUR NEXT STEP</p>
       <h3>{p.name}</h3>
       <p>{p.summary}</p>
       {p.origin && <p>From: {p.origin}</p>}
       {p.destination && <p>To: {p.destination}</p>}
       {p.mode && <p>Mode: {p.mode}</p>}
       <small>
-        No route, travel time, venue availability or private account data has
-        been retrieved. Confirm these planning details before using them.
+        These are planning ideas. Check current routes, prices and availability
+        in the experience you open.
       </small>
       <div>
         {p.app === "pathd" && onMila && (

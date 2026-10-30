@@ -92,7 +92,9 @@ export async function sb(
       signal: AbortSignal.timeout(15000),
       headers: {
         apikey: key,
-        authorization: "Bearer " + (token || key),
+        // Supabase's sb_publishable_/sb_secret_ API keys are NOT JWTs.
+        // With no user token, use only apikey; legacy anon/service JWTs may also be Bearer.
+        ...(token ? {authorization:"Bearer "+token}:key.split('.').length===3?{authorization:"Bearer "+key}:{}),
         "content-type": "application/json",
         "accept-profile": schema,
         "content-profile": schema,
@@ -153,6 +155,7 @@ export const table = (env, name, query = "", opts = {}) =>
   sb(env, "/rest/v1/" + name + (query ? "?" + query : ""), opts);
 export const rpc = (env, name, data) =>
   sb(env, "/rest/v1/rpc/" + name, { method: "POST", data, service: true });
+const verifiedRequests=new WeakMap();
 export async function who(req, env, optional = false) {
   const h = req.headers.get("authorization") || "";
   if (!h) {
@@ -161,11 +164,10 @@ export async function who(req, env, optional = false) {
   }
   if (!h.startsWith("Bearer "))
     fail(401, "authentication_failed", "Please sign in again.");
-  const token = h.slice(7);
-  const u = await sb(env, "/auth/v1/user", { token });
-  if (!u?.id || u.is_anonymous)
-    fail(401, "authentication_failed", "Please sign in again.");
-  return { id: u.id, email: u.email, token, user: u };
+  const cached=verifiedRequests.get(req);if(cached?.env===env)return cached.promise;
+  const token=h.slice(7);
+  const promise=(async()=>{const u=await sb(env,"/auth/v1/user",{token});if(!u?.id||u.is_anonymous)fail(401,"authentication_failed","Please sign in again.");return {id:u.id,email:u.email,token,user:u};})();
+  verifiedRequests.set(req,{env,promise});return promise;
 }
 export const hex = (bytes) =>
   Array.from(new Uint8Array(bytes), (b) =>
@@ -186,7 +188,7 @@ export function sessionSecretSource(env){
 }
 export async function keyed(env, s) {
   const source=sessionSecretSource(env);
-  if(!source)fail(503,'session_not_configured','Account services need secure runtime configuration. Please contact the site owner.');
+  if(!source){console.error(JSON.stringify({event:'session_signing_unavailable',explicitPresent:!!env.AELIO_SESSION_SECRET,explicitValid:typeof env.AELIO_SESSION_SECRET==='string'&&env.AELIO_SESSION_SECRET.length>=32,servicePresent:!!env.SUPABASE_SERVICE_ROLE_KEY}));fail(503,'session_not_configured','Account services need secure runtime configuration. Please contact the site owner.');}
   let raw;
   if(source==='explicit')raw=new TextEncoder().encode(env.AELIO_SESSION_SECRET);
   else{
@@ -239,16 +241,10 @@ export async function audit(env, u, action, target) {
   });
 }
 export async function member(env, u, product = "aelio") {
-  const rows = await table(
-    env,
-    "memberships",
-    "user_id=eq." + u.id + "&product_id=eq." + product,
-    { schema: "core", token: u.token },
-  );
-  if (!rows?.some((x) => x.status === "active"))
-    fail(
-      403,
-      "membership_suspended",
-      "This application membership is unavailable.",
-    );
+  let active=await sb(env,"/rest/v1/rpc/app_product_access",{token:u.token,method:"POST",data:{product}});
+  if(!active){
+    await sb(env,"/rest/v1/rpc/app_account_bootstrap",{token:u.token,method:"POST",data:{}});
+    active=await sb(env,"/rest/v1/rpc/app_product_access",{token:u.token,method:"POST",data:{product}});
+  }
+  if(!active)fail(403,"membership_suspended","This application membership is unavailable.");
 }

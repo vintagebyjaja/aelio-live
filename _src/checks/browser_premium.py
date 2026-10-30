@@ -39,11 +39,12 @@ with sync_playwright() as p:
   assert 'plan a trip' in page.get_by_role('textbox',name='Message',exact=True).input_value()
   assert page.locator('.messages .bubble').count()==0
   nav(page,width,'Settings');page.get_by_role('heading',name='Your AELIO, your way.',exact=True).wait_for()
-  page.locator('.settings-workspace').get_by_role('button',name='Connected Apps',exact=True).click();page.get_by_role('heading',name='Your world, connected thoughtfully.',exact=True).wait_for()
+  page.locator('.settings-workspace').get_by_role('button',name='Connected Apps',exact=True).click();page.get_by_role('heading',name='More ways to follow your vibe.',exact=True).wait_for()
   assert page.get_by_role('link',name='Open Groove Guide',exact=False).get_attribute('href')=='https://grooveville.org/guide/'
-  assert page.get_by_role('link',name='Open VYBR8',exact=False).get_attribute('href')=='https://vybr8.live/'
-  assert page.locator('.connection-status').all_text_contents()==['Available','Available','Available']
-  page.get_by_role('button',name='Connection details',exact=True).first.click();page.get_by_text('No linked credential is stored',exact=False).wait_for()
+  assert page.get_by_role('link',name='Explore VYBR8',exact=False).get_attribute('href')=='https://vybr8.live/'
+  assert page.get_by_role('button',name='Plan a Trip',exact=True).is_visible()
+  assert not page.get_by_text('Permissions granted: none',exact=False).count()
+  assert not page.get_by_role('button',name='Connect Account',exact=True).count()
   # All four themes preview and persist via the existing appearance API.
   for title,design in [('OG Light','og-light'),('OG Dark','og-dark'),('Ocean Fresh','ocean-fresh'),('Chocolate Cream','chocolate-cream')]:
    nav(page,width,'Settings');page.get_by_role('button',name='Appearance & themes',exact=False).click()

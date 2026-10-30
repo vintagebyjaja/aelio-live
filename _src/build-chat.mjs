@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 await build({
   entryPoints: ["_src/chat/main.tsx"],
   bundle: true,
@@ -11,8 +11,10 @@ await build({
   jsx: "automatic",
   define: { "process.env.NODE_ENV": '"production"' },
 });
-const html =
+const version=JSON.parse(readFileSync("package.json","utf8")).version;
+const htmlBase =
   '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>AELIO · Your Space</title><link rel="icon" href="/favicon.webp"><link rel="stylesheet" href="/assets/chat/app.css"></head><body><div id="root"></div><script src="/assets/config.js"></script><script type="module" src="/assets/chat/app.js"></script></body></html>';
+const html=htmlBase.replace("/assets/chat/app.css",`/assets/chat/app.css?v=${version}`).replace("/assets/chat/app.js",`/assets/chat/app.js?v=${version}`);
 for (const path of ["chat", "account", "auth/callback", "auth/reset"]) {
   mkdirSync("public/" + path, { recursive: true });
   writeFileSync("public/" + path + "/index.html", html);

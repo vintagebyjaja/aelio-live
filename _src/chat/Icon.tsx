@@ -53,30 +53,4 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
     </svg>
   );
 }
-export function Orb({
-  state = "idle",
-  small = false,
-}: {
-  state?: string;
-  small?: boolean;
-}) {
-  return (
-    <div
-      className={"aelio-orb " + (small ? "orb-small" : "")}
-      data-state={state}
-      role="img"
-      aria-label={
-        state === "listening"
-          ? "AELIO is listening"
-          : state === "thinking"
-            ? "AELIO is responding"
-            : state === "error"
-              ? "AELIO needs attention"
-              : "AELIO"
-      }
-    >
-      <span className="orb-metal" />
-      <span className="orb-halo" />
-    </div>
-  );
-}
+export { AelioOrb as Orb } from "./AelioOrb";

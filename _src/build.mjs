@@ -3,12 +3,14 @@
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { NAV, PAGES, LINK_LABELS } from "./content.mjs";
+import { publicPage } from "./public-experience.mjs";
+import { NAV, PAGES as SOURCE_PAGES, LINK_LABELS } from "./content.mjs";
 import { visual } from "./visuals.mjs";
 import { scene, hash } from "./scenes.mjs";
 import { DISC, VAL } from "./panels.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
+const PAGES=SOURCE_PAGES.map(publicPage);
 const BY = Object.fromEntries(PAGES.map(p => [p.path, p]));
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const STATUS = { live: ["Live", "ok"], prototype: ["Prototype", "warn"], planned: ["Planned", "plan"], concept: ["Concept preview", "plan"] };
@@ -49,23 +51,23 @@ function header(cur) {
     <button class="icon-btn" id="searchBtn" aria-label="Search AELIO"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2"/></svg></button>
     <a class="brain-btn" href="/chat/">Chat</a>
     <a class="brain-btn" href="/brain/" title="Brain"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3h0V4zm6 0a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3V4z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Brain</a>
-    <button class="outline-btn" data-early>Get Early Access →</button>
+    <button class="outline-btn" data-early>Open your space →</button>
     <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
   </div></div>
-  <div class="m-panel" id="mPanel" hidden><a href="/" class="m-home">Home</a>${mobile}<a href="/chat/" class="m-brain">Chat</a><a href="/brain/" class="m-brain">Brain</a><button class="gold-btn" data-early>Get Early Access →</button></div>
+  <div class="m-panel" id="mPanel" hidden><a href="/" class="m-home">Home</a>${mobile}<a href="/chat/" class="m-brain">Chat</a><a href="/brain/" class="m-brain">Brain</a><button class="gold-btn" data-early>Open your space →</button></div>
 </header>`;
 }
 
 const footer = () => `
 <section class="earth" aria-hidden="true"><div class="earth-word">DREAM BEYOND</div><div class="earth-glow"></div></section>
 <footer class="site-foot"><div class="foot-inner">
-  <div><a class="logo" href="/"><span class="lv">Λ</span>ELIO<i>.</i></a><img class="foot-emblem" src="/assets/img/brand/dream-beyond-logo-675.webp" alt="Dream Beyond" width="150" height="78" loading="lazy"><p class="motto">Dream beyond. Never say never.</p><p class="dim small">© ${new Date().getFullYear()} Grooveville LLC. AELIO is in development: features are labelled Live, Prototype, Planned or Concept.</p></div>
+  <div><a class="logo" href="/"><span class="lv">Λ</span>ELIO<i>.</i></a><img class="foot-emblem" src="/assets/img/brand/dream-beyond-logo-675.webp" alt="Dream Beyond" width="150" height="78" loading="lazy"><p class="motto">Dream beyond. Never say never.</p><p class="dim small">© ${new Date().getFullYear()} Grooveville LLC. Your space. Your energy.</p></div>
   ${NAV.map(n => `<div><div class="f-h">${esc(n.label)}</div>${n.groups.flatMap(g => g.links).slice(0, 5).map(h => `<a href="${h}">${esc(info(h).title === "Overview" ? n.label : info(h).title)}</a>`).join("")}</div>`).join("")}
 </div></footer>
 <div class="modal" id="earlyModal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="emT">
-  <button class="modal-x" data-close aria-label="Close">×</button><div class="eyebrow">AELIO</div><h2 id="emT">Get Early Access</h2>
-  <p>AELIO is in development. The waitlist isn't connected yet, so this preview doesn't collect email addresses.</p>
-  <a class="gold-btn" href="/brain/">Play the brain game while you wait →</a></div></div>
+  <button class="modal-x" data-close aria-label="Close">×</button><div class="eyebrow">AELIO</div><h2 id="emT">Make yourself at home.</h2>
+  <p>Start a conversation, explore your ideas, or sign in to keep your history.</p>
+  <a class="gold-btn" href="/chat/">Talk to AELIO →</a></div></div>
 <div class="search" id="search" hidden><div class="search-card" role="dialog" aria-modal="true" aria-label="Search AELIO">
   <input id="searchIn" type="search" placeholder="Search AELIO: Green Guardians, Agent Transfer, University…" autocomplete="off">
   <div id="searchOut" class="search-out"></div></div></div>
@@ -114,7 +116,7 @@ function sceneFor(p) {
 }
 
 function hero(p) {
-  const st = p.status ? `<span class="status s-${STATUS[p.status][1]}">${STATUS[p.status][0]}</span>` : "";
+  const st = "";
   const ctas = [p.cta, p.cta2].filter(Boolean).map((c, i) => `<a class="${i ? "dark-btn" : "gold-btn"}" href="${c[1]}">${esc(c[0])} →</a>`).join("");
   const focal = p.overview ? "" : `<div class="lens" data-tilt>${visual(p.visual)}</div>`;
   return `<section class="hero hero-env ${p.overview ? "hero-xl" : "hero-sub"}">${sceneFor(p)}<div class="hero-grid">
@@ -123,21 +125,14 @@ function hero(p) {
       ${ctas ? `<div class="actions">${ctas}</div>` : ""}</div>${focal}</div></section>`;
 }
 
-const plansBlock = () => `<section class="band"><div class="wrap plans">
-  <div class="plan" id="free"><div class="eyebrow">AELIO Free</div><div class="price">$0</div>
-    <p>Meet your chosen general personalities, use Main Pal, and explore AELIO with a rolling five-hour allowance and creation access.</p>
-    <a class="dark-btn" data-early href="#">Get Early Access →</a></div>
-  <div class="plan plan-live" id="live"><div class="eyebrow">AELIO Live · Proposed price</div><div class="price">$14.99<small> / month</small></div>
-    <p>Expanded creation tools, specialist agents, agent group chats, training opportunities, and the ability to publish an approved agent.</p>
-    <a class="gold-btn" data-early href="#">Join Live Waitlist →</a></div>
-  <p class="dim small center full">Proposed pricing. Billing isn't enabled. Optional AELIO Credits let members keep going after their allowance runs out, and they never charge automatically.</p></div></section>`;
+const plansBlock = () => `<section class="band"><div class="wrap plans"><div class="plan" id="free"><div class="eyebrow">AELIO Free</div><div class="price">$0</div><p>Your space to talk, plan and create. See your current message allowance in Account.</p><a class="gold-btn" href="/account/">Start with Free →</a></div><div class="plan plan-live" id="live"><div class="eyebrow">Make it yours</div><p>Explore personal agents, conversation styles and your own appearance settings.</p><a class="dark-btn" href="/chat/">Explore your space →</a></div><p class="dim small center full">Free is the available plan today. Checkout is closed; you won’t be charged.</p></div></section>`;
 
 function previewBlock(p) {
   if (p.preview === "personas") {
     const names = ["Tech Savvy", "Young & Hip", "Proper & British", "Classy Gyal", "OMG Girl!", "The Homie"];
     const lines = ["Good morning. Your plans are ready whenever you are.", "Yo, what's the move? Let's get it.", "Good morning. Shall we review the day's agenda?", "Hey love, let's make today look effortless.", "OMG hi!! Okay, what are we doing today?!", "What's good? I got you, let's figure it out."];
-    return `<section class="band"><div class="wrap"><div class="eyebrow">Concept preview</div><h2 class="h2">Say hello to each personality.</h2>
-      <div class="persona-pick" data-personas='${esc(JSON.stringify(lines)).replace(/'/g, "&#39;")}'>${names.map((n, i) => `<button class="persona" aria-pressed="${i === 0}"><img src="/assets/img/persona-${i + 1}.png" alt="" loading="lazy"><b>${esc(n)}</b></button>`).join("")}</div>
+    return `<section class="band"><div class="wrap"><div class="eyebrow">Communication examples</div><h2 class="h2">Say hello to each personality.</h2>
+      <div class="persona-pick" data-personas='${esc(JSON.stringify(lines)).replace(/'/g, "&#39;")}'>${names.map((n, i) => `<button class="persona" aria-pressed="${i === 0}"><img src="/assets/img/companions/${["naomi", "angelo", "oliver", "simone", "chloe", "reggie"][i]}.webp" alt="" loading="lazy"><b>${esc(n)}</b></button>`).join("")}</div>
       <blockquote class="persona-line" aria-live="polite">“${esc(lines[0])}”</blockquote>
       <p class="dim small">Example greetings written for this page, not live AI output.</p></div></section>`;
   }
@@ -184,8 +179,8 @@ If you cannot provide a ZIP or downloadable file, simply return the profile as t
       <div class="loop">${["Monitor", "Predict", "Optimize", "Verify", "Report"].map(s => `<span>${s}</span>`).join("<i></i>")}</div>
       <p class="dim small center">Live readings appear only inside the private Studio Brain, from real hardware sensors. No public numbers are shown until they're measured.</p></div></section>`;
   }
-  return `<section class="band"><div class="wrap"><div class="concept"><span class="status s-plan">Concept preview</span>
-    <p>This is how <b>${esc(p.title)}</b> is planned to work. It isn't operational yet, and the Brain will show it when it is.</p></div></div></section>`;
+  return `<section class="band"><div class="wrap"><div class="concept">
+    <p>Explore <b>${esc(p.title)}</b> in a conversation and choose a useful next step.</p><a class="dark-btn" href="/chat/">Talk it through with AELIO →</a></div></div></section>`;
 }
 
 function subpage(p) {
@@ -198,12 +193,12 @@ function subpage(p) {
     ${(p.related || []).map(h => { const i = BY[h] ? BY[h] : { title: info(h).title, lede: info(h).text }; return `<a href="${h}"><b>${esc(i.title)}</b><span>${esc((i.lede || "").split(/[.!]/)[0])}</span><i>→</i></a>`; }).join("")}
     </div></div></section>`;
   const cta = `<section class="band cta-band"><div class="wrap center"><h2 class="h2">Dream beyond with AELIO.</h2>
-    <div class="actions center"><button class="gold-btn" data-early>Get Early Access →</button><a class="dark-btn" href="/aelio/">Explore AELIO</a></div></div></section>`;
+    <div class="actions center"><button class="gold-btn" data-early>Open your space →</button><a class="dark-btn" href="/aelio/">Explore AELIO</a></div></div></section>`;
   return hero(p) + what + how + (p.plans ? plansBlock() : "") + previewBlock(p) + related + cta;
 }
 
 const firstSentence = (t) => (t || "").split(/(?<=[.!?])\s/)[0];
-const statusTag = (pg) => pg && pg.status ? `<span class="status s-${STATUS[pg.status][1]}">${STATUS[pg.status][0]}</span>` : "";
+const statusTag = () => "";
 const pageInfo = (h) => BY[h] ? { title: BY[h].title, text: firstSentence(BY[h].lede), pg: BY[h] } : { title: info(h).title, text: info(h).text, pg: null };
 
 function sectionBody(p) {
@@ -211,10 +206,10 @@ function sectionBody(p) {
   const subs = [...new Set(n.groups.flatMap(g => g.links))].filter(h => h !== p.path);
   const rows = (hrefs) => `<div class="list-rows">${hrefs.map(h => { const i = pageInfo(h); return `<a href="${h}"><b>${esc(i.title)}</b><span>${esc(i.text)}</span></a>`; }).join("")}</div>`;
   if (p.nav === "aelio") {
-    const xp = [["/aelio/personalities/", "Personalities", "Six energies. Pick the one that fits you.", "personas"], ["/aelio/main-pal/", "Main Pal", "Your constant partner, every day.", "sphere"],
+    const xp = [["/aelio/personalities/", "Your companions", "Distinct companions, familiar faces and room for your own agents.", "personas"], ["/aelio/main-pal/", "Main Pal", "Your constant partner, every day.", "sphere"],
       ["/dream-beyond/dream-spaces/", "Dream Spaces", "Dedicated workspaces for every project.", "holo"], ["/dream-beyond/agent-team/", "Agent Team", "Multiple perspectives, one conversation.", "campus"], ["/create/", "Create", "Turn ideas into reality.", "wireframe"]];
-    const imgs = [1, 2, 3, 4, 5, 6].map(k => `<img src="/assets/img/persona-${k}.png" alt="" loading="lazy">`).join("");
-    return `<section class="band"><div class="wrap"><div class="sec-h"><h2 class="h2">Experiences built <span class="gold">around you.</span></h2><p>Each part of AELIO has its own job. Open one to see what it does today and what's coming.</p></div>
+    const imgs = [1, 2, 3, 4, 5, 6].map(k => `<img src="/assets/img/companions/${["naomi", "angelo", "oliver", "simone", "chloe", "reggie"][k-1]}.webp" alt="" loading="lazy">`).join("");
+    return `<section class="band"><div class="wrap"><div class="sec-h"><h2 class="h2">Experiences built <span class="gold">around you.</span></h2><p>Each part of AELIO has its own job. Find a conversation, explore an idea and choose your next step.</p></div>
       <div class="bento">${xp.map(([h, t, d, v], k) => `<a class="xp xp-${k + 1}" href="${h}">${v === "personas" ? `<div class="persona-wall">${imgs}</div>` : `<div class="xp-vis">${visual(v)}</div>`}<small>${k ? "Explore" : "Start here"}</small><b>${t}</b><span>${d}</span></a>`).join("")}</div>
       ${rows(subs.filter(h => !xp.some(x => x[0] === h)))}</div></section>`;
   }
@@ -228,7 +223,7 @@ function sectionBody(p) {
   if (p.nav === "tech") {
     const order = ["/technology/native/", "/technology/dream-code/", "/technology/dream-deploy/", "/technology/dream-cloud/", "/technology/dream-memory/", "/technology/dream-guard/", "/technology/green-guardians/"];
     const kind = { "/technology/native/": "Core model", "/technology/dream-code/": "Build", "/technology/dream-deploy/": "Ship", "/technology/dream-cloud/": "Run", "/technology/dream-memory/": "Remember", "/technology/dream-guard/": "Protect", "/technology/green-guardians/": "Sustain" };
-    return `<section class="band"><div class="wrap"><div class="sec-h"><h2 class="h2">The AELIO <span class="gold">stack.</span></h2><p>Every layer is AELIO's own. Each one shows its real status: Live, Prototype or Planned.</p></div>
+    return `<section class="band"><div class="wrap"><div class="sec-h"><h2 class="h2">The AELIO <span class="gold">stack.</span></h2><p>Explore the ideas and safeguards behind your AELIO experience.</p></div>
       <div class="stack">${order.map(h => { const pg = BY[h]; return `<a class="layer${h.includes("native") ? " core" : h.includes("green") ? " green" : ""}" href="${h}"><span class="lk">${kind[h]}</span><b>${esc(pg.title)}</b>${statusTag(pg)}<i>→</i><span>${esc(firstSentence(pg.lede))}</span></a>`; }).join("")}</div>
       <p class="honest">System readings (temperature, power, cooling) are shown only from real sensors inside the private Studio Brain. This page never displays invented numbers.</p></div></section>`
       + (p.published ? previewBlock({ preview: "published" }) : "");
@@ -308,8 +303,8 @@ function page(p) {
 for (const p of PAGES) {
   const out = join(ROOT, p.path, "index.html");
   mkdirSync(dirname(out), { recursive: true });
-  writeFileSync(out, page(p));
-  if (p.home) { mkdirSync(join(ROOT,'explore'),{recursive:true}); writeFileSync(join(ROOT,'explore','index.html'),page(p)); }
+  writeFileSync(out, page(p).replace(/[\t ]+$/gm,""));
+  if (p.home) { mkdirSync(join(ROOT,'explore'),{recursive:true}); writeFileSync(join(ROOT,'explore','index.html'),page(p).replace(/[\t ]+$/gm,'')); }
 }
 writeFileSync(join(ROOT, "assets", "search-index.json"), JSON.stringify(PAGES.filter(p => !p.home).map(p => ({
   url: p.path, title: p.title, section: (NAV.find(n => n.key === p.nav) || {}).label || "", text: p.lede }))));

@@ -34,10 +34,10 @@ export const DESIGNS = [
     name: "Chocolate Cream",
     description: "Warm, intimate city nights",
     light: false,
-    accent: "#cba276",
+    accent: "#D5AD83",
     scene: "chocolate-cream.webp",
     mobileScene: "chocolate-cream.webp",
-    surface: "#2c1b15",
+    surface: "#302019",
   },
 ];
 export function designOf(ap: any = {}) {

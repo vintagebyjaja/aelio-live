@@ -1,3 +1,4 @@
+import {consumerMessage} from "../shared/experience.js";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api, ApiError, currentUser, isDev, post, setDevToken, signOut, supa } from "./api";
@@ -54,9 +55,9 @@ function SignIn({ onDone, note }: any) {
           if (r.confirmEmail) { setMsg("Check your email to confirm your account, then sign in."); setBusy(false); return; }
         } else await supa.signInWithPassword(email, pw);
       }
-      else { throw new Error("Supabase sign-in is not configured. Open Account for connection details."); }
+      else { throw new Error("Sign-in needs a moment. Please try again shortly."); }
       onDone();
-    } catch (e: any) { setErr(e.message || String(e)); }
+    } catch (e: any) { setErr(consumerMessage(e.code,e.message)); }
     setBusy(false);
   }
   return (

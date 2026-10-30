@@ -1,3 +1,13 @@
+# AELIO 1.0.5 — migration preview
+
+Review branch only: main is unchanged and awaits your explicit approval. [Preview gallery](docs/previews/v1.0.5/README.md) · [Setup and SQL order](config/V1_0_5_SETUP.md) · [Validation and limitations](docs/releases/AELIO_v1.0.5_VALIDATION.md).
+
+Actual local browser render with synthetic test data; not a live deployment:
+
+![AELIO migration preview](docs/previews/v1.0.5/home-desktop.png)
+
+---
+
 # AELIO
 
 Existing Dream Beyond / Grooveville LLC platform, extended with the Dream Box messaging experience. **Local delivery candidate AELIO_v1.0.1** — not deployed or published.

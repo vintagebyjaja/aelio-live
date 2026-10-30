@@ -1,8 +1,8 @@
+import {consumerMessage} from "../shared/experience.js";
 import { createSupabaseAuth } from "../brain/supabase-auth";
 const cfg = (window as any).AELIO_CONFIG?.supabase;
 export const authConfigurationError =
-  cfg?.configurationError?.message ||
-  "Supabase sign-in needs a public publishable or anon key in Cloudflare. Your password has not been sent.";
+  consumerMessage("auth_not_configured",cfg?.configurationError?.message);
 export const auth =
   cfg?.url && cfg?.anonKey && !cfg?.configurationError
     ? createSupabaseAuth({
@@ -21,6 +21,7 @@ export async function call(path: string, method = "GET", data?: any) {
         "content-type": "application/json",
         ...(token ? { authorization: "Bearer " + token } : {}),
       },
+      signal: AbortSignal.timeout(20000),
       body: data === undefined ? undefined : JSON.stringify(data),
     });
   } catch {
@@ -36,7 +37,7 @@ export async function call(path: string, method = "GET", data?: any) {
       "AELIO returned an unexpected response. Try again shortly.",
     );
   }
-  if (!r.ok) throw new Error(d.error || "Request failed.");
+  if (!r.ok) throw Object.assign(new Error(consumerMessage(d.code,d.error)),{code:d.code,requestId:d.request_id});
   return d;
 }
 export async function upload(
@@ -57,7 +58,7 @@ export async function upload(
     body: file,
   });
   const d = await r.json();
-  if (!r.ok) throw new Error(d.error);
+  if (!r.ok) throw new Error(consumerMessage(d.code,d.error));
   return d.file;
 }
 export async function fileURL(id: string) {

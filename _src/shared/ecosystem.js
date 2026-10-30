@@ -5,10 +5,10 @@ export const ECOSYSTEM_APPS = Object.freeze([
     name: "Groove Guide",
     url: "https://grooveville.org/guide/",
     icon: "compass",
-    description: "Travel and navigation",
+    description: "Your personal travel and navigation companion.",
     capabilities: [
-      "Travel planning handoff",
-      "Open the standalone Groove Guide",
+      "Plan a trip",
+      "Explore destinations",
     ],
     intent: "travel_planning",
   },
@@ -17,10 +17,10 @@ export const ECOSYSTEM_APPS = Object.freeze([
     name: "VYBR8",
     url: "https://vybr8.live/",
     icon: "sparkle",
-    description: "Food, drink and lifestyle discovery",
+    description: "Discover places, experiences, and moments that match your vibe.",
     capabilities: [
-      "Food and lifestyle discovery handoff",
-      "Open the standalone VYBR8",
+      "Explore food and drinks",
+      "Discover experiences",
     ],
     intent: "food_discovery",
   },
@@ -31,8 +31,8 @@ export const ECOSYSTEM_APPS = Object.freeze([
     icon: "agents",
     description: "Career and life with MILA",
     capabilities: [
-      "Shared Supabase identity",
-      "Independent subscription and sign-in session",
+      "Your career and life with MILA",
+      "Explore your next move",
     ],
     intent: "career_support",
   },
@@ -58,10 +58,10 @@ export function ecosystemHandoff(input) {
     permissions: [],
     dataRetrieved: false,
   };
-  if (input.origin !== undefined) result.origin = clean(input.origin, 200);
-  if (input.destination !== undefined)
+  if (input.origin != null) result.origin = clean(input.origin, 200);
+  if (input.destination != null)
     result.destination = clean(input.destination, 200);
-  if (input.mode !== undefined) {
+  if (input.mode != null) {
     if (!["driving", "walking", "unspecified"].includes(input.mode))
       throw Error("Unsupported travel mode.");
     result.mode = input.mode;

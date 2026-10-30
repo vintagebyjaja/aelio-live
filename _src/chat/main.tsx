@@ -1,3 +1,6 @@
+import {AgentAvatar,CompanionNavigation,CompanionLibrary} from "./Companions";
+import {companion} from "../shared/companions.js";
+import {AelioLoading,FeatureBoundary,ConnectionNotice,friendly} from "./Experience";
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { auth, call, upload, fileURL, download } from "./client";
@@ -93,6 +96,9 @@ function App() {
     [suggestion, setSuggestion] = useState(""),
     [proposals, setProposals] = useState<Record<string, any[]>>({}),
     [allowReminders, setAllowReminders] = useState(false);
+  const [mention,setMention]=useState(""),[searchHits,setSearchHits]=useState<any[]>([]);
+  useEffect(()=>{let live=true;if(!session||search.trim().length<2){setSearchHits([]);return;}const timer=setTimeout(()=>{call('/conversations/search?q='+encodeURIComponent(search.trim().slice(0,100))).then(result=>{if(live)setSearchHits(result.conversations);}).catch(error=>{if(live)setErr(friendly(error));});},250);return()=>{live=false;clearTimeout(timer);};},[search,session?.user?.id]);
+  const listedThreads=search.length>=2?[...searchHits,...threads.filter(thread=>!searchHits.some(found=>found.id===thread.id))]:threads;
   const [editor, setEditor] = useState<any>(null),
     [appearance, setAppearance] = useState<any>(null),
     [items, setItems] = useState<any[]>([]),
@@ -104,24 +110,31 @@ function App() {
     cache = useRef<Record<string, any[]>>({}),
     end = useRef<HTMLDivElement | null>(null),
     input = useRef<HTMLTextAreaElement | null>(null);
+  function clearPrivateState(){
+    Object.values(generations.current).forEach(controller=>controller.abort());
+    setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setBackgroundURL('');
+    cache.current={};backgroundCache.current.forEach(url=>URL.revokeObjectURL(url));backgroundCache.current.clear();
+  }
+  useEffect(()=>{const changed=(event:StorageEvent)=>{if(event.key!=='aelio.auth')return;const id=(value:string|null)=>{try{return value?JSON.parse(value)?.user?.id:null;}catch{return null;}};if(!event.newValue||id(event.oldValue)!==id(event.newValue)){clearPrivateState();location.assign('/chat/');}};addEventListener('storage',changed);return()=>removeEventListener('storage',changed);},[]);
   async function reload() {
     setAccountError("");
     try {
       const s = await auth?.session();
+      const identityChanged=!!session&&(!s||session.user?.id!==s.user?.id);
+      if(identityChanged)clearPrivateState();
       setSession(s || null);
       if (s) {
         try {
-          const a = await call("/account");
+          const a = await call("/account").catch(error=>{setAccountError(friendly(error));return null;});
           setAccount(a);
-          setGlobalAppearance(a.preferences.appearance || {});
-          setConsent(a.preferences.external_ai_consent);
+          if(a){setGlobalAppearance(a.preferences.appearance || {});setConsent(a.preferences.external_ai_consent);}
           const [as, cs] = await Promise.all([
             call("/agents"),
             call("/conversations"),
           ]);
           setAgents(as.agents);
           setThreads(cs.conversations);
-          if (!cur || cur.guest_hash) {
+          if (!cur || cur.guest_hash || identityChanged) {
             const q = new URLSearchParams(location.search);
             const mila = q.get("companion") === "mila";
             const agent = as.agents.find(
@@ -137,7 +150,7 @@ function App() {
             setHome(!new URLSearchParams(location.search).has("companion"));
           }
         } catch (e: any) {
-          setAccountError(e.message);
+          setAccountError(friendly(e));
         }
       } else {
         setAccount(null);
@@ -147,7 +160,7 @@ function App() {
         loadMessages(g.conversation.id);
       }
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
       setSession(null);
     }
   }
@@ -195,7 +208,7 @@ function App() {
       cache.current[id] = r.messages;
       setMessages((m) => ({ ...m, [id]: r.messages }));
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   function select(t: any, record = true) {
@@ -216,6 +229,10 @@ function App() {
     if (!busy[t.id]) loadMessages(t.id);
     input.current?.focus();
   }
+  async function openCompanion(agent:any){
+    const thread=threads.find(t=>t.permanent_key===agent.kind)||threads.find(t=>t.participants.length===1&&t.participants[0]===agent.id);
+    if(thread)select(thread);else await newThread([agent.id],companion(agent.kind)?.title||agent.name,agent.kind==='mila'?'pathd':'aelio');
+  }
   async function newThread(ids: string[], title: string, product = "aelio") {
     try {
       const r = await call("/conversations", "POST", {
@@ -228,7 +245,7 @@ function App() {
       setPanel("");
       return r.conversation;
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   async function change(fields: any) {
@@ -238,7 +255,7 @@ function App() {
       setThreads((ts) => ts.map((t) => (t.id === cur.id ? r.conversation : t)));
       setAppearance(null);
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   async function remove() {
@@ -249,7 +266,7 @@ function App() {
       setCur(null);
       setPanel("agents");
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   async function send(
@@ -386,10 +403,10 @@ function App() {
       if (session)
         call("/account")
           .then(setAccount)
-          .catch(() => {});
+          .catch(error => setAccountError(friendly(error)));
       if (!suggest) await loadMessages(id, true);
     } catch (e: any) {
-      setErr(e.name==='AbortError'?'Generation stopped. Your draft is available to retry.':e.message);
+      setErr(e.name==='AbortError'?'Generation stopped. Your draft is available to retry.':friendly(e));
       if (!suggest){setDrafts((d) => ({ ...d, [id]: content }));setRetryable(current=>({...current,[id]:true}));}
     } finally {
       delete generations.current[id];setWaiting(current=>({...current,[id]:false}));
@@ -417,7 +434,7 @@ function App() {
       if (p === "files" || p === "projects")
         setFiles((await call("/files")).files);
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   function navigate(view: string, record = true) {
@@ -477,7 +494,7 @@ function App() {
         const mainPal = agents.find((a) => a.kind === "aelio");
         if (!mainPal) {
           setErr(
-            "Your Main Pal is still loading. Retry the account connection.",
+            "Your Main Pal needs a moment. Try opening your space again.",
           );
           return;
         }
@@ -525,7 +542,7 @@ function App() {
     if (session) {
       const a = agents.find((a) => a.kind === "aelio");
       if (!a) {
-        setErr("Your Main Pal is still loading. Retry the account connection.");
+        setErr("Your Main Pal needs a moment. Try opening your space again.");
         return;
       }
       t = await newThread([a.id], topic[0]);
@@ -550,7 +567,7 @@ function App() {
         "Appearance saved. Agents using your default will follow it.",
       );
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   const minimalBackground = ["Minimal Black", "Minimal White"].includes(
@@ -579,13 +596,13 @@ function App() {
           }
           if (live) setBackgroundURL(v);
         })
-        .catch((e: any) => setErr(e.message));
+        .catch((e: any) => setErr(friendly(e)));
     return () => {
       live = false;
     };
   }, [ap.file_id]);
   if (session === undefined)
-    return <main className="loading">Opening your space…</main>;
+    return <main className="loading"><AelioLoading onRetry={reload}/></main>;
   if (panel === "account" && !session)
     return (
       <main className="auth-page">
@@ -617,7 +634,7 @@ function App() {
         } as any
       }
     >
-      <header className="topbar">
+      <ConnectionNotice/><header className="topbar">
         <button
           aria-label="Open conversations"
           aria-expanded={drawer || (!collapsed && innerWidth > 900)}
@@ -721,7 +738,7 @@ function App() {
           ))}
         </nav>
         <div className="side-head">
-          <h2>Recent chats</h2>
+          <h2>Your space</h2>
           <button
             aria-label="Close conversations"
             onClick={() => setDrawer(false)}
@@ -743,42 +760,13 @@ function App() {
             onChange={(e: any) => setSearch(e.target.value)}
           />
         </label>
-        <button
-          className="permanent"
-          onClick={() => {
-            const a = agents.find((a) => a.kind === "aelio");
-            const t = threads.find(
-              (t) => t.participants.length === 1 && t.participants[0] === a?.id,
-            );
-            if (t) select(t);
-            else if (a) newThread([a.id], "AELIO");
-            else setPanel("");
-          }}
-        >
-          <b>AELIO</b>
-          <small>Your Original Main Pal · Permanent</small>
-        </button>
-        {session && (
-          <button
-            className="mila-shortcut"
-            onClick={() => {
-              const a = agents.find((a) => a.kind === "mila");
-              const t = threads.find(
-                (t) =>
-                  t.participants.length === 1 && t.participants[0] === a?.id,
-              );
-              if (t) select(t);
-              else if (a) newThread([a.id], "MILA");
-            }}
-          >
-            MILA <small>Career & Life Companion</small>
-          </button>
-        )}
-        {[...threads]
+        {session?<CompanionNavigation agents={agents} threads={threads} current={cur} query={search} onOpen={openCompanion} onSelect={select}/>:<button className="permanent" onClick={()=>{setPanel("");setHome(false);}}>AELIO · Your Main Pal</button>}
+        <div className="side-head"><h2>Recent Conversations</h2></div>
+        {[...listedThreads]
           .filter(
             (t) =>
-              !t.archived &&
-              [t.title, t.subtitle]
+              !t.archived && (!t.permanent_key||!!search) &&
+              [t.title, t.subtitle, t.search_preview, ...((messages[t.id]||cache.current[t.id]||t.app_messages||[]).map((m:any)=>m.content))]
                 .join(" ")
                 .toLowerCase()
                 .includes(search.toLowerCase()),
@@ -790,7 +778,7 @@ function App() {
               className={"thread " + (cur?.id === t.id ? "selected" : "")}
               onClick={() => select(t)}
             >
-              <span className="avatar">{t.title.slice(0, 1)}</span>
+              <AgentAvatar agent={agents.find(a=>a.id===t.participants[0])} group={t.participants.length>1}/>
               <span>
                 <b>
                   {t.pinned ? "★ " : ""}
@@ -802,7 +790,7 @@ function App() {
                     "Your conversation"}
                 </small>
                 <small>
-                  {(messages[t.id] || cache.current[t.id])
+                  {t.search_preview || (messages[t.id] || cache.current[t.id])
                     ?.slice(-1)[0]
                     ?.content?.slice(0, 70) ||
                     t.app_messages?.[0]?.content?.slice(0, 70) ||
@@ -849,13 +837,13 @@ function App() {
           One Mind. Your Energy.
           <br />
           {session
-            ? "Free plans · Paid plans coming soon"
+            ? "Your Free account"
             : remaining === null
               ? "Guest chat"
               : remaining + " guest messages remaining"}
         </footer>
       </aside>
-      <main className="workspace">
+      <main className="workspace"><FeatureBoundary key={panel||(home?"home":cur?.id||"chat")} onExit={()=>navigate("home")}>
         {err && (
           <div className="error" role="alert">
             {err}
@@ -921,7 +909,7 @@ function App() {
             onResume={select}
           />
         ) : panel === "connected-apps" ? (
-          <ConnectedApps />
+          <ConnectedApps onPlan={(topic:any)=>startTopic(topic)} onMila={()=>{const mila=agents.find(a=>a.kind==="mila");if(mila)openCompanion(mila);else setPanel("account");}}/>
         ) : panel === "settings" ? (
           <section className="panel settings-workspace">
             <p className="workspace-eyebrow">MAKE YOURSELF AT HOME</p>
@@ -1003,9 +991,8 @@ function App() {
               <Icon name="arrow" size={18} />
             </a>
             <p className="muted">
-              Image, video and execution tools depend on the configured Brain
-              capabilities. No generated output is claimed before a real service
-              returns it.
+              Start with a brief, a story or a piece of code. You can develop the
+              idea here and take it to your chosen creative tools.
             </p>
           </section>
         ) : panel === "projects" ? (
@@ -1051,7 +1038,7 @@ function App() {
                     file_id: file.id,
                   });
                 } catch (e: any) {
-                  setErr(e.message);
+                  setErr(friendly(e));
                 }
               }}
             />
@@ -1096,34 +1083,22 @@ function App() {
             >
               Create agent
             </button>
-            {agents.map((a) => (
-              <article key={a.id}>
-                <h2>
-                  {a.name} {a.kind !== "custom" && <small>Permanent</small>}
-                </h2>
-                <p>{a.subtitle}</p>
-                <p>
-                  {a.specialty} {a.personality && " · " + a.personality}
-                </p>
-                <button onClick={() => newThread([a.id], a.name)}>
-                  Open chat
-                </button>
-                {a.kind === "custom" && (
-                  <button
-                    onClick={() => {
-                      setEditor(a);
-                      setPanel("edit-agent");
-                    }}
-                  >
-                    Edit agent
-                  </button>
-                )}
-              </article>
-            ))}
+            <CompanionLibrary agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCustomize={a=>{setEditor(a);setPanel('companion-appearance');}} onEdit={a=>{setEditor(a);setPanel('edit-agent');}}/>
+
           </section>
+        ) : panel === "companion-appearance" && editor ? (
+          <section className="panel appearance-panel"><button onClick={()=>setPanel('agents')}>Back to companions</button><h1>{editor.name}’s appearance</h1>
+          <label>Appearance<select value={editor.appearance_mode||'inherit'} onChange={(e:any)=>setEditor({...editor,appearance_mode:e.target.value})}><option value="inherit">Use AELIO Default</option><option value="custom">Customize This Agent</option></select></label>
+          {editor.appearance_mode==='custom'&&<AppearanceControls value={editor.appearance||{}} onChange={(appearance:any)=>setEditor({...editor,appearance})} backgrounds={BACKGROUNDS} allowFile={!!session} onUpload={async(file:File)=>{const uploaded=await upload(file,'agents');setEditor({...editor,appearance:{...editor.appearance,background:'Custom Upload',file_id:uploaded.id}});}}/>}
+          <button onClick={async()=>{try{const response=await call('/agents/'+editor.id,'PATCH',{appearance_mode:editor.appearance_mode||'inherit',appearance:editor.appearance||{}});setAgents(as=>as.map(a=>a.id===editor.id?response.agent:a));setPanel('agents');}catch(e){setErr(friendly(e));}}}>Save companion appearance</button><p>Switching to your default keeps this companion’s saved custom settings.</p></section>
         ) : panel === "edit-agent" && editor ? (
           <section className="panel">
             <h1>{editor.id ? "Edit" : "Create"} agent</h1>
+            <div className="custom-portrait-editor"><AgentAvatar agent={{...editor,kind:'custom'}} shape="rounded"/><label>Agent portrait<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async(e:any)=>{const file=e.target.files?.[0];if(!file)return;try{const saved=await upload(file,'agents');setEditor({...editor,avatar_file_id:saved.id,avatar_crop:{x:50,y:35,zoom:1}});}catch(error){setErr(friendly(error));}}}/></label>
+            {editor.avatar_file_id&&<><p>Position the portrait for your agent. Save the profile to keep your changes.</p>{[['x','Horizontal position',0,100,1],['y','Vertical position',0,100,1],['zoom','Zoom',1,3,.01]].map(([key,label,min,max,step])=><label key={String(key)}>{label}<input type="range" aria-label={String(label)} min={Number(min)} max={Number(max)} step={Number(step)} value={editor.avatar_crop?.[String(key)]??(key==='zoom'?1:key==='y'?35:50)} onChange={(e:any)=>setEditor({...editor,avatar_crop:{x:50,y:35,zoom:1,...editor.avatar_crop,[String(key)]:Number(e.target.value)}})}/></label>)}
+            <button type="button" onClick={()=>setEditor({...editor,avatar_crop:{x:50,y:35,zoom:1}})}>Reset crop</button><button type="button" onClick={()=>setEditor({...editor,avatar_file_id:null,avatar_crop:{x:50,y:35,zoom:1}})}>Remove picture</button></>}
+            </div>
+
             <form
               onSubmit={async (e: any) => {
                 e.preventDefault();
@@ -1139,7 +1114,7 @@ function App() {
                   ]);
                   setPanel("agents");
                 } catch (e: any) {
-                  setErr(e.message);
+                  setErr(friendly(e));
                 }
               }}
             >
@@ -1183,6 +1158,10 @@ function App() {
                     "Creative",
                     "Analytical",
                     "Mindful",
+                    "Tech Savvy",
+                    "Young & Hip",
+                    "Good Energy",
+                    "Real Talk",
                   ].map((p) => (
                     <option key={p}>{p}</option>
                   ))}
@@ -1246,7 +1225,7 @@ function App() {
                         },
                       });
                     } catch (e: any) {
-                      setErr(e.message);
+                      setErr(friendly(e));
                     }
                   }}
                 />
@@ -1269,7 +1248,7 @@ function App() {
                         "application/json",
                       );
                     } catch (e: any) {
-                      setErr(e.message);
+                      setErr(friendly(e));
                     }
                   }}
                 >
@@ -1277,7 +1256,7 @@ function App() {
                 </button>
                 <p>
                   No private messages, memories, files or credentials are
-                  included. Publishing is not enabled.
+                  included. This export is for your own use; it doesn’t create a public listing.
                 </p>
               </>
             )}
@@ -1306,7 +1285,7 @@ function App() {
                       await show("files");
                     }
                   } catch (e: any) {
-                    setErr(e.message);
+                    setErr(friendly(e));
                   }
                 }}
               />
@@ -1332,7 +1311,7 @@ function App() {
                       a.click();
                       setTimeout(() => URL.revokeObjectURL(url), 1000);
                     } catch (e: any) {
-                      setErr(e.message);
+                      setErr(friendly(e));
                     }
                   }}
                 >
@@ -1344,7 +1323,7 @@ function App() {
                       await call("/files/" + f.id, "DELETE");
                       show("files");
                     } catch (e: any) {
-                      setErr(e.message);
+                      setErr(friendly(e));
                     }
                   }}
                 >
@@ -1361,7 +1340,7 @@ function App() {
             appearance={globalAP}
             onTopic={startTopic}
             recent={threads
-              .filter((t) => !t.archived)
+              .filter((t) => !t.archived && (messages[t.id]||cache.current[t.id]||t.app_messages||[]).length>0)
               .map((t) => ({
                 ...t,
                 preview:
@@ -1386,11 +1365,11 @@ function App() {
             onFile={async (file: File) => {
               try {
                 if (file.size > 1000000)
-                  throw Error("AI attachments must be1MB or smaller.");
+                  throw Error("Choose an attachment of 1 MB or smaller.");
                 const uploaded = await upload(file, "documents");
                 setHomeFiles((previous) => [...previous, uploaded].slice(0, 3));
               } catch (error: any) {
-                setErr(error.message);
+                setErr(friendly(error));
               }
             }}
           />
@@ -1428,12 +1407,9 @@ function App() {
             }
           >
             <div className="chat-header">
-              <Orb
-                small
-                state={busy[cur?.id] ? "thinking" : err ? "error" : "idle"}
-              />
+              <AgentAvatar agent={activeAgents[0]} group={activeAgents.length>1}/>
               <div>
-                <h1>{cur?.title || "AELIO"}</h1>
+                <h1>{cur?.permanent_key==='dream-team'?'Dream Team':activeAgents.length===1?(companion(activeAgents[0]?.kind)?.title||cur?.title||'AELIO'):cur?.title||'AELIO'}</h1>
                 <p>
                   {cur?.subtitle ||
                     activeAgents.map((a: any) => a.subtitle).join(" · ") ||
@@ -1461,7 +1437,7 @@ function App() {
             >
               {!(messages[cur?.id] || []).length && (
                 <div className="welcome">
-                  <h2>{isMila ? "Hey, I’m MILA." : "Hey, I’m AELIO."}</h2>
+                  <h2>{cur?.permanent_key==="dream-team"?"Meet your Dream Team.":"Hey, I’m "+(activeAgents[0]?.name||"AELIO")+"."}</h2>
                   <p>
                     {isMila
                       ? account?.preferences?.mila_welcomed
@@ -1478,7 +1454,7 @@ function App() {
                           });
                           reload();
                         } catch (e: any) {
-                          setErr(e.message);
+                          setErr(friendly(e));
                         }
                       }}
                     >
@@ -1505,7 +1481,7 @@ function App() {
               )}
               {(messages[cur?.id] || []).map((m: any) => (
                 <article key={m.id} className={"bubble " + m.role}>
-                  {m.role === "assistant" && <b>{m.speaker || "AELIO"}</b>}
+                  {m.role === "assistant" && <b className="message-speaker"><AgentAvatar agent={agents.find(a=>a.id===m.agent_id||a.name===m.speaker)||activeAgents[0]}/>{m.speaker || "AELIO"}</b>}
                   <Markdown text={m.content}/>
                   {m.role === "assistant" && session && (
                     <button
@@ -1521,7 +1497,7 @@ function App() {
                           );
                           setErr("Output saved to your private files.");
                         } catch (e: any) {
-                          setErr(e.message);
+                          setErr(friendly(e));
                         }
                       }}
                     >
@@ -1583,7 +1559,7 @@ function App() {
                           "Reminder confirmed and saved. View Reminders for its schedule.",
                         );
                       } catch (e: any) {
-                        setErr(e.message);
+                        setErr(friendly(e));
                       }
                     }}
                   >
@@ -1591,6 +1567,7 @@ function App() {
                   </button>
                 </article>
               ))}
+              {isMila&&<label className="disclosure">MILA’s communication style<select aria-label="MILA communication style" value={account?.preferences?.mila_style||'homegirl'} onChange={async(event:any)=>{try{const mila_style=event.target.value;await call('/account','PATCH',{mila_style});if(account)setAccount({...account,preferences:{...account.preferences,mila_style}});}catch(error){setErr(friendly(error));}}}>{['Homegirl','CEO','Auntie','Advisor','Teacher','Mom'].map(name=><option value={name.toLowerCase()} key={name}>{name}</option>)}</select></label>}
               {isMila && (
                 <label className="disclosure">
                   <input
@@ -1608,13 +1585,13 @@ function App() {
                     value={target}
                     onChange={(e: any) => setTarget(e.target.value)}
                   >
-                    <option value="">{activeAgents[0]?.name}</option>
+                    <option value="">{cur.permanent_key==='dream-team'?'Let the team choose':activeAgents[0]?.name}</option>{cur.permanent_key==='dream-team'&&<option value={activeAgents[0]?.id}>{activeAgents[0]?.name}</option>}
                     {activeAgents.slice(1).map((a: any) => (
                       <option key={a.id} value={a.id}>
                         {a.name}
                       </option>
                     ))}
-                    <option value="group">The group (up to four agents)</option>
+                    <option value="group">{cur.permanent_key==='dream-team'?'The team chooses relevant speakers':'The group (up to four agents)'}</option>
                   </select>
                 </label>
               )}
@@ -1628,11 +1605,11 @@ function App() {
                       if (session)
                         call("/account", "PATCH", {
                           external_ai_consent: e.target.checked,
-                        }).catch((x) => setErr(x.message));
+                        }).catch((x) => setErr(friendly(x)));
                     }}
                   />
                   I agree to send these messages and selected files to the
-                  configured external AI provider. Replies may be inaccurate.
+                  external AI service. Replies may be inaccurate.
                   AELIO Native is still in research.
                 </label>
               )}
@@ -1664,13 +1641,13 @@ function App() {
                             setAttachments((a) => [...a, f].slice(0, 3));
                           }
                         } catch (e: any) {
-                          setErr(e.message);
+                          setErr(friendly(e));
                         }
                       }}
                     />
                   </label>
                 )}
-                <textarea
+                <textarea onKeyUp={(e:any)=>{const match=e.currentTarget.value.slice(0,e.currentTarget.selectionStart).match(/@([a-z]*)$/i);setMention(match?match[1]:"__closed");}}
                   ref={input}
                   aria-label="Message"
                   rows={2}
@@ -1693,6 +1670,7 @@ function App() {
                   ↗
                 </button>
               </form>
+              {activeAgents.length>1&&mention!=="__closed"&&drafts[cur?.id]?.includes('@')&&<div className="mention-choices" role="group" aria-label="Mention a companion">{activeAgents.filter((a:any)=>a.name.toLowerCase().startsWith(mention.toLowerCase())).map((a:any)=><button key={a.id} onClick={()=>{setDrafts(d=>({...d,[cur.id]:(d[cur.id]||'').replace(/@[a-z]*$/i,'@'+a.name+' ')}));setMention('__closed');input.current?.focus();}}>{a.name}</button>)}</div>}
               {attachments.map((f) => (
                 <button
                   key={f.id}
@@ -1720,7 +1698,7 @@ function App() {
                       setErr(r.count + " guest conversation saved.");
                       reload();
                     } catch (e: any) {
-                      setErr(e.message);
+                      setErr(friendly(e));
                     }
                   }}
                 >
@@ -1738,6 +1716,7 @@ function App() {
               Conversation title
               <input
                 value={cur.title}
+                disabled={cur.permanent_key==='dream-team'}
                 onChange={(e: any) => setCur({ ...cur, title: e.target.value })}
                 onBlur={() => change({ title: cur.title })}
               />
@@ -1746,6 +1725,7 @@ function App() {
               Conversation topic / subtitle
               <input
                 value={cur.subtitle}
+                disabled={cur.permanent_key==='dream-team'}
                 onChange={(e: any) =>
                   setCur({ ...cur, subtitle: e.target.value })
                 }
@@ -1797,7 +1777,7 @@ function App() {
                     file_id: file.id,
                   });
                 } catch (e: any) {
-                  setErr(e.message);
+                  setErr(friendly(e));
                 }
               }}
             />
@@ -1814,10 +1794,10 @@ function App() {
             <button onClick={() => change({ archived: !cur.archived })}>
               {cur.archived ? "Unarchive" : "Archive"}
             </button>
-            <button onClick={remove}>Delete conversation</button>
+            {!cur.permanent_key&&<button onClick={remove}>Delete conversation</button>}
           </section>
         )}
-      </main>
+      </FeatureBoundary></main>
       <nav className="mobile-nav" aria-label="Main navigation">
         {[
           ["home", "Home", "home"],
@@ -1880,7 +1860,7 @@ function ProjectWorkspace({
               await upload(file, "code-projects");
               refresh();
             } catch (error: any) {
-              setErr(error.message);
+              setErr(friendly(error));
             }
             event.target.value = "";
           }}
@@ -1903,7 +1883,7 @@ function ProjectWorkspace({
                   anchor.click();
                   setTimeout(() => URL.revokeObjectURL(url), 1000);
                 } catch (error: any) {
-                  setErr(error.message);
+                  setErr(friendly(error));
                 }
               }}
             >
@@ -1916,7 +1896,7 @@ function ProjectWorkspace({
                   await call("/files/" + file.id, "DELETE");
                   refresh();
                 } catch (error: any) {
-                  setErr(error.message);
+                  setErr(friendly(error));
                 }
               }}
             >
@@ -2025,10 +2005,10 @@ function Account({ account, reload, setPanel, setErr }: any) {
   if (!account)
     return (
       <section className="panel">
-        <h1>Account connection unavailable</h1>
+        <h1>Let’s open your space.</h1>
         <p>
-          Your sign-in session is independent of the Brain. Retry the account
-          service configuration.
+          Your sign-in is safe. I’m having trouble opening your account right now.
+          Let’s try again.
         </p>
         <button onClick={reload}>Retry</button>
       </section>
@@ -2057,7 +2037,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
             await call("/account", "PATCH", { display_name: name });
             reload();
           } catch (e: any) {
-            setErr(e.message);
+            setErr(friendly(e));
           }
         }}
       >
@@ -2078,7 +2058,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
           </a>
         </article>
       ))}
-      <p>Subscriptions and usage stay separate. Paid plans are Coming Soon.</p>
+      <p>Your subscriptions and usage stay separate. Free is the available plan today.</p>
       {account.role === "founder" && (
         <a href="/studiobrain/">Open Studio Brain (MFA required)</a>
       )}
@@ -2099,7 +2079,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
                   await call("/account", "PATCH", { [k]: e.target.checked });
                   reload();
                 } catch (e: any) {
-                  setErr(e.message);
+                  setErr(friendly(e));
                 }
               }}
             />
@@ -2126,7 +2106,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
               "application/json",
             );
           } catch (e: any) {
-            setErr(e.message);
+            setErr(friendly(e));
           }
         }}
       >
@@ -2161,7 +2141,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
                 await auth?.signOut();
                 location.assign("/chat/");
               } catch (e: any) {
-                setErr(e.message);
+                setErr(friendly(e));
               }
             }}
           >
@@ -2177,7 +2157,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
           } catch (e: any) {
             await reload();
             setPanel("");
-            setErr(e.message);
+            setErr(friendly(e));
           }
         }}
       >
@@ -2201,7 +2181,7 @@ function Career({ items, notifications, records, refresh, setErr }: any) {
       await fn();
       refresh();
     } catch (e: any) {
-      setErr(e.message);
+      setErr(friendly(e));
     }
   }
   return (

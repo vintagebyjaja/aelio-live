@@ -111,21 +111,8 @@ export async function recovery(req, env, path) {
         "Use at least 12 characters for your new password.",
       );
     // Account email lookup is server-only; failures share a uniform response. No question lookup endpoint leaks identities.
-    const rows = await table(
-      env,
-      "profiles",
-      "select=user_id&limit=1&user_id=eq." + (await lookup(env, email)),
-      { schema: "core", service: true },
-    );
-    const uid = rows?.[0]?.user_id;
-    const r = uid
-      ? (
-          await table(env, "recovery_credentials", "user_id=eq." + uid, {
-            schema: "core",
-            service: true,
-          })
-        )?.[0]
-      : null;
+    const uid=await lookup(env,email);
+    const r=await rpc(env,'app_recovery_record',{uid});
     const answers = Array.isArray(d.answers) ? d.answers : [];
     let ok = !!r && answers.length === 2;
     for (let i = 0; i < 2; i++) {

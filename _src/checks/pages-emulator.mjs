@@ -67,4 +67,4 @@ createServer((req, res) => {
   if (!f) { f = join(DIR, "404.html"); status = 404; }
   res.writeHead(status, { "content-type": TYPES[extname(f)] || "text/plain" });
   res.end(readFileSync(f));
-}).listen(PORT, () => console.log(`serving ${DIR} on http://localhost:${PORT}`));
+}).listen(PORT, "127.0.0.1", () => console.log(`serving ${DIR} on http://localhost:${PORT}`));

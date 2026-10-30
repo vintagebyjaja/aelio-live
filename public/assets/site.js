@@ -85,9 +85,9 @@
   const pub = $("[data-engine-list]");
   if (pub) {
     const engine = (window.AELIO_CONFIG && window.AELIO_CONFIG.engine) || "";
-    fetch(engine + "/api/public/models").then(r => r.json()).then(d => {
+    fetch(engine + "/api/public/models",{signal:AbortSignal.timeout(12000)}).then(r => r.json()).then(d => {
       pub.innerHTML = d.models.length ? d.models.map(m => `<div class="card"><b>${m.name}</b><p>${m.engine}</p><p class="dim small">${Object.entries(m.metrics || {}).filter(([k, v]) => typeof v === "number" && /accuracy|val_loss|pass_at/.test(k)).map(([k, v]) => k + " " + v).join(" · ")}</p></div>`).join("")
         : '<p class="dim">No models have been published yet. When the founder publishes one from the Studio Brain, it appears here automatically.</p>';
-    }).catch(() => { pub.innerHTML = '<p class="dim">The AELIO engine isn\'t reachable right now, so no published models can be shown.</p>'; });
+    }).catch(() => { pub.innerHTML = '<p class="dim">The research library needs a moment. <a href="/chat/">Explore an idea with AELIO</a> while we reconnect.</p>'; });
   }
 })();

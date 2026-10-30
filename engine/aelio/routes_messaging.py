@@ -32,7 +32,7 @@ async def respond(req):
     elif not d.get('guest'):
         raise HTTPError(401,'Guest identity required','guest_required')
     agents=d.get('agents',[])
-    if not isinstance(agents,list) or not 1<=len(agents)<=4:
+    if not isinstance(agents,list) or not 1<=len(agents)<=(6 if d.get("dream_team") is True else 4):
         raise HTTPError(400,'Choose one to four agents')
     attachments=[]
     for f in d.get('attachments',[])[:3]:
@@ -51,6 +51,8 @@ async def respond(req):
                     name='AELIO'; system='You are AELIO, the permanent Original Main Pal. One Mind. Your Energy. Adapt naturally to tone, humor, seriousness and emotional context. Be truthful, coherent and willing to disagree. You have no fixed selectable personality.'
                 elif kind=='mila':
                     name='MILA'; system="You are MILA, PATHD's distinct career and life companion. Be a warm, funny, supportive and appropriately direct homegirl, mentor and accountability partner. Listen first. No shaming or stereotypes. Support career, education, routines and balanced lives. You are not a licensed therapist or financial adviser. Do not claim a reminder or job search has run unless a confirmed tool result says so."
+                elif kind in ('naomi','angelo','oliver','simone','chloe','reggie'):
+                    name=kind.capitalize(); system=f'You are {name}, a permanent AELIO companion. Preserve your distinct identity and apply your trusted profile instructions.'
                 else:
                     name=str(agent.get('name','Agent'))[:80]
                     system=f'You are {name}, a separate AELIO custom agent. Style: {agent.get("personality") or "Adaptive"}.'
@@ -65,7 +67,7 @@ async def respond(req):
                     tools=[Tool('propose_reminder','Draft an in-app reminder the user can confirm. Never say it is scheduled before confirmation.',{'type':'object','properties':{'title':{'type':'string'},'due_at':{'type':'string','description':'ISO 8601 with timezone offset'},'timezone':{'type':'string'},'recurrence':{'type':'string','enum':['once','daily','weekly']}},'required':['title','due_at','timezone','recurrence'],'additionalProperties':False})]
                     system+='\nCurrent server time: '+str(d.get('now'))+'; user timezone: '+str(d.get('timezone'))+'. Use propose_reminder only when requested. Reminders require user confirmation in the app.'
                 if d.get('ecosystem_tools') is True:
-                    tools.append(Tool('propose_ecosystem_handoff','Offer an optional user-confirmed website handoff. No API data, route duration, reservation or linked account is available through this tool.',{'type':'object','properties':{'app':{'type':'string','enum':['groove-guide','vybr8','pathd']},'intent':{'type':'string','enum':['travel_planning','food_discovery','career_support']},'summary':{'type':'string','maxLength':500},'origin':{'type':'string','maxLength':200},'destination':{'type':'string','maxLength':200},'mode':{'type':'string','enum':['driving','walking','unspecified']}},'required':['app','intent','summary'],'additionalProperties':False}))
+                    tools.append(Tool('propose_ecosystem_handoff','Offer an optional user-confirmed website handoff. No API data, route duration, reservation or linked account is available through this tool.',{'type':'object','properties':{'app':{'type':'string','enum':['groove-guide','vybr8','pathd']},'intent':{'type':'string','enum':['travel_planning','food_discovery','career_support']},'summary':{'type':'string','maxLength':500},'origin':{'type':['string','null'],'maxLength':200},'destination':{'type':['string','null'],'maxLength':200},'mode':{'type':['string','null'],'enum':['driving','walking','unspecified',None]}},'required':['app','intent','summary','origin','destination','mode'],'additionalProperties':False}))
                     system+='\nGroove Guide handles journeys; VYBR8 handles food/lifestyle discovery; PATHD supports careers with MILA. Use propose_ecosystem_handoff only when useful to the user. Map groove-guide to travel_planning, vybr8 to food_discovery, pathd to career_support. These are optional website handoffs, never verified API results. No private app access, route times, ratings, availability, purchases or account linking is provided. Never say a handoff completed an external action.'
                 gen=GenRequest(tools=tools,user_id=caller['user_id'],purpose='chat',instructions=system,messages=history+[Message(role='user',content=str(d.get('content',''))[:8000])],conversation_id=d.get('conversation_id'))
                 success=False

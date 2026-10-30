@@ -1,3 +1,4 @@
+import {friendly} from "./Experience";
 import React, { useState, useEffect } from "react";
 import { auth, authConfigurationError, call, download } from "./client";
 export const QUESTIONS = [
@@ -94,7 +95,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           if (location.pathname.includes("/reset")) setMode("reset");
           else onDone();
         })
-        .catch((e: any) => setError(e.message))
+        .catch((e: any) => setError(friendly(e)))
         .finally(() => setBusy(false));
     }
   }, []);
@@ -113,7 +114,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           !readiness.sessionConfigured
         )
           throw new Error(
-            "Secure account setup is not configured yet. Please contact the site owner. No new account has been created.",
+            "Your account needs a moment to get ready. Please try again shortly. No new account has been created.",
           );
         if (
           (window as any).AELIO_CONFIG?.turnstileSiteKey &&
@@ -133,7 +134,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
         );
         if (r.confirmEmail) {
           setNote(
-            "This Supabase project still requires email confirmation. The owner must finish the documented signup configuration; do not create another account.",
+            "Check your email to confirm your account, then return here. Your account already exists; you don’t need to register again.",
           );
           return;
         }
@@ -180,7 +181,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
         onDone();
       }
     } catch (e: any) {
-      setError(e.message);
+      setError(friendly(e));
     } finally {
       setBusy(false);
     }

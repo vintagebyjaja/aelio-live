@@ -1,3 +1,6 @@
+import {consumerMessage} from "../shared/experience.js";
+import {companion,coordinateTeam} from "../shared/companions.js";
+import {milaStyleInstruction} from "../shared/mila-style.js";
 import {openAIResponses} from "./providers/openai.js";
 import { ecosystemHandoff } from "../shared/ecosystem.js";
 import {
@@ -17,6 +20,7 @@ import {
   member,
   audit,
   rate,
+  sb,
 } from "./shared.js";
 const personalities = [
   "The Homie",
@@ -25,6 +29,10 @@ const personalities = [
   "Creative",
   "Analytical",
   "Mindful",
+  "Tech Savvy",
+  "Young & Hip",
+  "Good Energy",
+  "Real Talk",
 ];
 export const PERSONALITIES = personalities;
 export const backgrounds = [
@@ -187,7 +195,8 @@ export async function chatRoutes(req, env, path) {
   }
   if (path === "/agents") {
     if (!u) fail(401, "authentication_required", "Sign in to manage agents.");
-    if (req.method === "GET")
+    if (req.method === "GET") {
+      await sb(env,"/rest/v1/rpc/app_account_bootstrap",{token:u.token,method:"POST",data:{}});
       return reply({
         agents: await table(
           env,
@@ -200,11 +209,13 @@ export async function chatRoutes(req, env, path) {
         ),
         personalities,
       });
+    }
     if (req.method === "POST") {
       if (productScope === "pathd")
         fail(403, "pathd_agents", "PATHD offers AELIO and MILA only.");
       const d = await body(req);
       const a = agentFields(d);
+      if(a.avatar_file_id)await backgroundFile(env,a.avatar_file_id,u);
       if (a.appearance?.file_id)
         await backgroundFile(env, a.appearance.file_id, u);
       if (!a.name) fail(400, "name_required", "Name your agent.");
@@ -258,15 +269,22 @@ export async function chatRoutes(req, env, path) {
         201,
       );
     }
+    if(a.kind!=="custom" && req.method==="PATCH"){
+      const d=await body(req);if(Object.keys(d).some(k=>!["appearance","appearance_mode"].includes(k)))fail(403,"permanent_companion","This companion’s identity stays the same. You can customize its appearance.");
+      const fields={};if(d.appearance!==undefined){fields.appearance=appearance(d.appearance);if(fields.appearance.file_id)await backgroundFile(env,fields.appearance.file_id,u);}
+      if(d.appearance_mode!==undefined){if(!['inherit','custom'].includes(d.appearance_mode))fail(400,'invalid_appearance','Choose how this companion should look.');fields.appearance_mode=d.appearance_mode;}
+      return reply({agent:(await table(env,"app_agents","id=eq."+a.id+"&owner_id=eq."+u.id,{service:true,method:"PATCH",data:fields}))[0]});
+    }
     if (a.kind !== "custom")
       fail(
         403,
         "permanent_companion",
-        "AELIO and MILA are permanent companions.",
+        "Your permanent companions stay with you.",
       );
     if (req.method === "PATCH") {
       const d = await body(req);
       const fields = agentFields(d);
+      if(fields.avatar_file_id)await backgroundFile(env,fields.avatar_file_id,u);
       if (fields.appearance?.file_id)
         await backgroundFile(env, fields.appearance.file_id, u);
       return reply({
@@ -297,6 +315,11 @@ export async function chatRoutes(req, env, path) {
       return reply({ ok: true });
     }
   }
+  if(path==='/conversations/search'&&req.method==='GET'){
+    if(!u)fail(401,'authentication_required','Sign in to search your history.');
+    const term=text(new URL(req.url).searchParams.get('q')||'',100);
+    return reply({conversations:await sb(env,'/rest/v1/rpc/app_search_history',{token:u.token,method:'POST',data:{term,product_scope:productScope}})});
+  }
   if (path === "/conversations") {
     if (!u)
       fail(401, "authentication_required", "Sign in to save conversations.");
@@ -326,7 +349,7 @@ export async function chatRoutes(req, env, path) {
       );
       const product =
         productScope === "pathd" || d.product === "pathd" ? "pathd" : "aelio";
-      if (product === "pathd" && agents.some((a) => a.kind === "custom"))
+      if (product === "pathd" && agents.some((a) => !["aelio","mila"].includes(a.kind)))
         fail(403, "pathd_agents", "PATHD offers AELIO and MILA only.");
       await member(env, u, product);
       return reply(
@@ -373,7 +396,7 @@ export async function chatRoutes(req, env, path) {
     }
     if(cm[2]==='/cancel' && req.method==='POST'){
       const data=await body(req);if(!uuid(data.request_id))fail(400,'invalid_request_id','Choose a valid generation request.');
-      const attempt=(await table(env,'chat_requests','id=eq.'+data.request_id,{schema:'core',service:true}))[0];
+      const attempt=await rpc(env,'app_chat_request_lookup',{rid:data.request_id});
       if(!attempt||attempt.conversation_id!==c.id||attempt.owner_id!==(u?.id||null))fail(404,'not_found','Not found.');
       if(attempt.status==='running')await rpc(env,'app_finish_chat',{rid:attempt.id,ok:false});
       return reply({stopped:attempt.status!=='complete',complete:attempt.status==='complete'});
@@ -388,6 +411,7 @@ export async function chatRoutes(req, env, path) {
         fields = {};
       for (const k of ["title", "subtitle"])
         if (d[k] !== undefined) fields[k] = text(d[k], 160);
+      if(c.permanent_key==='dream-team'&&((fields.title!==undefined&&fields.title!==c.title)||(fields.subtitle!==undefined&&fields.subtitle!==c.subtitle)))fail(403,"permanent_conversation","Dream Team keeps its name. You can customize its appearance.");
       for (const k of ["pinned", "archived", "memory_enabled"])
         if (d[k] !== undefined) fields[k] = d[k] === true;
       if (d.appearance) {
@@ -410,6 +434,7 @@ export async function chatRoutes(req, env, path) {
       });
     }
     if (req.method === "DELETE" && !cm[2]) {
+      if(c.permanent_key)fail(403,"permanent_conversation","This chat stays with you. You can archive it instead.");
       if (c.busy_until && Date.parse(c.busy_until) > Date.now())
         fail(409, "reply_in_progress", "Wait for the reply to finish.");
       await table(
@@ -423,8 +448,16 @@ export async function chatRoutes(req, env, path) {
   }
   fail(404, "not_found", "Not found.");
 }
+export function avatarCrop(value){
+ if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!['x','y','zoom'].includes(k)))fail(400,'invalid_avatar_crop','Choose a valid portrait crop.');
+ const crop={x:value.x??50,y:value.y??35,zoom:value.zoom??1};
+ if(!Object.values(crop).every(n=>typeof n==='number'&&Number.isFinite(n))||crop.x<0||crop.x>100||crop.y<0||crop.y>100||crop.zoom<1||crop.zoom>3)fail(400,'invalid_avatar_crop','Adjust the portrait within the image.');
+ return crop;
+}
 function agentFields(d) {
   const a = {};
+  if(d.avatar_crop!==undefined)a.avatar_crop=avatarCrop(d.avatar_crop);
+  if(d.avatar_file_id!==undefined){if(d.avatar_file_id!==null&&!uuid(d.avatar_file_id))fail(400,"invalid_avatar","Choose an uploaded portrait.");a.avatar_file_id=d.avatar_file_id;}
   if (d.appearance !== undefined) a.appearance = appearance(d.appearance);
   if (d.appearance_mode !== undefined) {
     if (!["inherit", "custom"].includes(d.appearance_mode))
@@ -520,7 +553,7 @@ async function generate(req, env, c, u, suggest = false) {
   const rid=d.request_id || crypto.randomUUID();
   if(!uuid(rid))fail(400,'invalid_request_id','Use a valid request identifier.');
   async function replayAttempt(){
-    const previous=(await table(env,'chat_requests','id=eq.'+rid,{schema:'core',service:true}))[0];
+    const previous=await rpc(env,'app_chat_request_lookup',{rid});
     if(!previous)return null;
     if(previous.conversation_id!==c.id||previous.owner_id!==(u?.id||null))fail(409,'request_id_reused','Use a new request identifier.');
     if(previous.status==='running')fail(409,'reply_in_progress','This reply is still running. Stop it or wait before retrying.');
@@ -547,12 +580,13 @@ async function generate(req, env, c, u, suggest = false) {
     agents.some((a) => !["aelio", "mila"].includes(a.kind))
   )
     fail(403, "pathd_agents", "PATHD offers AELIO and MILA only.");
-  if (d.target && d.target !== "group") {
+  if(c.permanent_key==="dream-team"&&(!d.target||d.target==="group")){agents=coordinateTeam(agents,input);}
+  else if (d.target && d.target !== "group") {
     agents = agents.filter((a) => a.id === d.target);
     if (!agents.length)
       fail(400, "invalid_target", "Choose a participant in this conversation.");
   } else if (d.target !== "group") agents = agents.slice(0, 1);
-  if (agents.length > 4)
+  if (agents.length > (c.permanent_key==="dream-team"?6:4))
     fail(400, "group_limit", "Address up to four agents at a time.");
   const history = (
     await table(
@@ -571,6 +605,8 @@ async function generate(req, env, c, u, suggest = false) {
         })
       )[0]
     : null;
+  agents=agents.map(agent=>{const official=companion(agent.kind);return official&&!["aelio","mila"].includes(agent.kind)?{...agent,name:official.name,instructions:official.description}:agent;});
+  agents=agents.map(agent=>agent.kind==="mila"?{...agent,instructions:[agent.instructions||"",milaStyleInstruction(pref?.mila_style)].filter(Boolean).join("\n")}:agent);
   const career =
     u &&
     pref?.career_consent &&
@@ -641,6 +677,7 @@ async function generate(req, env, c, u, suggest = false) {
       guest: c.guest_hash,
       conversation_id: c.id,
       agents,
+      dream_team:c.permanent_key==="dream-team",
       history,
       content: suggest
         ? "Suggest one short conversation subtitle. Return only the subtitle."
@@ -765,9 +802,7 @@ async function generate(req, env, c, u, suggest = false) {
                 type: "error",
                 code: e instanceof Problem ? e.code : "brain_failure",
                 message:
-                  e instanceof Problem
-                    ? e.message
-                    : "The reply could not be saved or completed. Please retry.",
+                  consumerMessage(e instanceof Problem?e.code:"generation_failed",e instanceof Problem?e.message:"The reply could not be saved or completed. Please retry."),
               }) + "\n",
             ),
           );

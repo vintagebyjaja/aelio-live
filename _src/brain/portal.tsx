@@ -79,7 +79,7 @@ export function MyAgents() {
           <div><label>Memory preferences</label><input value={f.memory_preferences} onChange={(e: any) => setF({ ...f, memory_preferences: e.target.value })} /></div>
         </div><div className="row" style={{ marginTop: 12 }}><button className="gold-btn" disabled={!f.name} onClick={create}>Create agent</button></div></div>}
       {data && groups.map(([title, fn]) => { const list = data.agents.filter(fn); return (
-        <div key={title}><h3>{title}</h3>{list.length ? <div className="grid g3">{list.map((a: any) => <AgentCard key={a.id} a={a} reload={reload} />)}</div> : <Empty>{title === "Agent Teams" ? "Agent Teams are planned." : "None yet."}</Empty>}</div>); })}
+        <div key={title}><h3>{title}</h3>{list.length ? <div className="grid g3">{list.map((a: any) => <AgentCard key={a.id} a={a} reload={reload} />)}</div> : <Empty>{title === "Agent Teams" ? "Create a group conversation with your agents in Chat." : "None yet."}</Empty>}</div>); })}
     </div>);
 }
 
@@ -132,7 +132,7 @@ export function MyAgent({ id }: any) {
                 <span><span>{m.text}</span><span className="dim small"> · {m.category} · {m.source}</span>{m.flags?.map((f: string) => <Badge key={f} kind="warn">{f}</Badge>)}</span>
                 <button className="ghost sm" onClick={(e: any) => { e.preventDefault(); setData({ ...a, memories: a.memories.filter((x: any) => x.id !== m.id) }); }} aria-label="Remove memory">✕</button></label>)) : <Empty>No memories.</Empty>}
             <div className="row" style={{ marginTop: 8 }}><button className="dark-btn sm" onClick={save}>Save memory choices</button></div></div>
-          <div className="card"><h2>Personality preview</h2><p className="dim small">Try your agent before you commit. Replies come from today's AELIO Native prototype and are experimental.</p>
+          <div className="card"><h2>Personality preview</h2><p className="dim small">Try your agent before you commit. This preview uses a research model; its replies may be limited.</p>
             <div className="row">{TESTS.map(t => <button key={t} className="dark-btn sm" onClick={() => preview(t)}>{t}</button>)}</div>
             {pv && (pv.loading ? <p className="dim">Thinking…</p> : <div className="grid g2" style={{ marginTop: 12 }}>
               <div><h3>Imported personality profile</h3><pre>{JSON.stringify(pv.imported_profile_expectation, null, 2) || "—"}</pre></div>

@@ -1,3 +1,4 @@
+import {consumerMessage} from "../shared/experience.js";
 import {sessionSecretSource} from "./shared.js";
 import builtPublicAuth from "../generated/public-auth-config.js";
 import { resolveSupabaseConfig } from "../shared/supabase-config.js";
@@ -39,7 +40,7 @@ export function publicConfig(env) {
           url: resolved.url,
           anonKey: resolved.anonKey,
           configurationError: resolved.error
-            ? { code: resolved.errorCode, message: resolved.error }
+            ? { code: resolved.errorCode, message: consumerMessage(resolved.errorCode,resolved.error) }
             : null,
         },
       }) +
@@ -56,47 +57,14 @@ export function publicConfig(env) {
 async function account(req, env, path) {
   const u = await who(req, env);
   if (path === "" && req.method === "GET") {
-    const [profiles, plans, prefs, roles] = await Promise.all([
-      table(env, "profiles", "user_id=eq." + u.id, {
-        schema: "core",
-        token: u.token,
-      }),
-      table(env, "app_entitlements", "user_id=eq." + u.id, { token: u.token }),
-      table(env, "app_preferences", "user_id=eq." + u.id, { token: u.token }),
-      table(env, "app_roles", "user_id=eq." + u.id, {
-        schema: "core",
-        service: true,
-      }),
-    ]);
-    return reply({
-      user: {
-        id: u.id,
-        email: u.email,
-        display_name: profiles[0]?.display_name || "",
-        recovery_enrolled: !!profiles[0]?.recovery_enrolled_at,
-      },
-      plans: plans.map((p) => ({
-        ...p,
-        unlimited: roles.some((r) => r.product === p.product),
-      })),
-      preferences: prefs[0] || {},
-      role: roles.find((r) => r.product === "aelio")?.role || "member",
-      connectedApps: ["aelio", "pathd"],
-      paidPlans: "coming_soon",
-    });
+    const result = await sb(env, "/rest/v1/rpc/app_account_bootstrap", {token:u.token,method:"POST",data:{}});
+    return reply({...result,user:{...result.user,email:u.email},connectedApps:["aelio","pathd"],paidPlans:"closed"});
   }
+
   if (path === "" && req.method === "PATCH") {
     const d = await body(req);
     if (d.display_name !== undefined)
-      await table(env, "profiles", "user_id=eq." + u.id, {
-        schema: "core",
-        token: u.token,
-        method: "PATCH",
-        data: {
-          display_name: text(d.display_name, 80),
-          updated_at: new Date().toISOString(),
-        },
-      });
+      await sb(env,"/rest/v1/rpc/app_update_display_name",{token:u.token,method:"POST",data:{value:text(d.display_name,80)}});
     const p = {};
     for (const k of [
       "external_ai_consent",
@@ -105,6 +73,7 @@ async function account(req, env, path) {
       "mila_welcomed",
     ])
       if (d[k] !== undefined) p[k] = d[k] === true;
+    if(d.mila_style!==undefined){if(!["homegirl","ceo","auntie","advisor","teacher","mom"].includes(d.mila_style))fail(400,"invalid_style","Choose an available communication style.");p.mila_style=d.mila_style;}
     if (d.appearance !== undefined) {
       p.appearance = appearance(d.appearance);
       if (p.appearance.file_id)
@@ -129,12 +98,7 @@ async function account(req, env, path) {
   }
   if (path === "/export" && req.method === "GET") {
     const out = {
-      profile: (
-        await table(env, "profiles", "user_id=eq." + u.id, {
-          schema: "core",
-          token: u.token,
-        })
-      )[0],
+      profile:await sb(env,"/rest/v1/rpc/app_export_profile",{token:u.token,method:"POST",data:{}}),
     };
     for (const n of [
       "app_agents",
@@ -176,6 +140,7 @@ async function account(req, env, path) {
     });
     if (s.user.id !== u.id)
       fail(403, "reauthentication_required", "Reauthenticate first.");
+    if(!await rpc(env,"app_account_deletion_ready",{uid:u.id}))fail(409,"account_deletion_requires_review","This shared account can’t be closed here right now. You can export your data and keep using both sites.");
     if (!env.AELIO_STORAGE)
       fail(
         503,
@@ -331,7 +296,17 @@ export async function platform(req, env) {
         openAIConfigured: !!env.OPENAI_API_KEY,
         inferenceVerified: false,
       });
-    await rate(req, env, "platform", 120, 60);
+    if(p==='/diagnostics'&&req.method==='GET'){
+      const user=await who(req,env);
+      const own=await sb(env,'/rest/v1/rpc/app_account_bootstrap',{token:user.token,method:'POST',data:{}});
+      if(own.role!=='founder')fail(403,'permission_denied','This page is private.');
+      return reply({accountAuthConfigured:!!resolveSupabaseConfig(env,builtPublicAuth).anonKey,sessionSigning:sessionSecretSource(env)||'unavailable',explicitSessionPresent:!!env.AELIO_SESSION_SECRET,explicitSessionValid:typeof env.AELIO_SESSION_SECRET==='string'&&env.AELIO_SESSION_SECRET.length>=32,databaseConfigured:!!env.SUPABASE_SERVICE_ROLE_KEY,openAIConfigured:!!env.OPENAI_API_KEY,inferenceVerified:false,accountBootstrapVerified:true});
+    }
+    // Verified members use an owner-scoped SQL throttle, independent of guest-cookie signing.
+    const user = await who(req, env, true);
+    if(user){
+      if(!await sb(env,"/rest/v1/rpc/app_user_rate_limit",{token:user.token,method:"POST",data:{}}))fail(429,"rate_limited","Too many attempts. Please wait and try again.");
+    } else await rate(req, env, "platform", 120, 60);
     if (p.startsWith("/discover/")) return await discovery(req, p.slice(9));
     if (p.startsWith("/recovery/")) return await recovery(req, env, p.slice(9));
     if (p.startsWith("/files")) return await storage(req, env, p.slice(6));
@@ -353,9 +328,7 @@ export async function platform(req, env) {
     return reply(
       {
         error:
-          e instanceof Problem
-            ? e.message
-            : "This request could not be completed.",
+          consumerMessage(code,e instanceof Problem?e.message:undefined),
         code,
         request_id: id,
       },

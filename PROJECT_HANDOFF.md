@@ -1,3 +1,17 @@
+# Current handoff — AELIO_v1.0.5 migration review
+
+The user requires a secondary migration branch preview and explicit later approval before main. Branch: migration, base main 8da7e87. No main push, manual deployment, production SQL or secret change is authorized for this update. PATHD 0.1.3 remains separate.
+
+Account repairs remove private-core REST dependencies, use authenticated owner-only bootstrap/rate RPCs independent of guest signing, and stop sending modern Supabase API keys as Bearer JWTs. Missing records are filled idempotently; existing profiles, identities, histories, credits and subscription boundaries are retained. SQL 05/06 must be applied manually after review. Founder diagnostics/logs expose safe metadata only.
+
+Added official AELIO/MILA/Naomi/Angelo/Oliver/Simone/Chloe/Reggie identities, stable permanent chat keys, protected histories, Dream Team with deterministic relevant-speaker coordination/direct mentions, correct portraits, clickable compact navigation/cards, independent appearance and custom-avatar ownership. MILA styles remain communication preferences, not additional agents. PATHD continues filtering to AELIO/MILA.
+
+Added centralized consumer status/error language, bounded orb loading, offline notice and feature boundary retaining parent draft state; refreshed public marketing copy and useful connected-app planning actions without fake linking/API access. AelioOrb uses native WebGL internal noise/material flow, actual optional audio levels, reduced motion, visibility pause and fallback; Chocolate Cream gains restrained olive/sage accents. Other theme palettes and Studio design are preserved.
+
+See config/V1_0_5_SETUP.md and docs/releases/AELIO_v1.0.5_VALIDATION.md for actual checks and live-service limitations. Do not claim production login, provider output, R2, microphone or real-device frame rates are verified. Stopped partial replies remain local; completed replies persist. All screenshots are actual local browser renders with explicit synthetic account/provider fixtures.
+
+---
+
 # Current handoff — AELIO_v1.0.4
 
 2026-10-30. The user requested an immediate AELIO main push after validation and authorized a separate PATHD push when its remaining checks are ready. Do not combine repositories/domains, alter production SQL/secrets, or invoke a manual Cloudflare deployment. Existing Git integration may deploy automatically.
@@ -68,3 +82,5 @@ No deployment, push, release publication, real account mutation, destructive sou
 ## Next exact actions
 
 Read the configuration and SQL instructions; configure and validate a staging copy with the owner's keys. Resolve the protected browser download policy if that separate Quality Lab workflow is required. Run real end-to-end Auth/recovery/provider/R2 checks before claiming operational readiness. The owner handles all uploads, settings and deployment; do not do them automatically.
+
+1.0.5 final portrait source: AELIO_Approved_Avatars.zip supplied by the user. Imported exact six-character grid and approved business-casual MILA image; no substitute image generation. Literal review branch is migration in both repositories.

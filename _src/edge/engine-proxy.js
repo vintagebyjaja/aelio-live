@@ -1,3 +1,4 @@
+import {consumerMessage} from "../shared/experience.js";
 // Same-origin bridge: aelio.live/api/* and aelio.live/webhooks/* -> the AELIO engine, privately.
 //
 // Runs as a Cloudflare Pages Function (see functions/api and functions/webhooks).
@@ -29,7 +30,7 @@ export async function proxyToEngine({ request, env }) {
   const origin = env && env.AELIO_ENGINE_ORIGIN ? String(env.AELIO_ENGINE_ORIGIN).replace(/\/$/, "") : "";
   if (!binding && !origin) {
     console.error(JSON.stringify({event:"engine_configuration_missing",code:"engine_not_connected"}));
-    return json(503, { error: "The AELIO engine isn't connected to this site yet.", code: "engine_not_connected" });
+    return json(503, { error: consumerMessage("engine_not_connected"), code: "engine_not_connected" });
   }
   const target = (binding ? "http://aelio-engine.internal" : origin) + url.pathname + url.search;
 
@@ -52,7 +53,7 @@ export async function proxyToEngine({ request, env }) {
     res = binding ? await binding.fetch(new Request(target, init)) : await fetch(target, init);
   } catch (e) {
     console.error(JSON.stringify({event:"engine_upstream_failed",code:"engine_unreachable"}));
-    return json(502, { error: "The AELIO engine isn't reachable right now.", code: "engine_unreachable" });
+    return json(502, { error: consumerMessage("engine_unreachable"), code: "engine_unreachable" });
   }
   const out = new Headers();
   for (const [k, v] of res.headers) if (!HOP_BY_HOP.includes(k.toLowerCase()) && k.toLowerCase() !== "set-cookie") out.append(k, v);

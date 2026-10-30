@@ -1,0 +1,16 @@
+{
+  "approved_source_sha256": {
+    "dream-team": "23e126a6b025907007648b42ac33146fc45ea45e60a7417c74d3aac48ec445b4",
+    "mila": "cb9f4ecaaab5ef147058ff6877b6a922b79f45b254f3388022794fe2033b34a8"
+  },
+  "method": "exact source crops, no image generation or face retouching",
+  "system_ids": [
+    "naomi",
+    "angelo",
+    "oliver",
+    "simone",
+    "chloe",
+    "reggie",
+    "mila"
+  ]
+}

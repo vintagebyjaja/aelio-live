@@ -1,5 +1,9 @@
 # AELIO version history
 
+## AELIO_v1.0.5 — 2026-10-30 — migration preview
+
+Repaired private-schema account/profile access and modern Supabase API-key headers; decoupled verified account startup from guest signing. Added idempotent eight-companion/nine-chat provisioning, protected identities/history, portrait navigation, relevant-speaker Dream Team coordination/mentions, owned custom avatars with crop/reset controls, immutable approved official portraits and private message search. Added saved MILA communication styles, centralized consumer messages/fallbacks, useful connected-app actions, public copy audit, a native WebGL liquid-metal orb and Chocolate Cream olive/sage accents. Preserved separate PATHD, all other themes, existing data and Studio design. SQL migrations 05/06 require owner review/execution. Migration branch only; main and production settings unchanged. See release validation for actual checks and limits.
+
 ## AELIO_v1.0.4 — 2026-10-30 — cinematic experience and AI/Auth activation
 
 Implemented the approved cinematic desktop/mobile interface with four distinct themes, orb states, a unified Send composer, streamlined discovery/navigation and owned recent chats. Added truthful website handoffs and structured ecosystem proposals. Fixed Supabase public-key aliases/build-runtime propagation, safe privileged-key rejection, session refresh and product-local logout. Added secure server-only guest/rate-key derivation and signup readiness checks. Added modular Worker-native OpenAI Responses streaming using runtime secrets, configurable model and safety limits, Stop, stable request replay/retry, safe Markdown and timing metadata. Preserved the separate private Brain architecture and independent product entitlements.

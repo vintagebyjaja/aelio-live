@@ -28,3 +28,7 @@ The user subsequently authorized updating main and triggering the existing Cloud
 ## Current v1.0.4 instructions
 
 The user authorized pushing the completed AELIO update to main now, followed by the separately validated PATHD update when ready. Keep repositories/domains/deployments separate; do not manually deploy, change Cloudflare settings, production SQL or secrets. Preserve the cinematic redesign already approved; the later AI instructions request functional activation without further redesign. Worker-native OpenAI Responses is a modular chat provider; the existing private Brain remains available with AELIO_AI_PROVIDER=brain. Never expose provider/service-role keys. See config/V1_0_4_SETUP.md and the release validation notes.
+
+## Current 1.0.5 review boundary
+
+The latest user explicitly requests GitHub migration-branch previews first and will approve main later. Push only migration; never main or a manual deployment. PATHD stays in its own repository/branch. Apply no production SQL or secrets. Eight official companions use stable kind IDs and locked identities; Dream Team contains only the six specialists. Only custom agents may be renamed/deleted. See config/V1_0_5_SETUP.md and the 1.0.5 validation notes.

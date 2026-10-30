@@ -268,13 +268,7 @@
   background: #eda45f60;
   filter: blur(15px);
 }
-.aelio-orb[data-state="listening"] .orb-halo {
-  animation: orb-listen 1.2s ease-in-out infinite;
-}
-.aelio-orb[data-state="thinking"] .orb-halo {
-  border-top-color: transparent;
-  animation: orb-think 2.4s linear infinite;
-}
+
 .aelio-orb[data-state="error"] .orb-halo {
   border-color: #c98571;
   box-shadow: 0 0 15px #b85f4033;
@@ -1313,9 +1307,7 @@
     background: transparent;
   }
 }
-.aelio-orb[data-state="speaking"] .orb-halo {
-  animation: orb-listen 0.75s ease-in-out infinite;
-}
+
 @media (max-width: 900px) {
   .dream-app.at-home:before {
     background-image:
@@ -1380,3 +1372,10 @@
 }
 
 .markdown-content{min-width:0;overflow-wrap:anywhere}.markdown-content p{margin:.4rem 0;white-space:pre-wrap}.markdown-content ul,.markdown-content ol{padding-left:1.4rem;line-height:1.6}.markdown-content pre{max-width:100%;overflow-x:auto;padding:1rem;border-radius:12px;background:#0003;font-size:.8rem;white-space:pre}.markdown-content code{font-family:ui-monospace,monospace}.markdown-content p>code{background:#0002;padding:.1rem .25rem;border-radius:4px}.markdown-content .markdown-heading{font-size:1.15em;font-weight:600}
+
+/* Shared liquid-metal renderer stays inside the established copper silhouette. */
+.orb-canvas{position:absolute;inset:-1.25%;width:102.5%;height:102.5%;border-radius:50%;pointer-events:none;transition:opacity .2s ease}
+.aelio-orb[data-reduced="true"] *{animation:none!important;transition:none!important}
+.aelio-orb[data-renderer="webgl"] .orb-halo{animation:none;box-shadow:0 0 6px #ffc38a55,0 0 20px #f3a15822}
+
+.aelio-orb .orb-halo{opacity:calc(.65 + var(--orb-audio,0)*.3);transition:opacity .12s ease}

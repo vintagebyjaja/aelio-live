@@ -1,6 +1,6 @@
 # AELIO project overview
 
-Current implementation **AELIO_v1.0.4**, 2026-10-30. The owner-authorized main push triggered Cloudflare, which rejected publication with error10143 because the configured aelio-engine service was missing. The actual deployment outcome of this repair must be verified.
+Current implementation **AELIO_v1.0.5**, migration-branch review only. Previous implementation **AELIO_v1.0.4**, 2026-10-30. The owner-authorized main push triggered Cloudflare, which rejected publication with error10143 because the configured aelio-engine service was missing. The actual deployment outcome of this repair must be verified.
 
 AELIO is Dream Beyond / Grooveville LLC's adaptive Original Main Pal: **One Mind. Your Energy.** His name and identity are permanent. Named styles belong to separate custom agents. MILA is PATHD's distinct career and life companion, not a renamed AELIO.
 
@@ -44,3 +44,5 @@ The default website deployment no longer requires a not-yet-created Brain Worker
 ## v1.0.4 completed AELIO update
 
 The approved cinematic Home/Discover/Agents/Create/Projects/Connected Apps/Settings UX is implemented for desktop/tablet/mobile with four themes, actual owned history, an animated orb and unified explicit-send composer. Supabase public aliases resolve at build/runtime without leaking secrets; session refresh and product-local logout are hardened. Guest/rate HMAC can derive from the server-only service credential when a dedicated secret is absent. Worker-native OpenAI Responses streams through existing authorized orchestration, quotas and persistent conversations; model/output/context/daily limits are server-configurable. Existing private Brain/Native infrastructure remains separate. Website handoffs are labeled and never claim API/account-linking access. PATHD remains a separate application/repository.
+
+1.0.5 adds owner-scoped account repair RPCs and permanent official companions/Dream Team, consumer copy/fallback polish and the native WebGL liquid-metal orb. See config/V1_0_5_SETUP.md. Main is preserved pending explicit review.
