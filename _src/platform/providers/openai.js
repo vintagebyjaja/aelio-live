@@ -40,10 +40,11 @@ export function responseBody(env,payload,agent){
  return body;
 }
 function providerError(status,code){
- if(status===401||status===403)return new Problem(502,'provider_credentials_rejected','The AI provider rejected the server credentials. Please contact the site owner.');
- if(status===429&&code==='insufficient_quota')return new Problem(503,'provider_billing_unavailable','AI replies are temporarily unavailable. Your account remains accessible.');
+ if(status===401||status===403||code==='invalid_api_key'||code==='authentication_error')return new Problem(502,'provider_credentials_rejected','The AI provider rejected the server credentials. Please contact the site owner.');
+ if(code==='insufficient_quota')return new Problem(503,'provider_billing_unavailable','AI replies are temporarily unavailable. Your account remains accessible.');
+ if(code==='server_error'||code==='internal_error'||status>=500)return new Problem(502,'provider_unavailable','The AI provider is temporarily unavailable. Please retry.');
  if(status===400)return new Problem(502,'provider_request_rejected','The AI service could not accept this request. Please retry.');
- if(status===429)return new Problem(503,'provider_capacity','The AI service is at its current usage or rate limit. Try again later.');
+ if(status===429||code==='rate_limit_exceeded')return new Problem(503,'provider_capacity','The AI service is at its current usage or rate limit. Try again later.');
  if(code==='model_not_found'||status===404)return new Problem(503,'model_unavailable','The configured AI model is unavailable for this account. Please contact the site owner.');
  return new Problem(502,'provider_unavailable','The AI service could not complete the request. Please retry.');
 }
@@ -56,6 +57,13 @@ export async function openAIResponses(env,payload,signal,deps={}){
  if(!env.OPENAI_API_KEY)fail(503,'ai_not_configured','AI replies need the OpenAI server secret configured. Your account remains accessible.');
  if(!Array.isArray(payload.agents)||!payload.agents.length||payload.agents.length>(payload.group?8:payload.dream_team?6:4))fail(400,'invalid_agents','Choose one to four companions.');
  const fetcher=deps.fetch||fetch;
+ const safeCode=value=>typeof value==='string'&&/^[a-z0-9_-]{1,100}$/i.test(value)?value:null;
+ const diagnostic=(status,error,headers,model)=>{
+  const code=safeCode(error?.code)||safeCode(error?.type)||'provider_rejected';
+  const problem=providerError(status,code);
+  console.error(JSON.stringify({event:status>=400?'openai_request_rejected':'openai_provider_failure',request_id:payload.request_id||null,http_status:status,provider_request_id:safeCode(headers?.get('x-request-id')),provider_error_code:code,error_category:problem.code,model}));
+  return problem;
+ };
  const reserve=deps.reserve|| (async()=>{const key=await digest('openai-global:'+new Date().toISOString().slice(0,10));if(!await rpc(env,'app_limit',{k:key,maximum:bounded(env.OPENAI_DAILY_REQUEST_LIMIT,500,1,10000),seconds:86400}))fail(429,'ai_daily_limit','The platform has reached its daily AI safety limit. Try again tomorrow.');});
  const abort=new AbortController();const onAbort=()=>abort.abort();if(signal?.aborted)abort.abort();signal?.addEventListener('abort',onAbort,{once:true});
  const encode=new TextEncoder();let readerCancelled=false,timedOut=false;
@@ -70,7 +78,7 @@ export async function openAIResponses(env,payload,signal,deps={}){
      const body=responseBody(env,{...payload,group_turn_replies:groupReplies},agent);const timer=setTimeout(()=>{timedOut=true;abort.abort();},90000);
      try{
       let upstream;try{upstream=await fetcher(ENDPOINT,{method:'POST',headers:{authorization:'Bearer '+env.OPENAI_API_KEY,'content-type':'application/json',accept:'text/event-stream'},body:JSON.stringify(body),signal:abort.signal});}catch(error){if(abort.signal.aborted)throw error;throw new Problem(502,'provider_network_error','Could not reach the AI provider. Please retry.');}
-      if(!upstream.ok){const data=await upstream.json().catch(()=>({}));console.error(JSON.stringify({event:'openai_request_rejected',request_id:payload.request_id||null,http_status:upstream.status,code:typeof data?.error?.code==='string'&&/^[a-z0-9_]{1,80}$/i.test(data.error.code)?data.error.code:'provider_rejected',model:body.model}));throw providerError(upstream.status,data?.error?.code);}
+      if(!upstream.ok){const data=await upstream.json().catch(()=>({}));throw diagnostic(upstream.status,data?.error,upstream.headers,body.model);}
       if(!upstream.body)throw new Problem(502,'provider_response_invalid','The AI response stream is missing.');
       for await(const event of sse(upstream.body)){
        if(abort.signal.aborted)throw new DOMException('Stopped','AbortError');
@@ -84,7 +92,7 @@ export async function openAIResponses(env,payload,signal,deps={}){
         controller.enqueue(encode.encode(JSON.stringify({type:'tool_call',agent_id:agent.id,speaker:agent.name,name:item.name,arguments:item.arguments})+'\n'));
        }
        if(event.type==='response.completed'){completed=true;usage=event.response?.usage||null;}
-       if(event.type==='response.failed'||event.type==='error')throw providerError(502,event.error?.code);
+       if(event.type==='response.failed'||event.type==='error')throw diagnostic(upstream.status,event.response?.error||event.error||event,upstream.headers,body.model);
        if(event.type==='response.incomplete')throw new Problem(502,'response_incomplete','The AI reply reached its limit before finishing. You can retry or ask a shorter question.');
       }
       if(!completed)throw new Problem(502,'stream_interrupted','The AI connection ended before the response was complete. Please retry.');

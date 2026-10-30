@@ -54,3 +54,8 @@ Keep this combined iteration on migration only. Fix existing account/chat depend
 
 
 Latest owner priority: pause new visual/UI refinement until actual backend responding is verified. Preserve the resizable-workspace assignment as deferred. Migration review may include the already implemented earlier requests, but do not claim the live outage fixed from fixtures. SQL10 repairs only new-turn ordering; existing history stays intact. Correlate safe request IDs through credit/provider/persistence stages; never log raw requests or credentials.
+
+
+## Pending migration provider-stream repair — 2026-10-30
+
+Fixed Responses nested failure parsing and safe provider status/category/request-ID diagnostics. Live provider rejection remains unverified without production logs; no automatic retry added. Preserve current UI and pending1.0.8 work. See `docs/diagnostics/PROVIDER_STREAM_REPAIR.md`. No main push or deployment authorized.

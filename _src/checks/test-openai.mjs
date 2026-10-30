@@ -46,3 +46,14 @@ test('provider CRLF frames may split between chunks without losing completion',a
  const upstream=new ReadableStream({start(c){for(const character of wire)c.enqueue(new TextEncoder().encode(character));c.close();}});
  const response=await openAIResponses(env,payload,undefined,{reserve:async()=>{},fetch:async()=>new Response(upstream)});const text=await response.text();assert.match(text,/Split newline reply/);assert.match(text,/"type":"complete"/);assert.doesNotMatch(text,/stream_interrupted/);
 });
+
+test('HTTP 200 failed Responses events classify nested errors and terminate without completion or automatic retry',async()=>{
+ for(const [providerCode,expected] of [['insufficient_quota','provider_billing_unavailable'],['rate_limit_exceeded','provider_capacity'],['model_not_found','model_unavailable'],['server_error','provider_unavailable']]){
+  let calls=0;const logs=[],original=console.error;console.error=value=>logs.push(JSON.parse(value));
+  try{
+   const response=await openAIResponses(env,{...payload,request_id:'fixture-request'},undefined,{reserve:async()=>{},fetch:async()=>{calls++;return new Response(event({type:'response.output_text.delta',delta:'Partial'})+event({type:'response.failed',response:{error:{code:providerCode,message:'sensitive '+env.OPENAI_API_KEY}}}),{headers:{'x-request-id':'req_fixture'}});}});
+   const wire=await response.text();assert.match(wire,/Partial/);assert.match(wire,new RegExp(expected));assert.doesNotMatch(wire,/"type":"complete"/);assert.equal(calls,1);
+   const diagnostic=logs.find(x=>x.event==='openai_provider_failure');assert.equal(diagnostic.http_status,200);assert.equal(diagnostic.provider_error_code,providerCode);assert.equal(diagnostic.provider_request_id,'req_fixture');assert.equal(diagnostic.request_id,'fixture-request');assert.ok(!JSON.stringify(logs).includes(env.OPENAI_API_KEY));assert.ok(!wire.includes(env.OPENAI_API_KEY));
+  }finally{console.error=original;}
+ }
+});

@@ -318,3 +318,8 @@ Backend-priority follow-up: UI refinement/resizable workspace is deferred. Added
 - supabase/migrations/20261030000010_chat_message_order.sql
 
 Deletions: none. SQL08–10 and owner-verified UUID grant template are separate from automatic application startup. ZIP parts contain at most100 files each. Production outage and real OAuth/passkeys remain unverified.
+
+
+## Pending migration provider-stream repair — 2026-10-30
+
+Fixed Responses nested failure parsing and safe provider status/category/request-ID diagnostics. Live provider rejection remains unverified without production logs; no automatic retry added. Preserve current UI and pending1.0.8 work. See `docs/diagnostics/PROVIDER_STREAM_REPAIR.md`. No main push or deployment authorized.

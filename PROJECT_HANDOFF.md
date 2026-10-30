@@ -111,3 +111,8 @@ AELIO additionally includes bounded editable custom groups, the exact scripted U
 
 
 Backend-priority follow-up: UI refinement/resizable workspace is deferred. Added correlated reservation/provider/persistence diagnostics and copyable support references, fixed fragmented CRLF stream parsing and deterministic ordering for newly saved chat turns (SQL10). All eight companion handler/provider/persistence paths are tested with explicitly synthetic local inference; Simone provider rejection is correlated/refunded. Production outage remains unverified: no Cloudflare runtime-log connection or live provider credentials were available. New work stays migration-only; no main push, production SQL or manual deployment.
+
+
+## Pending migration provider-stream repair — 2026-10-30
+
+Fixed Responses nested failure parsing and safe provider status/category/request-ID diagnostics. Live provider rejection remains unverified without production logs; no automatic retry added. Preserve current UI and pending1.0.8 work. See `docs/diagnostics/PROVIDER_STREAM_REPAIR.md`. No main push or deployment authorized.
