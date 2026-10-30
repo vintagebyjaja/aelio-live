@@ -1,0 +1,302 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "87ed73940d6f3a195640b86c99eea5dd4cadd960dcb2708b5f63d31d874ef9e4"
+  },
+  {
+    "path": "CHANGELOG.md",
+    "sha256": "b881f560f56a9cadfb8b3b930c99b66abf90d83916aaa0248d92476b8db24096"
+  },
+  {
+    "path": "PROJECT_HANDOFF.md",
+    "sha256": "298a01ea68f497775b66b9e18e8aa6550950763d0eb76aa38702ccd608f5fe5d"
+  },
+  {
+    "path": "PROJECT_OVERVIEW.md",
+    "sha256": "c1af6705e333a0fb83754515ce5e807d5665153cccf057443fa7a935aa375bdd"
+  },
+  {
+    "path": "RELEASE_MANIFEST.md",
+    "sha256": "cf46085c0b462761e9f65b541a3a47697a1f03b53f74537412358f3c1aeabcdb"
+  },
+  {
+    "path": "_src/chat/Auth.tsx",
+    "sha256": "6262dcffc74afd11c15e4f77f60f4617111b23135d202bba596d6e4c22b3fd8e"
+  },
+  {
+    "path": "_src/chat/main.tsx",
+    "sha256": "31b3916fd95ac4eed8c267fbf1ee91f50be4d1d7c011aeb7f171a25e14977483"
+  },
+  {
+    "path": "_src/checks/browser_premium.py",
+    "sha256": "f0332ea8be1432d666cdbb6bb99a26a7979eb0610ace39ee9dffaac0edca72a1"
+  },
+  {
+    "path": "_src/checks/test-platform-integration.mjs",
+    "sha256": "43e5613aeb1bef01c5d6ed920547ec2bdc6da6986b54f12fc5e9eb3d27b92932"
+  },
+  {
+    "path": "_src/checks/test-recovery-optional.mjs",
+    "sha256": "948c7c5c12b030bee4a3305f12ff5ac55c126ebc2ee6abb1faafdf95133cb75a"
+  },
+  {
+    "path": "_src/platform/recovery.js",
+    "sha256": "da0edafd285e364cb38e83714afa7e58572af21f036975233156c125bd7738c7"
+  },
+  {
+    "path": "docs/releases/AELIO_v1.0.6_VALIDATION.md",
+    "sha256": "c49931520ddea5bcde2a837b03f6c2314b36fbd4f03189d7de315b8b5eefc009"
+  },
+  {
+    "path": "package-lock.json",
+    "sha256": "628849ce66ebff39cece784a8d2e448edb4b84b7a0d1d3b47be939734c8f05fa"
+  },
+  {
+    "path": "package.json",
+    "sha256": "5b4a50bf933c6ba68fea7fad044d7369e9249f641ad0aec76b9c632dc7f8b69e"
+  },
+  {
+    "path": "public/404.html",
+    "sha256": "72c9ae38b056c8a57925905365d22f7733ec19064392e928b8e2197edfcb3a4f"
+  },
+  {
+    "path": "public/account/index.html",
+    "sha256": "7247e80b72b6d14a851ae696aa351fc1f2102158dcbb52c678d35162c999cfdc"
+  },
+  {
+    "path": "public/aelio/agent-transfer/index.html",
+    "sha256": "617090219e4998adf74052ff662bbb3b7ae76804cbd6b9c1b1dae39ba4229923"
+  },
+  {
+    "path": "public/aelio/conversation/index.html",
+    "sha256": "3cd364566d1ff084176b2eac2bf080665dd1ee65f945bf9d0382642b029239aa"
+  },
+  {
+    "path": "public/aelio/how-it-works/index.html",
+    "sha256": "175180ab0a480ee2ce51dbe9d11bd40b9162fd19c0d79111cbdafdbd20857b67"
+  },
+  {
+    "path": "public/aelio/index.html",
+    "sha256": "66def08f31c18de9c8c912abd3638b0b46058bd306fd41b15fb221349e8c28b2"
+  },
+  {
+    "path": "public/aelio/main-pal/index.html",
+    "sha256": "4b660296d3bd5d2a6ed34d0a425a7aaffdde1c18a6752d3dca37143cb635f71e"
+  },
+  {
+    "path": "public/aelio/personalities/index.html",
+    "sha256": "3f4db5a815bb8af47ac35133ba5e1ad299737542a47f51bfaa1e5ab46cb09dec"
+  },
+  {
+    "path": "public/aelio/teammate/index.html",
+    "sha256": "9c2797806c5e95ef994dadc27d35b1d6ca227aa751621c98713538c765055c1d"
+  },
+  {
+    "path": "public/agent-campus/accountability/index.html",
+    "sha256": "7037d16a9a48a780eab0f3b4ed250ddf7cb7cdf5f7df29ed2f544249d387a812"
+  },
+  {
+    "path": "public/agent-campus/community-service/index.html",
+    "sha256": "bc458d0b755e16b76ef81691ba6c4d9746faaf8caef74bf4d6d24b05c02454e7"
+  },
+  {
+    "path": "public/agent-campus/draft-block/index.html",
+    "sha256": "9755ebcbdd6fb0e7c9f52a2e4f69fe3f7d130f3cbdc8c95de810c31e66b56afd"
+  },
+  {
+    "path": "public/agent-campus/index.html",
+    "sha256": "dfa708bd95c711a639ee04f214280dc7949daa600dcfaecea0f2295020edf274"
+  },
+  {
+    "path": "public/agent-campus/lobby/index.html",
+    "sha256": "926c97c13a3fabc9c45cd30a9d5505d626fab067e3e75fba3c7b347295d5109a"
+  },
+  {
+    "path": "public/agent-campus/mentor-mentee/index.html",
+    "sha256": "7a52d87243e20a3d20c388d702a7d8886c26e92913dfe74b3ef45281fa25da93"
+  },
+  {
+    "path": "public/agent-campus/onboarding/index.html",
+    "sha256": "da23916c45484a92e811954aae01c43f21e6e3be36119669911e5e0b5f8b5de1"
+  },
+  {
+    "path": "public/agent-campus/reports/index.html",
+    "sha256": "d59f2f60405fd144be59c94d652a96b6ce00d929c949585c82dbf3c823dd89fd"
+  },
+  {
+    "path": "public/agent-campus/university/index.html",
+    "sha256": "9891b27254f3b70410eab6aa298f62692b7476918c6dbecc839c63d17eb3eb3b"
+  },
+  {
+    "path": "public/assets/chat/app.js",
+    "sha256": "5ba0c70f906f1c00005f4261196e7ab8728ba282330a5d3932f07f5ab26f433d"
+  },
+  {
+    "path": "public/auth/callback/index.html",
+    "sha256": "7247e80b72b6d14a851ae696aa351fc1f2102158dcbb52c678d35162c999cfdc"
+  },
+  {
+    "path": "public/auth/reset/index.html",
+    "sha256": "7247e80b72b6d14a851ae696aa351fc1f2102158dcbb52c678d35162c999cfdc"
+  },
+  {
+    "path": "public/brain/index.html",
+    "sha256": "eab84e75f56b3ef67a9bb8681f5132ff27caa25d166e6236b13aabfdbb5a877b"
+  },
+  {
+    "path": "public/brain/my/index.html",
+    "sha256": "99fbb763cd6b97154ea8fee3844cc3b76c39d61bc87172ef3b89d911994d4d6e"
+  },
+  {
+    "path": "public/chat/index.html",
+    "sha256": "7247e80b72b6d14a851ae696aa351fc1f2102158dcbb52c678d35162c999cfdc"
+  },
+  {
+    "path": "public/create/animation/index.html",
+    "sha256": "16aff4e0fbd1d8659fcee291010464cde5a70bb74e6fcb844c94716d44acc892"
+  },
+  {
+    "path": "public/create/architecture/index.html",
+    "sha256": "3987b2365291d196cb6b476ba5c71e3700bd8cb2999c14cd775b6d887f6289a1"
+  },
+  {
+    "path": "public/create/design/index.html",
+    "sha256": "63a655b7aa01dfa1b4bdd13edfbeb8179c0a282f704f5a3bc910892ab912658e"
+  },
+  {
+    "path": "public/create/games/index.html",
+    "sha256": "5c0865cbed820f800f1e587af34917af783f0d04d74af937bd1b1221d6edc52f"
+  },
+  {
+    "path": "public/create/index.html",
+    "sha256": "5992fcf9f476a3d8bcb63612173c89eae029b0d706dd73053d7ead52c4f61d71"
+  },
+  {
+    "path": "public/create/projects/index.html",
+    "sha256": "fac44f4317bc5de675f1cafd345b6bcfaa26a97cde7b4a699c7e832dd496b98c"
+  },
+  {
+    "path": "public/create/worlds/index.html",
+    "sha256": "90c16747af79db334bef3659dcc02b64ec0ea0490f2a17ec4e991f82e25965ce"
+  },
+  {
+    "path": "public/dream-beyond/agent-team/index.html",
+    "sha256": "266c9fdddeb22034b6f0779a319b985f95af2ad1af5baadc84b384ce139e2976"
+  },
+  {
+    "path": "public/dream-beyond/dream-spaces/index.html",
+    "sha256": "61123052383ea4a9e98f3865a33c9939bc315e912e6370ac8652ef5185843494"
+  },
+  {
+    "path": "public/dream-beyond/ecosystem/index.html",
+    "sha256": "278bbb7543ff732be913f9ff229e2f0ec4dddc1a0c3578709ec81a064037baeb"
+  },
+  {
+    "path": "public/dream-beyond/index.html",
+    "sha256": "a143670e1ebc51c1dc8a213ac936ff07e0a0944cdf9e50a107b192d33db5c9fd"
+  },
+  {
+    "path": "public/dream-beyond/main-pal/index.html",
+    "sha256": "9779e77fb43226e0c33c4737609a91f9ebe2936aaec267ec5e759dad86f66860"
+  },
+  {
+    "path": "public/dream-beyond/vision/index.html",
+    "sha256": "d3943dfb0f654df760a6260f90ea6695827a3bbf52e24cb846178dcc92882a64"
+  },
+  {
+    "path": "public/explore/index.html",
+    "sha256": "24241b5fa1a1b70e4d437d4e95b5e4b7eb1ca19f4ce49528546147141910edfc"
+  },
+  {
+    "path": "public/index.html",
+    "sha256": "0bbad5f084ca0f362df38736d7e7df3a53cf40d4acd3eb338655e2795b1a3cb1"
+  },
+  {
+    "path": "public/live/agent-teams/index.html",
+    "sha256": "4f6ae2583b3cbf0231a5d74e1178413169a4ec00561ff4f85ee7feed604946f5"
+  },
+  {
+    "path": "public/live/create-agents/index.html",
+    "sha256": "348b27ea98101924b3890289c7144501b170a8c1ad8acf96417ea348700753ce"
+  },
+  {
+    "path": "public/live/index.html",
+    "sha256": "9d1bf7d4fa13bc7437fa1f9460fbcdf75f52f4f83f0efffb8b0a6bf14ae9a074"
+  },
+  {
+    "path": "public/live/marketplace/index.html",
+    "sha256": "4cc298011f056189961f6837e3bb66c6f19ab1a34bfdd0786e57768613c7fbd8"
+  },
+  {
+    "path": "public/live/plans/index.html",
+    "sha256": "99a83be0dda3cff045a6073123e5f16ba40debbbb342aec63d58a8be6dd6bc9e"
+  },
+  {
+    "path": "public/live/publishing/index.html",
+    "sha256": "7e1f8cb7350446061d1475c0850e1b9d4b59265bf577bc0dd1d03222efb5420d"
+  },
+  {
+    "path": "public/live/train-agents/index.html",
+    "sha256": "ca35b0efe229edd3df7238944780329545ba6b940dc80fa76386167d1e175b68"
+  },
+  {
+    "path": "public/studiobrain/index.html",
+    "sha256": "fbcc4a660bd7334823642139737b85dca0b89c32dc61453c9b8f61e93b8a6de8"
+  },
+  {
+    "path": "public/technology/dream-cloud/index.html",
+    "sha256": "2101d65dc8d5e21747c20d055c8b62e1c25057c3e8e0d7610e76066249814b96"
+  },
+  {
+    "path": "public/technology/dream-code/index.html",
+    "sha256": "1363432a2b7c6bb3c29a86982a5797e7d2ff9c4fe74f8c3edc1006d4054adce2"
+  },
+  {
+    "path": "public/technology/dream-deploy/index.html",
+    "sha256": "648127c01b9867180462555e6c55eb65576e97d988c4c24ef7363c9e88d5a821"
+  },
+  {
+    "path": "public/technology/dream-guard/index.html",
+    "sha256": "b8b59248f7e5994d1832d085c2717c68e5d1c7955c09fc4dd9053cf0bfb9b379"
+  },
+  {
+    "path": "public/technology/dream-memory/index.html",
+    "sha256": "56386c7a08af9870602acb263292d367d1be6ff0ef1d00fe9dff3e0ab0c21ebb"
+  },
+  {
+    "path": "public/technology/green-guardians/index.html",
+    "sha256": "b318f095440a0af4ced937ab747708138c062a9e46454f74e33181caef636082"
+  },
+  {
+    "path": "public/technology/index.html",
+    "sha256": "ef084da7d0d58ef7e5b687563497e05bc3b0e50f9ac8477cfa7c82b31ed79dbb"
+  },
+  {
+    "path": "public/technology/native/index.html",
+    "sha256": "9348ca6647843b458f2574a2ea5aafce98733fff83ad5cf70a5bf0e747f82947"
+  },
+  {
+    "path": "public/values/community/index.html",
+    "sha256": "86c85db926c73e798a8632f471b307d09bc7dc310933375c899771b240b0a835"
+  },
+  {
+    "path": "public/values/green-guardians/index.html",
+    "sha256": "d788f82998a84b23689a16a553136996ed120dacc0b278005a816919b7c4b084"
+  },
+  {
+    "path": "public/values/index.html",
+    "sha256": "7b6e82988c10850828cc1f2d22e6855aee410d6948d149c7a588d391eb666059"
+  },
+  {
+    "path": "public/values/opportunity/index.html",
+    "sha256": "96438955394ce0e57ee1f33bf26d0bfd39dcc6b331f0c9e236c7edc5515335fe"
+  },
+  {
+    "path": "public/values/privacy/index.html",
+    "sha256": "6e89c69f127fba1d6b48e97c4fdf7a68830b32dcc5840c2002f92be47b464ca9"
+  },
+  {
+    "path": "supabase/migrations/20261030000007_optional_recovery.sql",
+    "sha256": "eeedf17a44d476e6ad43adeb841f8f92a99d9890b1e729c1e1e8de3087403f6e"
+  }
+]

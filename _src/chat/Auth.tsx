@@ -79,6 +79,7 @@ export function AuthPanel({ onDone, enroll = false }: any) {
     [newPassword, setNewPassword] = useState("");
   const [qs, setQs] = useState(QUESTIONS.slice(0, 2)),
     [answers, setAnswers] = useState(["", ""]);
+  const [generateCodes, setGenerateCodes] = useState(false);
   const [code, setCode] = useState(""),
     [codes, setCodes] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
@@ -107,15 +108,6 @@ export function AuthPanel({ onDone, enroll = false }: any) {
     try {
       if (!auth) throw new Error(authConfigurationError);
       if (mode === "signup") {
-        const readiness = await call("/status");
-        if (
-          !readiness.accounts ||
-          !readiness.databaseConfigured ||
-          !readiness.sessionConfigured
-        )
-          throw new Error(
-            "Your account needs a moment to get ready. Please try again shortly. No new account has been created.",
-          );
         if (
           (window as any).AELIO_CONFIG?.turnstileSiteKey &&
           !(window as any).aelioCaptchaToken
@@ -139,21 +131,23 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           return;
         }
         setMode("enroll");
-        const r2 = await call("/recovery/enroll", "POST", {
+        try { await call("/recovery/enroll", "POST", {
           password,
           questions: qs,
           answers,
         });
-        setCodes(r2.codes);
+        } catch { /* Account is already created: optional setup must not prevent entry. */ }
+        onDone();
         setAnswers(["", ""]);
         setPassword("");
       } else if (mode === "enroll") {
         const r = await call("/recovery/enroll", "POST", {
+          generate_codes: generateCodes,
           password,
           questions: qs,
           answers,
         });
-        setCodes(r.codes);
+        if (r.codes) setCodes(r.codes); else onDone();
         setAnswers(["", ""]);
         setPassword("");
       } else if (mode === "recover") {
@@ -307,17 +301,18 @@ export function AuthPanel({ onDone, enroll = false }: any) {
           (window as any).AELIO_CONFIG?.turnstileSiteKey && <Turnstile />}
         {["signup", "enroll"].includes(mode) && (
           <p className="muted">
-            Your answers are protected with slow salted hashing. Single-use
-            recovery codes are required as the stronger backup factor.
+            Saving answers leaves your password unchanged. Questions alone cannot
+            reset a password. Secure email recovery remains available.
           </p>
         )}
+        {mode === "enroll" && <label><input type="checkbox" checked={generateCodes} onChange={(e:any)=>setGenerateCodes(e.target.checked)} />Also generate new backup codes (optional; replaces old codes)</label>}
         <button disabled={busy}>
           {busy
             ? "One moment…"
             : mode === "signup"
               ? "Create Free account"
               : mode === "enroll"
-                ? "Save recovery & get codes"
+                ? "Save recovery answers"
                 : mode === "recover"
                   ? "Reset password"
                   : mode === "email"
@@ -341,7 +336,8 @@ export function AuthPanel({ onDone, enroll = false }: any) {
             Use secure email recovery
           </button>
         )}
-        <a href="/chat/">Back to Chat</a>
+        <a href="/">Back to AELIO</a>
+        <a href="/explore/">Explore the free site</a>
       </nav>
     </section>
   );

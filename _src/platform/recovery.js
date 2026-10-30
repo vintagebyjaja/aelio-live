@@ -65,9 +65,12 @@ async function reauth(env, u, password) {
   return d;
 }
 export async function recovery(req, env, path) {
-  await rate(req, env, "recovery", 5, 900);
+  // Authenticated setup is throttled by verified owner, independent of guest signing.
+  if (path !== "/enroll") await rate(req, env, "recovery", 5, 900);
   if (path === "/enroll") {
     const u = await who(req, env);
+    const allowed = await rpc(env, "app_limit", {k:await digest("recovery-owner:"+u.id),maximum:5,seconds:900});
+    if (!allowed) fail(429,"rate_limited","Too many attempts. Please wait and try again.");
     const d = await body(req);
     await reauth(env, u, d.password);
     if (
@@ -90,15 +93,15 @@ export async function recovery(req, env, path) {
         "Use two different questions and answers of at least three characters.",
       );
     const hashes = await Promise.all(ans.map((a) => slowHash(a)));
-    const codes = Array.from({ length: 8 }, random);
-    const codeHashes = await Promise.all(codes.map(digest));
-    await rpc(env, "app_enroll_recovery", {
-      uid: u.id,
-      qs,
-      hashes,
-      codes: codeHashes,
-    });
-    return reply({ codes });
+    // Backup codes are generated only by a separate, explicit owner action.
+    if (d.generate_codes === true) {
+      const codes = Array.from({length:8},random);
+      await rpc(env,"app_enroll_recovery",{uid:u.id,qs,hashes,codes:await Promise.all(codes.map(digest))});
+      return reply({codes,password_changed:false});
+    }
+    // Saving answers never changes passwords, sessions or existing backup codes.
+    await rpc(env, "app_save_recovery_questions", {uid:u.id, qs, hashes});
+    return reply({ok:true, password_changed:false});
   }
   if (path === "/reset") {
     const d = await body(req);

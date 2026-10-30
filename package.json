@@ -8,7 +8,7 @@
     "build:brain": "node _src/build-brain.mjs",
     "check": "node _src/checks/check-public.mjs",
     "check:deploy": "node _src/checks/check-deploy.mjs",
-    "test": "node --test _src/checks/test-engine-proxy.mjs _src/checks/test-supabase-auth.mjs _src/checks/test-pathd-bridge.mjs _src/checks/test-worker.mjs _src/checks/test-platform.mjs _src/checks/test-appearance.mjs _src/checks/test-auth-config.mjs _src/checks/test-openai.mjs _src/checks/test-experience.mjs",
+    "test": "node --test _src/checks/test-engine-proxy.mjs _src/checks/test-supabase-auth.mjs _src/checks/test-pathd-bridge.mjs _src/checks/test-worker.mjs _src/checks/test-platform.mjs _src/checks/test-appearance.mjs _src/checks/test-auth-config.mjs _src/checks/test-openai.mjs _src/checks/test-experience.mjs _src/checks/test-recovery-optional.mjs",
     "dev": "node _src/checks/pages-emulator.mjs public 8090",
     "build:chat": "node _src/build-chat.mjs",
     "typecheck": "tsc --noEmit -p _src",
@@ -20,5 +20,5 @@
     "react-dom": "19.2.0",
     "typescript": "5.9.3"
   },
-  "version": "1.0.5"
+  "version": "1.0.6"
 }

@@ -609,12 +609,6 @@ function App() {
         <AuthPanel onDone={reload} />
       </main>
     );
-  if (session && account && !account.user.recovery_enrolled)
-    return (
-      <main className="auth-page">
-        <AuthPanel enroll onDone={reload} />
-      </main>
-    );
   return (
     <div
       className={

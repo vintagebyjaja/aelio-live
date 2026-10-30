@@ -289,7 +289,7 @@ await test("reminders persist, deliver once, and expose notifications only to th
   await call("/career/reminders/" + r.id, "DELETE");
 });
 await test('recovery route needs both protected answers and an unused strong code; codes are atomic and private',async()=>{
- const enroll=await call('/recovery/enroll','POST',{password:'fixture-password',questions:['Question one for local test?','Question two for local test?'],answers:['answer one','answer two']});
+ const enroll=await call('/recovery/enroll','POST',{generate_codes:true,password:'fixture-password',questions:['Question one for local test?','Question two for local test?'],answers:['answer one','answer two']});
  assert.equal(enroll.codes.length,8);assert.equal(new Set(enroll.codes).size,8);
  const wrong=await platform(request('/recovery/reset','POST',{email:'one@local.test',password:'new-password-local-only',answers:['wrong','wrong'],code:enroll.codes[0]},null),env);assert.equal(wrong.status,400);assert.equal(resetPassword,null);
  const ok=await call('/recovery/reset','POST',{email:'one@local.test',password:'new-password-local-only',answers:['answer one','answer two'],code:enroll.codes[0]},null);assert.equal(ok.ok,true);assert.equal(resetPassword,'new-password-local-only');assert.ok(logouts>0);

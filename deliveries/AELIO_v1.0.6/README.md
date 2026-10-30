@@ -1,0 +1,1 @@
+AELIO 1.0.6: sign-in is no longer gated by recovery setup. Run only migration07 in the existing shared Supabase project after05/06, once. No password/session/subscription changes. See docs/releases/AELIO_v1.0.6_VALIDATION.md. No production SQL executed by Codex.

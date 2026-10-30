@@ -46,3 +46,10 @@ The default website deployment no longer requires a not-yet-created Brain Worker
 The approved cinematic Home/Discover/Agents/Create/Projects/Connected Apps/Settings UX is implemented for desktop/tablet/mobile with four themes, actual owned history, an animated orb and unified explicit-send composer. Supabase public aliases resolve at build/runtime without leaking secrets; session refresh and product-local logout are hardened. Guest/rate HMAC can derive from the server-only service credential when a dedicated secret is absent. Worker-native OpenAI Responses streams through existing authorized orchestration, quotas and persistent conversations; model/output/context/daily limits are server-configurable. Existing private Brain/Native infrastructure remains separate. Website handoffs are labeled and never claim API/account-linking access. PATHD remains a separate application/repository.
 
 1.0.5 adds owner-scoped account repair RPCs and permanent official companions/Dream Team, consumer copy/fallback polish and the native WebGL liquid-metal orb. See config/V1_0_5_SETUP.md. Main is preserved pending explicit review.
+
+
+## 1.0.6 — Optional recovery and sign-in repair (2026-10-30)
+
+Owner authorizes pushing this repair to main in each separate repository. Verified sign-in never forces recovery enrollment. Public browsing remains available; private account data still requires authentication. Signup no longer depends on optional companion/guest configuration. Saving recovery answers does not change passwords or sessions and preserves existing backup codes; new codes require explicit opt-in. Current-password verification remains required when editing security settings. Shared identities do not merge subscriptions or browser sessions.
+
+Run AELIO migration `20261030000007_optional_recovery.sql` once after the already-applied 05 and 06 for answer-only saving. Do not rerun old migrations. Sign-in is independent of 07. No production SQL, credentials/settings changes or manual deployment performed. Local fixture checks do not verify production Auth or Cloudflare runtime configuration.

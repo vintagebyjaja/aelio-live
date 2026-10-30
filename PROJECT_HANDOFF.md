@@ -90,3 +90,10 @@ No deployment, push, release publication, real account mutation, destructive sou
 Read the configuration and SQL instructions; configure and validate a staging copy with the owner's keys. Resolve the protected browser download policy if that separate Quality Lab workflow is required. Run real end-to-end Auth/recovery/provider/R2 checks before claiming operational readiness. The owner handles all uploads, settings and deployment; do not do them automatically.
 
 1.0.5 final portrait source: AELIO_Approved_Avatars.zip supplied by the user. Imported exact six-character grid and approved business-casual MILA image; no substitute image generation. Literal review branch is migration in both repositories.
+
+
+## 1.0.6 — Optional recovery and sign-in repair (2026-10-30)
+
+Owner authorizes pushing this repair to main in each separate repository. Verified sign-in never forces recovery enrollment. Public browsing remains available; private account data still requires authentication. Signup no longer depends on optional companion/guest configuration. Saving recovery answers does not change passwords or sessions and preserves existing backup codes; new codes require explicit opt-in. Current-password verification remains required when editing security settings. Shared identities do not merge subscriptions or browser sessions.
+
+Run AELIO migration `20261030000007_optional_recovery.sql` once after the already-applied 05 and 06 for answer-only saving. Do not rerun old migrations. Sign-in is independent of 07. No production SQL, credentials/settings changes or manual deployment performed. Local fixture checks do not verify production Auth or Cloudflare runtime configuration.

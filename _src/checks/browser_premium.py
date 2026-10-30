@@ -69,7 +69,7 @@ with sync_playwright() as p:
   if '/messages' in route.request.url:return route.fulfill(content_type='application/json',body='{"messages":[]}')
   return route.fulfill(status=401,content_type='application/json',body='{"error":"Fixture: account service needs sign-in"}')
  page.route('**/assets/config.js',guest_fixture);page.route('**/api/platform/**',guest_fixture)
- page.goto(BASE+'/',wait_until='networkidle');page.get_by_text('Try the limited guest chat, or sign in to keep your history.',exact=True).wait_for()
+ page.goto(BASE+'/',wait_until='networkidle');page.locator('.hero-composer').wait_for();assert not page.get_by_role('heading',name='Account Security Setup',exact=True).count()
  nav(page,390,'Settings');page.get_by_role('button',name='Appearance & themes',exact=False).click();page.locator('.design-choice').filter(has_text='Ocean Fresh').click();page.get_by_role('button',name='Save global appearance',exact=True).click();page.get_by_text('Appearance saved. Agents using your default will follow it.',exact=True).wait_for();page.reload(wait_until='networkidle');assert page.locator('.dream-app').get_attribute('data-design')=='ocean-fresh'
  print('Guest: no fabricated history/account; local appearance survives reload')
  browser.close()
