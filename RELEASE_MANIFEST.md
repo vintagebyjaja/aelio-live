@@ -43,6 +43,13 @@ Application: AELIO only. Base:db874d4 (v1.0.3). User-authorized immediate Git pu
 - docs/assignments/AELIO_v1.0.4_AI_REQUEST.md
 - docs/assignments/AELIO_v1.0.4_DESKTOP_REQUEST.md
 - docs/assignments/AELIO_v1.0.4_MOBILE_REQUEST.md
+- docs/previews/v1.0.4/README.md
+- docs/previews/v1.0.4/chocolate-cream-1440.png
+- docs/previews/v1.0.4/ocean-fresh-1440.png
+- docs/previews/v1.0.4/og-dark-1440.png
+- docs/previews/v1.0.4/og-dark-390.png
+- docs/previews/v1.0.4/og-light-1440.png
+- docs/previews/v1.0.4/og-light-390.png
 - docs/releases/AELIO_v1.0.4_VALIDATION.md
 - engine/aelio/routes_messaging.py
 - engine/tests/test_messaging_bridge.py
@@ -62,4 +69,4 @@ Application: AELIO only. Base:db874d4 (v1.0.3). User-authorized immediate Git pu
 - public/studiobrain/index.html
 - wrangler.jsonc
 
-No versioned ZIP is required by the latest user delivery workflow. Previous archives were not overwritten.
+The latest user workflow uses direct Git delivery; no new combined ZIP is created. PATHD remains in its own repository.
