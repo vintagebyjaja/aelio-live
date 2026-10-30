@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { call } from "./client";
-import { DESIGNS, designOf } from "./design-system";
+import { Icon, Orb } from "./Icon";
 export const TOPICS = [
   [
     "Just Chat",
@@ -102,38 +102,103 @@ export function dayContext(date = new Date()) {
             food: "Dinner",
           };
 }
+const FEATURES = [
+  {
+    label: "IDEAS",
+    title: "Turn your ideas into reality.",
+    image: "ideas-horizon.webp",
+    topic: 1,
+  },
+  {
+    label: "GROWTH",
+    title: "A better you, every day.",
+    image: "new-ideas.webp",
+    topic: 10,
+  },
+  {
+    label: "TRAVEL",
+    title: "Explore new places.",
+    image: "just-chat.webp",
+    topic: 2,
+  },
+  {
+    label: "CREATIVE",
+    title: "Bring your vision to life.",
+    image: "business.webp",
+    topic: 1,
+  },
+];
 interface DreamHomeProps {
   name?: string;
   onTopic: (topic: string[] | undefined) => void;
-  onAppearance: (id?: string) => void;
   appearance: any;
-  recent?: any;
+  recent: any[];
   onResume: (thread: any) => void;
+  onNavigate: (view: string) => void;
   direct: string;
   setDirect: (value: string | ((previous: string) => string)) => void;
+  onSend: () => Promise<void>;
+  sending: boolean;
+  consent: boolean;
+  onConsent: (value: boolean) => void;
+  files: any[];
+  onFile: (file: File) => Promise<void>;
+  onRemoveFile: (id: string) => void;
+  signedIn: boolean;
+  error?: string;
+  voiceEnabled: boolean;
 }
 export function DreamHome({
   name,
   onTopic,
-  onAppearance,
   appearance,
   recent,
   onResume,
+  onNavigate,
   direct,
   setDirect,
+  onSend,
+  sending,
+  consent,
+  onConsent,
+  files,
+  onFile,
+  onRemoveFile,
+  signedIn,
+  error,
+  voiceEnabled,
 }: DreamHomeProps) {
-  const context = dayContext();
-  const [voiceError, setVoiceError] = useState(""),
-    [listening, setListening] = useState(false);
-  const recognition = useRef<any>(null);
-  useEffect(() => () => recognition.current?.abort(), []);
+  const [now, setNow] = useState(new Date()),
+    [feature, setFeature] = useState(0),
+    [listening, setListening] = useState(false),
+    [voiceError, setVoiceError] = useState(""),
+    [actions, setActions] = useState(false),
+    [uploading, setUploading] = useState(false);
+  const recognition = useRef<any>(null),
+    homeInput = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActions(false);
+    };
+    addEventListener("keydown", close);
+    return () => removeEventListener("keydown", close);
+  }, []);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => {
+      clearInterval(timer);
+      recognition.current?.abort();
+    };
+  }, []);
+  const context = dayContext(now),
+    selected = FEATURES[feature];
   function dictate() {
     const SR =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     if (!SR) {
       setVoiceError(
-        "Voice input is unavailable in this browser. You can type below.",
+        "Voice input is unavailable in this browser. You can still type.",
       );
       return;
     }
@@ -147,17 +212,17 @@ export function DreamHome({
       r.lang = navigator.language;
       r.interimResults = false;
       r.onresult = (event: any) =>
-        setDirect((d: string) =>
-          [d, event.results[0][0].transcript]
+        setDirect((previous: string) =>
+          [previous, event.results[0][0].transcript]
             .filter(Boolean)
             .join(" ")
             .slice(0, 16000),
         );
       r.onerror = () => {
-        setVoiceError(
-          "Microphone or browser speech service was unavailable. You can type instead.",
-        );
         setListening(false);
+        setVoiceError(
+          "The microphone or browser speech service is unavailable. You can type instead.",
+        );
       };
       r.onend = () => setListening(false);
       r.start();
@@ -168,138 +233,410 @@ export function DreamHome({
     }
   }
   return (
-    <div className="home-layout">
-      <section className="dream-home">
+    <div className="premium-home home-layout">
+      <section className="hero-space">
         <div className="home-greeting">
           <p className="eyebrow">YOUR SPACE. YOUR ENERGY.</p>
           <h1>
-            {context.greeting}
-            {name ? `, ${name.split(" ")[0]}` : ""}{" "}
-            <span aria-hidden="true">
-              {context.food === "Lunch" ? "☀" : "☾"}
+            {context.greeting}{" "}
+            <span className="greeting-symbol">
+              <Icon
+                name={
+                  context.greeting === "Good Morning" ||
+                  context.greeting === "Good Afternoon"
+                    ? "sun"
+                    : "moon"
+                }
+                size={40}
+              />
             </span>
           </h1>
-          <p>What’s the vibe today?</p>
+          <p className="hero-question">
+            What’s on your mind<span className="desktop-word"> today</span>?
+          </p>
         </div>
-        <button className="home-entry" onClick={() => onTopic(TOPICS[0])}>
-          <span className="main-pal-orb" aria-hidden="true" />
-          <span>I’m here whenever you’re ready.</span>
-          <span className="entry-arrow">→</span>
-        </button>
-        <form
-          className="home-composer"
-          onSubmit={(e: any) => {
-            e.preventDefault();
-            if (direct.trim()) onTopic(["Just Chat", "", direct.trim()]);
-          }}
-        >
-          <label className="sr-only" htmlFor="home-message">
-            Start talking to AELIO
-          </label>
-          <textarea
-            id="home-message"
-            value={direct}
-            maxLength={16000}
-            rows={1}
-            placeholder="Or tell me what’s on your mind…"
-            onChange={(e: any) => setDirect(e.target.value)}
+        <div className="orb-stage">
+          <Orb
+            state={
+              listening
+                ? "listening"
+                : sending
+                  ? "thinking"
+                  : error
+                    ? "error"
+                    : "idle"
+            }
           />
-          <button type="button" aria-pressed={listening} onClick={dictate}>
-            {listening ? "Stop" : "Mic"}
+        </div>
+        <div className="hero-compose-wrap">
+          <form
+            className="hero-composer"
+            onSubmit={(event: any) => {
+              event.preventDefault();
+              if (direct.trim() && !sending && !uploading) onSend();
+            }}
+          >
+            <button
+              type="button"
+              className="attachment-trigger"
+              aria-label="Attachments and actions"
+              aria-expanded={actions}
+              onClick={() => setActions(!actions)}
+            >
+              <Icon name={actions ? "close" : "plus"} />
+            </button>
+            <label className="sr-only" htmlFor="home-message">
+              Talk to AELIO
+            </label>
+            <textarea
+              ref={homeInput}
+              id="home-message"
+              rows={1}
+              maxLength={16000}
+              placeholder="Talk to AELIO…"
+              value={direct}
+              onChange={(event: any) => setDirect(event.target.value)}
+            />
+            <button
+              type="button"
+              className="voice-trigger"
+              aria-label={listening ? "Stop listening" : "Start voice input"}
+              title={
+                voiceEnabled
+                  ? "Browser speech input"
+                  : "Enable voice input in Settings"
+              }
+              disabled={!voiceEnabled || sending}
+              aria-pressed={listening}
+              onClick={dictate}
+            >
+              <Icon name="mic" />
+            </button>
+            <button
+              className="hero-send"
+              aria-label="Send to AELIO"
+              disabled={!direct.trim() || sending || uploading}
+            >
+              <Icon name="send" />
+            </button>
+          </form>
+          {actions && (
+            <div className="home-attachment-menu">
+              <button
+                aria-label="Close attachment actions"
+                onClick={() => setActions(false)}
+              >
+                <Icon name="close" size={18} />
+              </button>
+              {signedIn ? (
+                <label>
+                  Attach a document
+                  <input
+                    type="file"
+                    accept=".txt,.md,.json,.pdf"
+                    disabled={uploading || files.length >= 3}
+                    onChange={async (event: any) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setUploading(true);
+                      try {
+                        await onFile(file);
+                        setActions(false);
+                      } finally {
+                        setUploading(false);
+                        event.target.value = "";
+                      }
+                    }}
+                  />
+                </label>
+              ) : (
+                <button onClick={() => onNavigate("account")}>
+                  Sign in to attach private files
+                </button>
+              )}
+              <p>
+                Up to three text, JSON or PDF files, each up to1MB for AI
+                processing.
+              </p>
+            </div>
+          )}
+          {files.length > 0 && (
+            <div className="home-files">
+              {files.map((file) => (
+                <span key={file.id}>
+                  {file.name}
+                  <button
+                    aria-label={"Remove " + file.name}
+                    onClick={() => onRemoveFile(file.id)}
+                  >
+                    <Icon name="close" size={14} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {!consent && (
+            <label className="home-consent">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(event: any) => onConsent(event.target.checked)}
+              />
+              Allow my messages and selected files to be processed by AELIO’s AI
+              providers.
+            </label>
+          )}
+          {(listening || voiceError) && (
+            <p className="voice-feedback" role="status">
+              {listening
+                ? "Listening… Your browser’s speech service may process audio remotely."
+                : voiceError}
+            </p>
+          )}
+        </div>
+        <nav className="quick-actions" aria-label="Quick actions">
+          <button
+            onClick={() => {
+              homeInput.current?.focus();
+            }}
+          >
+            <Icon name="chat" />
+            Let’s Talk
           </button>
-          <button disabled={!direct.trim()}>Continue →</button>
-        </form>
-        <small className="voice-notice">
-          Voice uses your browser’s speech service, which may process audio
-          remotely.
-        </small>
-        {voiceError && <p role="status">{voiceError}</p>}
-        <div className="vibe-grid" aria-label="Conversation ideas">
-          {TOPICS.slice(0, 6).map((t) => (
-            <button className="vibe-card" key={t[0]} onClick={() => onTopic(t)}>
+          <button onClick={() => onNavigate("create")}>
+            <Icon name="bulb" />
+            Create
+          </button>
+          <button onClick={() => onNavigate("discover")}>
+            <Icon name="compass" />
+            Explore
+          </button>
+          <button
+            onClick={() => onNavigate("discover")}
+            aria-label="More conversation starters"
+          >
+            <Icon name="more" />
+            <span className="desktop-word">More</span>
+          </button>
+        </nav>
+      </section>
+      <section className="discovery-features" aria-label="AELIO possibilities">
+        <div className="mobile-feature">
+          <button
+            className="cinematic-feature"
+            onClick={() => onTopic(TOPICS[selected.topic])}
+          >
+            <img
+              src={"/assets/dream/" + selected.image}
+              alt=""
+              width="700"
+              height="300"
+              loading="lazy"
+            />
+            <span className="feature-copy">
+              <small>AELIO CAN HELP</small>
+              <strong>{selected.title}</strong>
+            </span>
+            <span className="feature-arrow">
+              <Icon name="arrow" />
+            </span>
+          </button>
+          <div
+            className="feature-dots"
+            role="group"
+            aria-label="Featured experiences"
+          >
+            {FEATURES.map((f, i) => (
+              <button
+                key={f.label}
+                aria-label={"Show " + f.label.toLowerCase() + " feature"}
+                aria-pressed={feature === i}
+                onClick={() => setFeature(i)}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="desktop-features">
+          {FEATURES.map((f) => (
+            <button
+              key={f.label}
+              className="cinematic-feature"
+              onClick={() => onTopic(TOPICS[f.topic])}
+            >
               <img
-                src={"/assets/dream/" + t[3]}
+                src={"/assets/dream/" + f.image}
                 alt=""
-                width="240"
-                height="180"
+                width="350"
+                height="230"
                 loading="lazy"
               />
-              <span>
-                <b>{t[0]}</b>
-                <small>{t[1]}</small>
+              <span className="feature-copy">
+                <small>{f.label}</small>
+                <strong>{f.title}</strong>
+              </span>
+              <span className="feature-arrow">
+                <Icon name="arrow" size={18} />
               </span>
             </button>
           ))}
         </div>
-        <div className="secondary-topics" aria-label="More conversation ideas">
-          {TOPICS.slice(6).map((t, i) => (
-            <button key={t[0]} onClick={() => onTopic(t)}>
-              <span aria-hidden="true">
-                {["◌", "◎", "▤", "♧", "✧", "▥", "•••"][i]}
-              </span>
-              {t[0]}
-            </button>
-          ))}
-        </div>
-        <div className="daily-picks">
-          <span>A little inspiration for this moment</span>
-          {context.picks.map((n) => (
-            <button
-              key={n}
-              onClick={() => onTopic(TOPICS.find((t) => t[0] === n))}
-            >
-              {n} ↗
-            </button>
-          ))}
-        </div>
-        <p className="home-note">
-          Choose a starting point, then make it yours. Nothing sends until you
-          press Send.
-        </p>
       </section>
-      <aside className="today-sidebar">
-        <Today food={context.food} onTopic={onTopic} />
-        <section className="today-card">
-          <div className="section-title">
-            <h2>Your AELIO</h2>
-            <button onClick={onAppearance}>Customize</button>
-          </div>
-          <div className="mini-designs">
-            {DESIGNS.map((d) => (
-              <button
-                key={d.id}
-                title={d.name}
-                aria-label={"Preview " + d.name}
-                onClick={() => onAppearance(d.id)}
-                style={{
-                  background: d.scene
-                    ? `url(/assets/dream/${d.scene}) center/cover`
-                    : d.surface,
-                  color: d.light ? "#302720" : "#fff2e4",
-                  borderColor:
-                    designOf(appearance).id === d.id ? d.accent : "transparent",
-                }}
-              >
-                {d.name}
+      <section className="recent-home">
+        <div className="section-title">
+          <h2>RECENT CHATS</h2>
+          <button onClick={() => onNavigate("chats")}>
+            View all <Icon name="arrow" size={16} />
+          </button>
+        </div>
+        {recent.length ? (
+          <div className="recent-cards">
+            {recent.slice(0, 4).map((t: any) => (
+              <button key={t.id} onClick={() => onResume(t)}>
+                <span className="recent-initial">
+                  {t.title?.slice(0, 1) || "A"}
+                </span>
+                <span>
+                  <strong>{t.title}</strong>
+                  <small>
+                    {t.preview || t.subtitle || "Continue your conversation"}
+                  </small>
+                </span>
               </button>
             ))}
           </div>
-          <p>{designOf(appearance).name}</p>
-          <button className="today-row" onClick={onAppearance}>
-            ◉ Chat Background <span>›</span>
+        ) : (
+          <div className="recent-empty">
+            <Icon name="chat" />
+            <p>
+              {signedIn
+                ? "Your next conversation starts here."
+                : "A little space for your thoughts."}
+            </p>
+            <small>
+              {signedIn
+                ? "Your recent chats will appear here."
+                : "Try the limited guest chat, or sign in to keep your history."}
+            </small>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+export function Discover({
+  onTopic,
+  onNavigate,
+  search = "",
+  onSearch,
+  threads = [],
+  onResume,
+}: any) {
+  const [group, setGroup] = useState("All");
+  const groups: Record<string, string[]> = {
+    All: TOPICS.map((t) => t[0]),
+    Create: ["New Ideas", "Business", "Inspiration"],
+    Everyday: [
+      "Just Chat",
+      "Lunch Ideas",
+      "Date Night",
+      "Affirmations",
+      "Random Thoughts",
+    ],
+    Explore: ["Travel Ideas", "Conspiracies", "Quick News"],
+    Reflect: ["Bible Verse", "Affirmations", "Inspiration"],
+  };
+  const filtered = TOPICS.filter(
+    (t) =>
+      groups[group].includes(t[0]) &&
+      [t[0], t[1]].join(" ").toLowerCase().includes(search.toLowerCase()),
+  );
+  return (
+    <section className="panel discovery-workspace">
+      <p className="workspace-eyebrow">FOLLOW YOUR CURIOSITY</p>
+      <h1>A little inspiration. Endless possibilities.</h1>
+      <label>
+        Find a starting point
+        <input
+          value={search}
+          onChange={(event: any) => onSearch(event.target.value)}
+          placeholder="Ideas, travel, affirmations…"
+        />
+      </label>
+      <div
+        className="discovery-tabs"
+        role="group"
+        aria-label="Discovery categories"
+      >
+        {Object.keys(groups).map((g) => (
+          <button
+            key={g}
+            aria-pressed={group === g}
+            onClick={() => setGroup(g)}
+          >
+            {g}
           </button>
-          <button className="today-row" onClick={onAppearance}>
-            ◌ Bubble Style <span>›</span>
-          </button>
-        </section>
-        {recent && (
-          <section className="today-card continue">
-            <h2>Pick up where you left off</h2>
-            <button onClick={() => onResume(recent)}>{recent.title} ↗</button>
+        ))}
+      </div>
+      {search.trim() &&
+        threads.some(
+          (t: any) =>
+            !t.archived && t.title.toLowerCase().includes(search.toLowerCase()),
+        ) && (
+          <section className="discovery-chat-results">
+            <h2>Conversations</h2>
+            {threads
+              .filter(
+                (t: any) =>
+                  !t.archived &&
+                  t.title.toLowerCase().includes(search.toLowerCase()),
+              )
+              .slice(0, 8)
+              .map((t: any) => (
+                <button key={t.id} onClick={() => onResume(t)}>
+                  <Icon name="chat" size={17} />
+                  {t.title}
+                </button>
+              ))}
           </section>
         )}
-      </aside>
-    </div>
+      <div className="discover-topics">
+        {filtered.map((t, i) => (
+          <button key={t[0]} onClick={() => onTopic(t)}>
+            {t[3] && (
+              <img
+                src={"/assets/dream/" + t[3]}
+                alt=""
+                width="320"
+                height="180"
+                loading="lazy"
+              />
+            )}
+            <span>
+              <Icon name={["chat", "bulb", "compass", "sparkle"][i % 4]} />
+              <strong>{t[0]}</strong>
+              <small>{t[1]}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+      {!filtered.length && (
+        <p>No matching ideas yet. Try a different search.</p>
+      )}
+      <div className="discover-connections">
+        <h2>Beyond your conversation</h2>
+        <p>
+          Groove Guide for the journey. VYBR8 for the experience. PATHD for your
+          next chapter.
+        </p>
+        <button onClick={() => onNavigate("connected-apps")}>
+          Explore connected apps <Icon name="arrow" size={18} />
+        </button>
+      </div>
+      <details className="discover-today">
+        <summary>Today, weather & local planning</summary>
+        <Today food={dayContext().food} onTopic={onTopic} />
+      </details>
+    </section>
   );
 }
 function weatherLabel(code: number) {
@@ -476,13 +813,13 @@ function Today({ food, onTopic }: any) {
       </div>
       <a
         className="today-row"
-        href={"https://www.google.com/maps/search/?api=1&query=" + mapQuery}
+        href="https://vybr8.live/"
         target="_blank"
         rel="noreferrer"
       >
         <span>
           <b>{food} Near You</b>
-          <small>Search Maps · opens another site</small>
+          <small>Open VYBR8 · website handoff only</small>
         </span>
         <span>↗</span>
       </a>
@@ -500,19 +837,23 @@ function Today({ food, onTopic }: any) {
         </p>
         <button onClick={() => onTopic(TOPICS[2])}>Plan a trip</button>
         <a
-          href="https://www.google.com/maps/dir/"
+          href="https://grooveville.org/guide/"
           target="_blank"
           rel="noreferrer"
         >
-          Open Maps for directions ↗
+          Open Groove Guide ↗
         </a>
       </details>
       <details>
         <summary>VYBR8 experiences</summary>
         <p>
-          Restaurant, event and ecosystem account linking are planned. No
-          external account is linked automatically.
+          VYBR8 is available as a website handoff. APIs and private account
+          linking are not configured. No external account is linked
+          automatically.
         </p>
+        <a href="https://vybr8.live/" target="_blank" rel="noreferrer">
+          Open VYBR8 ↗
+        </a>
         <button onClick={() => onTopic(TOPICS[5])}>
           Explore date night ideas
         </button>

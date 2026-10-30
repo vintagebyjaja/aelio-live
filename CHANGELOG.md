@@ -1,5 +1,11 @@
 # AELIO version history
 
+## AELIO_v1.0.4 — 2026-10-30 — cinematic experience and AI/Auth activation
+
+Implemented the approved cinematic desktop/mobile interface with four distinct themes, orb states, a unified Send composer, streamlined discovery/navigation and owned recent chats. Added truthful website handoffs and structured ecosystem proposals. Fixed Supabase public-key aliases/build-runtime propagation, safe privileged-key rejection, session refresh and product-local logout. Added secure server-only guest/rate-key derivation and signup readiness checks. Added modular Worker-native OpenAI Responses streaming using runtime secrets, configurable model and safety limits, Stop, stable request replay/retry, safe Markdown and timing metadata. Preserved the separate private Brain architecture and independent product entitlements.
+
+AELIO-only Git delivery requested; PATHD remains separate. Removed the prior combined archive from this current repository tree after verifying its preserved external copy/Git history. No new SQL, production secret changes or manual deployments. Validation:48 JS tests, seven local database scenarios, four Python bridge tests, production/type/public checks and responsive browser contracts. Live account/provider/latency verification remains owner-dependent. Stopped partial replies remain local; completed turns persist. Advanced external API/OAuth integrations remain unavailable, not simulated.
+
 ## AELIO_v1.0.3 — 2026-10-30 — deployment repair
 
 Fixed the confirmed Cloudflare10143 deployment blocker by removing the default service declaration referencing the nonexistent aelio-engine Worker. Preserved native R2 and all other deployment settings, full Brain source and explicit unavailable-backend responses. Added exact backend connection/runtime setup guidance. No production SQL, secrets or dashboard settings changed; no new SQL migration. Prior versions remain intact.

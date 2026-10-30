@@ -113,3 +113,38 @@ test("only the publishable key is ever sent", async () => {
   await c.signUp("a@x.dev", "pw-1234567890").catch(() => {});
   assert.ok(M.calls.every(x => x.h.apikey === ANON && !JSON.stringify(x).includes("service_role")));
 });
+
+test('missing/privileged config, rejected API key and network errors remain distinct',async()=>{
+ let sent=0;const storage=mem();
+ for(const anonKey of ['', 'sb_secret_do_not_send'])assert.throws(()=>createSupabaseAuth({url:URL_,anonKey},{storage,fetch:async()=>{sent++;return Response.json({});}}),/configuration/);
+ assert.equal(sent,0);
+ const keyClient=createSupabaseAuth({url:URL_,anonKey:ANON},{storage,fetch:async()=>Response.json({message:'Invalid API key'},{status:401})});
+ await assert.rejects(keyClient.signInWithPassword('a@x.dev','pw'),e=>e.code==='auth_key_rejected'&&/public key/.test(e.message));
+ const offline=createSupabaseAuth({url:URL_,anonKey:ANON},{storage,fetch:async()=>{throw new TypeError('offline');}});
+ await assert.rejects(offline.signInWithPassword('a@x.dev','pw'),e=>e.code==='auth_network_error');
+});
+test('signup with confirmation disabled persists a session across client reloads',async()=>{
+ const st=mem(),calls=[];const f=async(url,opts)=>{calls.push(JSON.parse(opts.body));return Response.json({access_token:'fixture-access',refresh_token:'fixture-refresh',expires_in:3600,user:{id:'fixture-user',email:'new@local.test'}});};
+ const c=createSupabaseAuth({url:URL_,anonKey:ANON,product:'aelio'},{fetch:f,storage:st});const result=await c.signUp('new@local.test','strong-local-fixture',undefined,'New user');assert.equal(result.confirmEmail,false);assert.equal(calls[0].data.signup_product,'aelio');
+ const reloaded=createSupabaseAuth({url:URL_,anonKey:ANON},{fetch:f,storage:st});assert.equal((await reloaded.session()).user.id,'fixture-user');
+});
+test('refresh network failures and 429 preserve the stored session for retry',async()=>{
+ const M=mock(),[first,st]=client(M);await first.signUp('retry@x.dev','pw-1234567890');M.users.get('retry@x.dev').confirmed=true;await first.signInWithPassword('retry@x.dev','pw-1234567890');M.tick(3590);
+ for(const response of ['network','rate']){
+  const c=createSupabaseAuth({url:URL_,anonKey:ANON},{storage:st,now:M.now,fetch:async()=>{if(response==='network')throw new TypeError('offline');return Response.json({error_code:'over_request_rate_limit'},{status:429});}});
+  await assert.rejects(c.session());assert.ok(st.getItem('aelio.auth'));
+ }
+ const resumed=createSupabaseAuth({url:URL_,anonKey:ANON},{storage:st,now:M.now,fetch:M.fetch});assert.ok(await resumed.session());
+});
+test('logout is local to this product session and an in-flight refresh cannot undo it',async()=>{
+ const M=mock(),[first,st]=client(M);await first.signUp('race@x.dev','pw-1234567890');M.users.get('race@x.dev').confirmed=true;await first.signInWithPassword('race@x.dev','pw-1234567890');M.tick(3590);let release;
+ const c=createSupabaseAuth({url:URL_,anonKey:ANON},{storage:st,now:M.now,fetch:async(url,opts)=>String(url).includes('grant_type=refresh_token')?new Promise(resolve=>{release=()=>resolve(M.fetch(url,opts));}):M.fetch(url,opts)});
+ const refresh=c.session();await c.signOut();assert.ok(M.calls.at(-1).path.includes('scope=local'));release();assert.equal(await refresh,null);assert.equal(st.getItem('aelio.auth'),null);
+});
+
+test('another client logout is respected while storage-blocked browsers retain a page-only session',async()=>{
+ const M=mock(),st=mem(),[one]=client(M,'aelio',st);await one.signUp('tabs@x.dev','pw-1234567890');M.users.get('tabs@x.dev').confirmed=true;
+ const [two]=client(M,'aelio',st);await two.signInWithPassword('tabs@x.dev','pw-1234567890');await one.signOut();assert.equal(await two.session(),null);
+ const unavailable={getItem(){throw Error('blocked');},setItem(){throw Error('blocked');},removeItem(){throw Error('blocked');}};
+ const c=createSupabaseAuth({url:URL_,anonKey:ANON},{storage:unavailable,fetch:M.fetch,now:M.now});await c.signInWithPassword('tabs@x.dev','pw-1234567890');assert.ok(await c.session());await c.signOut();assert.equal(await c.session(),null);
+});

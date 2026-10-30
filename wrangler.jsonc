@@ -3,7 +3,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "aelio-live",
+  "keep_vars": true,
   "main": "_src/edge/worker.js",
+  "build": {"command":"node _src/build-auth-config.mjs"},
   "compatibility_date": "2026-10-23",
   // Add the private AELIO_ENGINE service binding only after aelio-engine exists.
   // See config/CONNECT_BRAIN.md; missing targets cause Cloudflare error 10143.

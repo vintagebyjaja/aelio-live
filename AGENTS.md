@@ -24,3 +24,7 @@ Read `docs/assignments/AELIO_v1.0.2_REQUIREMENTS.md` and `config/DREAM_BOX.md`. 
 ## v1.0.3 deployment repair
 
 The user subsequently authorized updating main and triggering the existing Cloudflare deployment. That authorization supersedes earlier branch-only restrictions for the requested site rollout. It does not authorize production SQL or credential changes. Cloudflare log10143 confirms aelio-engine does not exist; default wrangler.jsonc must not require that missing target. Keep all Brain source and unavailable-service responses. Add its private service binding only after the real backend exists; see config/CONNECT_BRAIN.md.
+
+## Current v1.0.4 instructions
+
+The user authorized pushing the completed AELIO update to main now, followed by the separately validated PATHD update when ready. Keep repositories/domains/deployments separate; do not manually deploy, change Cloudflare settings, production SQL or secrets. Preserve the cinematic redesign already approved; the later AI instructions request functional activation without further redesign. Worker-native OpenAI Responses is a modular chat provider; the existing private Brain remains available with AELIO_AI_PROVIDER=brain. Never expose provider/service-role keys. See config/V1_0_4_SETUP.md and the release validation notes.

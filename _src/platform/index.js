@@ -1,3 +1,6 @@
+import {sessionSecretSource} from "./shared.js";
+import builtPublicAuth from "../generated/public-auth-config.js";
+import { resolveSupabaseConfig } from "../shared/supabase-config.js";
 import {
   Problem,
   reply,
@@ -25,6 +28,7 @@ import { storage, sweepFiles } from "./storage.js";
 import { discovery } from "./discovery.js";
 import { recovery } from "./recovery.js";
 export function publicConfig(env) {
+  const resolved = resolveSupabaseConfig(env, builtPublicAuth);
   return new Response(
     "window.AELIO_CONFIG=" +
       JSON.stringify({
@@ -32,8 +36,11 @@ export function publicConfig(env) {
         auth: "supabase",
         turnstileSiteKey: env.TURNSTILE_SITE_KEY || "",
         supabase: {
-          url: env.SUPABASE_URL || "https://xkpzabgpesishxcluxkp.supabase.co",
-          anonKey: env.SUPABASE_PUBLISHABLE_KEY || "",
+          url: resolved.url,
+          anonKey: resolved.anonKey,
+          configurationError: resolved.error
+            ? { code: resolved.errorCode, message: resolved.error }
+            : null,
         },
       }) +
       ";",
@@ -314,11 +321,14 @@ export async function platform(req, env) {
     const p = new URL(req.url).pathname.replace(/^\/api\/platform/, "");
     if (p === "/status" && req.method === "GET")
       return reply({
-        accounts: !!(env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY),
+        accounts: !!resolveSupabaseConfig(env, builtPublicAuth).anonKey,
         databaseConfigured: !!env.SUPABASE_SERVICE_ROLE_KEY,
+        sessionConfigured:
+          !!sessionSecretSource(env),
         storageBinding: !!env.AELIO_STORAGE,
         engineBinding: !!env.AELIO_ENGINE?.fetch,
         engineDevelopmentOrigin: !!env.AELIO_ENGINE_ORIGIN,
+        openAIConfigured: !!env.OPENAI_API_KEY,
         inferenceVerified: false,
       });
     await rate(req, env, "platform", 120, 60);

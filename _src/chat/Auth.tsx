@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { auth, call, download } from "./client";
+import { auth, authConfigurationError, call, download } from "./client";
 export const QUESTIONS = [
   "What was a nickname only your family used?",
   "What place holds a special memory for you?",
@@ -104,11 +104,17 @@ export function AuthPanel({ onDone, enroll = false }: any) {
     setError("");
     setNote("");
     try {
-      if (!auth)
-        throw new Error(
-          "Supabase sign-in needs its public project key in Cloudflare. Your password has not been sent.",
-        );
+      if (!auth) throw new Error(authConfigurationError);
       if (mode === "signup") {
+        const readiness = await call("/status");
+        if (
+          !readiness.accounts ||
+          !readiness.databaseConfigured ||
+          !readiness.sessionConfigured
+        )
+          throw new Error(
+            "Secure account setup is not configured yet. Please contact the site owner. No new account has been created.",
+          );
         if (
           (window as any).AELIO_CONFIG?.turnstileSiteKey &&
           !(window as any).aelioCaptchaToken

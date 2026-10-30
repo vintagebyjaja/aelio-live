@@ -1,3 +1,5 @@
+import {openAIResponses} from "./providers/openai.js";
+import { ecosystemHandoff } from "../shared/ecosystem.js";
 import {
   reply,
   fail,
@@ -351,7 +353,7 @@ export async function chatRoutes(req, env, path) {
     }
   }
   const cm = path.match(
-    /^\/conversations\/([a-f0-9-]+)(\/messages|\/respond|\/suggest-subtitle)?$/i,
+    /^\/conversations\/([a-f0-9-]+)(\/messages|\/respond|\/cancel|\/suggest-subtitle)?$/i,
   );
   if (cm) {
     const c = await conversation(req, env, cm[1], u);
@@ -368,6 +370,13 @@ export async function chatRoutes(req, env, path) {
         { ...(u ? { token: u.token } : { service: true }) },
       );
       return reply({ messages: rows.reverse() });
+    }
+    if(cm[2]==='/cancel' && req.method==='POST'){
+      const data=await body(req);if(!uuid(data.request_id))fail(400,'invalid_request_id','Choose a valid generation request.');
+      const attempt=(await table(env,'chat_requests','id=eq.'+data.request_id,{schema:'core',service:true}))[0];
+      if(!attempt||attempt.conversation_id!==c.id||attempt.owner_id!==(u?.id||null))fail(404,'not_found','Not found.');
+      if(attempt.status==='running')await rpc(env,'app_finish_chat',{rid:attempt.id,ok:false});
+      return reply({stopped:attempt.status!=='complete',complete:attempt.status==='complete'});
     }
     if (cm[2] === "/respond" && req.method === "POST")
       return generate(req, env, c, u);
@@ -446,7 +455,10 @@ function agentFields(d) {
     a.memory_enabled = d.memory_enabled === true;
   return a;
 }
-async function engine(env, payload) {
+async function engine(env, payload, signal) {
+  const provider=env.AELIO_AI_PROVIDER || (env.OPENAI_API_KEY?'openai':'brain');
+  if(provider==='openai')return openAIResponses(env,payload,signal);
+  if(provider!=='brain')fail(503,'ai_provider_invalid','The AI provider configuration is invalid.');
   if (!env.AELIO_ENGINE?.fetch && !env.AELIO_ENGINE_ORIGIN)
     fail(
       503,
@@ -471,6 +483,7 @@ async function engine(env, payload) {
       "x-aelio-messaging-secret": env.AELIO_MESSAGING_SECRET,
     },
     body: JSON.stringify(payload),
+    signal,
   });
   let res;
   try {
@@ -504,6 +517,19 @@ async function generate(req, env, c, u, suggest = false) {
       "consent_required",
       "Accept the AI disclosure before sending a message.",
     );
+  const rid=d.request_id || crypto.randomUUID();
+  if(!uuid(rid))fail(400,'invalid_request_id','Use a valid request identifier.');
+  async function replayAttempt(){
+    const previous=(await table(env,'chat_requests','id=eq.'+rid,{schema:'core',service:true}))[0];
+    if(!previous)return null;
+    if(previous.conversation_id!==c.id||previous.owner_id!==(u?.id||null))fail(409,'request_id_reused','Use a new request identifier.');
+    if(previous.status==='running')fail(409,'reply_in_progress','This reply is still running. Stop it or wait before retrying.');
+    if(previous.status==='failed')fail(409,'retry_new_request','The earlier attempt ended. Retry with a new request identifier.');
+    const stored=await table(env,'app_messages','conversation_id=eq.'+c.id+'&request_id=eq.'+rid+'&role=eq.user',{service:true});
+    if(!stored.some(message=>message.content===input))fail(409,'request_id_reused','This request identifier belongs to a different message.');
+    return new Response(JSON.stringify({type:'saved',request_id:rid,replayed:true})+'\n',{headers:{'content-type':'application/x-ndjson','cache-control':'no-store','x-request-id':rid}});
+  }
+  if(d.request_id){const replay=await replayAttempt();if(replay)return replay;}
   let agents = u
     ? await Promise.all(
         c.participants.map((id) => own(env, "app_agents", id, u)),
@@ -598,14 +624,16 @@ async function generate(req, env, c, u, suggest = false) {
       Number(env.AELIO_GUEST_MESSAGES || 10),
       86400,
     );
-  const rid = crypto.randomUUID();
-  const remaining = await rpc(env, "app_reserve_chat", {
+  let remaining;
+  try{remaining = await rpc(env, "app_reserve_chat", {
     cid: c.id,
     uid: u?.id || null,
     guest: c.guest_hash,
     allowance: Number(env.AELIO_GUEST_MESSAGES || 10),
     rid,
-  });
+  });}catch(error){if(error instanceof Problem&&error.code==='already_exists'){const replay=await replayAttempt();if(replay)return replay;}throw error;}
+  const job=new AbortController();const onAbort=()=>job.abort();if(req.signal.aborted)job.abort();req.signal.addEventListener('abort',onAbort,{once:true});
+  let upstreamReader;
   let first;
   try {
     first = await engine(env, {
@@ -623,11 +651,13 @@ async function generate(req, env, c, u, suggest = false) {
       consent: true,
       suggest,
       reminder_tools: !!u && d.allow_reminders === true,
+      ecosystem_tools: c.product === "aelio" && !suggest,
       now: new Date().toISOString(),
       timezone: pref?.timezone || "UTC",
       memory_enabled: c.memory_enabled,
-    });
+    },job.signal);
   } catch (e) {
+    job.abort();req.signal.removeEventListener("abort",onAbort);
     await rpc(env, "app_finish_chat", { rid, ok: false });
     throw e;
   }
@@ -638,7 +668,7 @@ async function generate(req, env, c, u, suggest = false) {
       const outputs = new Map();
       let done = false;
       try {
-        const reader = first.body.getReader();
+        const reader = first.body.getReader();upstreamReader=reader;
         const decoder = new TextDecoder();
         let buf = "";
         while (true) {
@@ -656,6 +686,16 @@ async function generate(req, env, c, u, suggest = false) {
                 ev.agent_id,
                 (outputs.get(ev.agent_id) || "") + ev.text,
               );
+            if (
+              ev.type === "tool_call" &&
+              ev.name === "propose_ecosystem_handoff"
+            ) {
+              if (c.product !== "aelio" || suggest)
+                throw Error("This workspace does not allow ecosystem actions.");
+              ev.type = "ecosystem_handoff";
+              ev.proposal = ecosystemHandoff(JSON.parse(ev.arguments));
+              delete ev.arguments;
+            }
             if (ev.type === "tool_call" && ev.name === "propose_reminder") {
               let proposal;
               try {
@@ -733,6 +773,7 @@ async function generate(req, env, c, u, suggest = false) {
           );
         } catch {}
       } finally {
+        job.abort();req.signal.removeEventListener("abort",onAbort);await upstreamReader?.cancel().catch(()=>{});
         try {
           await rpc(env, "app_finish_chat", { rid, ok });
         } finally {
@@ -742,11 +783,13 @@ async function generate(req, env, c, u, suggest = false) {
         }
       }
     },
+    async cancel(){job.abort();await upstreamReader?.cancel().catch(()=>{});await rpc(env,'app_finish_chat',{rid,ok:false});}
   });
   return new Response(stream, {
     headers: {
       "content-type": "application/x-ndjson",
-      "cache-control": "no-store",
+      "cache-control": "no-cache, no-store, no-transform",
+      "x-accel-buffering":"no",
       "x-request-id": rid,
     },
   });

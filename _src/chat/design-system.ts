@@ -5,7 +5,8 @@ export const DESIGNS = [
     description: "Clean, minimal, familiar",
     light: true,
     accent: "#e87832",
-    scene: "ocean-fresh.webp",
+    scene: "og-light-waterfront.webp",
+    mobileScene: "og-light-mobile.webp",
     surface: "#fffaf4",
   },
   {
@@ -14,7 +15,8 @@ export const DESIGNS = [
     description: "Original copper after dark",
     light: false,
     accent: "#f68b45",
-    scene: "chocolate-cream.webp",
+    scene: "og-dark-waterfront.webp",
+    mobileScene: "og-dark-mobile.webp",
     surface: "#101219",
   },
   {
@@ -24,6 +26,7 @@ export const DESIGNS = [
     light: true,
     accent: "#237d9d",
     scene: "ocean-fresh.webp",
+    mobileScene: "ocean-fresh.webp",
     surface: "#f8f3e9",
   },
   {
@@ -33,6 +36,7 @@ export const DESIGNS = [
     light: false,
     accent: "#cba276",
     scene: "chocolate-cream.webp",
+    mobileScene: "chocolate-cream.webp",
     surface: "#2c1b15",
   },
 ];

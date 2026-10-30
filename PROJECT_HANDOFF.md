@@ -1,3 +1,15 @@
+# Current handoff — AELIO_v1.0.4
+
+2026-10-30. The user requested an immediate AELIO main push after validation and authorized a separate PATHD push when its remaining checks are ready. Do not combine repositories/domains, alter production SQL/secrets, or invoke a manual Cloudflare deployment. Existing Git integration may deploy automatically.
+
+Completed AELIO: approved cinematic desktop/mobile UX and four themes; unified Send/attachments/voice input; Discover and dedicated workspaces; global/agent/conversation appearance; canonical user-confirmed ecosystem website handoffs and structured proposals; public Supabase key aliases and safe Wrangler build fallback; preserved session refresh and isolated logout; secure guest/rate derivation from server-only credentials; Worker-native OpenAI Responses provider with streaming, scoped identity/context, persistent quotas/safety limits, Stop, idempotent completed-turn replay and Retry, safe Markdown and metadata-only timing logs. No new SQL migration is needed; existing migrations remain prerequisites.
+
+Validation:48 JavaScript tests, seven disposable local PostgreSQL/API integration scenarios, four Python bridge tests, TypeScript/production build/public checks, and browser contracts at1440/768/390/320px plus guest persistence. These are code/build/local-fixture results, not live provider/account verification. See config/V1_0_4_SETUP.md and docs/releases/AELIO_v1.0.4_VALIDATION.md.
+
+AELIO source is separate from PATHD. The old combined delivery ZIP was withdrawn from the current AELIO tree after verifying its immutable external backup and prior Git history; no existing archive was overwritten. PATHD changes remain in their own checkout for separate validation/delivery.
+
+---
+
 # Current handoff — AELIO_v1.0.3 deployment repair
 
 2026-10-30. The user explicitly authorized the tested main update to trigger the current Cloudflare integration. Main was updated to9262158; Cloudflare uploaded the changed assets but failed to publish with code10143: `AELIO_ENGINE` referenced missing Worker `aelio-engine`. v1.0.3 removes the premature service declaration from the default root deployment config, preserving R2 and every other setting. Brain source, private architecture and clear unavailable-engine errors remain unchanged.

@@ -317,4 +317,15 @@ await test('global appearance and retained custom agent settings persist with ow
  await call('/agents/'+a.id,'DELETE');
 });
 
+await test('stable request IDs replay completed turns without a second AI call or duplicate messages',async()=>{
+ const a=(await call('/agents')).agents.find(a=>a.kind==='aelio');const c=(await call('/conversations','POST',{participants:[a.id],title:'Idempotent test'})).conversation;
+ const request_id=crypto.randomUUID(),before=payloads.length;
+ let response=await platform(request('/conversations/'+c.id+'/respond','POST',{content:'Save this once',consent:true,request_id}),env);assert.equal(response.status,200);assert.match(await response.text(),/saved/);
+ response=await platform(request('/conversations/'+c.id+'/respond','POST',{content:'Save this once',consent:true,request_id}),env);assert.equal(response.status,200);assert.match(await response.text(),/replayed/);assert.equal(payloads.length,before+1);
+ assert.equal((await call('/conversations/'+c.id+'/messages')).messages.length,2);
+ const changed=await platform(request('/conversations/'+c.id+'/respond','POST',{content:'Different input',consent:true,request_id}),env);assert.equal(changed.status,409);
+ const denied=await platform(request('/conversations/'+c.id+'/cancel','POST',{request_id},two),env);assert.equal(denied.status,404);
+ await call('/conversations/'+c.id,'DELETE');
+});
+
 globalThis.fetch = original;

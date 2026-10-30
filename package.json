@@ -3,15 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node _src/build.mjs && node _src/build-brain.mjs && node _src/build-chat.mjs",
+    "build": "node _src/build-auth-config.mjs && node _src/build.mjs && node _src/build-brain.mjs && node _src/build-chat.mjs",
     "build:pages": "node _src/build.mjs",
     "build:brain": "node _src/build-brain.mjs",
     "check": "node _src/checks/check-public.mjs",
     "check:deploy": "node _src/checks/check-deploy.mjs",
-    "test": "node --test _src/checks/test-engine-proxy.mjs _src/checks/test-supabase-auth.mjs _src/checks/test-pathd-bridge.mjs _src/checks/test-worker.mjs _src/checks/test-platform.mjs _src/checks/test-appearance.mjs",
+    "test": "node --test _src/checks/test-engine-proxy.mjs _src/checks/test-supabase-auth.mjs _src/checks/test-pathd-bridge.mjs _src/checks/test-worker.mjs _src/checks/test-platform.mjs _src/checks/test-appearance.mjs _src/checks/test-auth-config.mjs _src/checks/test-openai.mjs",
     "dev": "node _src/checks/pages-emulator.mjs public 8090",
     "build:chat": "node _src/build-chat.mjs",
-    "typecheck": "tsc --noEmit -p _src"
+    "typecheck": "tsc --noEmit -p _src",
+    "build:auth": "node _src/build-auth-config.mjs"
   },
   "devDependencies": {
     "esbuild": "0.25.10",
@@ -19,5 +20,5 @@
     "react-dom": "19.2.0",
     "typescript": "5.9.3"
   },
-  "version": "1.0.3"
+  "version": "1.0.4"
 }

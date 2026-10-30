@@ -3,7 +3,11 @@ import { createRoot } from "react-dom/client";
 import { auth, call, upload, fileURL, download } from "./client";
 import { AuthPanel } from "./Auth";
 import "./styles.css";
-import { DreamHome } from "./DreamHome";
+import { DreamHome, Discover, TOPICS } from "./DreamHome";
+import { Markdown } from "./Markdown";
+import { Icon, Orb } from "./Icon";
+import { ConnectedApps, HandoffCard } from "./ConnectedApps";
+import "./premium.css";
 import { AppearanceControls } from "./Appearance";
 import { designOf, resolveAppearance, guestAppearance } from "./design-system";
 const BACKGROUNDS = [
@@ -36,6 +40,24 @@ const SCENES: Record<string, string> = {
   "Luxury Penthouse": "aelio-architecture-scene.webp",
 };
 function App() {
+  const [keyboardOpen,setKeyboardOpen]=useState(false),[waiting,setWaiting]=useState<Record<string,boolean>>({}),[retryable,setRetryable]=useState<Record<string,boolean>>({});
+  const generations=useRef<Record<string,AbortController>>({}),attempts=useRef<Record<string,any>>({}),followScroll=useRef(true),messageScroller=useRef<HTMLDivElement|null>(null);
+  useEffect(()=>{
+    let baseline=window.visualViewport?.height||window.innerHeight;
+    const detect=()=>{const height=window.visualViewport?.height||window.innerHeight;const editable=document.activeElement?.matches('input,textarea');if(!editable)baseline=Math.max(baseline,height);setKeyboardOpen(!!editable&&baseline-height>Math.max(120,baseline*.18));};
+    window.visualViewport?.addEventListener('resize',detect);window.addEventListener('resize',detect);document.addEventListener('focusin',detect);document.addEventListener('focusout',detect);
+    return()=>{window.visualViewport?.removeEventListener('resize',detect);window.removeEventListener('resize',detect);document.removeEventListener('focusin',detect);document.removeEventListener('focusout',detect);};
+  },[]);
+  const [homeFiles, setHomeFiles] = useState<any[]>([]),
+    [homeSending, setHomeSending] = useState(false),
+    [handoffs, setHandoffs] = useState<Record<string, any[]>>({});
+  const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("aelio.voice.enabled") !== "false";
+    } catch {
+      return true;
+    }
+  });
   const [homeDraft, setHomeDraft] = useState("");
   const [home, setHome] = useState(
     !new URLSearchParams(location.search).has("companion"),
@@ -109,7 +131,7 @@ function App() {
               (c: any) =>
                 c.participants.length === 1 && c.participants[0] === agent?.id,
             );
-            if (t) select(t);
+            if (t) select(t, false);
             else if (agent)
               await newThread([agent.id], mila ? "MILA" : "AELIO");
             setHome(!new URLSearchParams(location.search).has("companion"));
@@ -145,7 +167,7 @@ function App() {
     return () => removeEventListener("keydown", k);
   }, []);
   useEffect(() => {
-    end.current?.scrollIntoView({ block: "end", behavior: "auto" });
+    if(followScroll.current)end.current?.scrollIntoView({ block: "end", behavior: "auto" });
   }, [messages, cur?.id]);
   useEffect(() => {
     const scenes = new Set<string>();
@@ -176,7 +198,10 @@ function App() {
       setErr(e.message);
     }
   }
-  function select(t: any) {
+  function select(t: any, record = true) {
+    followScroll.current=true;
+    if (record)
+      history.pushState({ aelioView: "chats", thread: t.id }, "", "#chats");
     setHome(false);
     setPanel("");
     setCur(t);
@@ -227,16 +252,28 @@ function App() {
       setErr(e.message);
     }
   }
-  async function send(suggest = false) {
-    if (!cur || busy[cur.id]) return;
-    const id = cur.id,
-      content = drafts[id] || "";
+  async function send(
+    suggest = false,
+    override?: { conversation: any; content: string; files: any[]; requestId?:string },
+  ) {
+    const conversation = override?.conversation || cur;
+    if (!conversation || busy[conversation.id]) return;
+    const id = conversation.id,
+      content = override?.content ?? drafts[id] ?? "";
+    const selectedFiles = override?.files ?? attachments;
     if (!content.trim() && !suggest) return;
     if (!consent) {
       setErr("Please accept the AI disclosure before sending.");
       return;
     }
     setErr("");
+    followScroll.current=true;
+    const previousRequest=attempts.current[id]?.request_id;
+    const retrying=!!override?.requestId || (!!retryable[id] && attempts.current[id]?.content===content);
+    let requestId=override?.requestId || (retrying?previousRequest:null) || crypto.randomUUID();
+    attempts.current[id]={request_id:requestId,content,files:selectedFiles,conversation};
+    const abort=new AbortController();generations.current[id]=abort;
+    setWaiting(current=>({...current,[id]:true}));setRetryable(current=>({...current,[id]:false}));
     inflight.current.add(id);
     setBusy((b) => ({ ...b, [id]: true }));
     if (!suggest) {
@@ -244,8 +281,8 @@ function App() {
       setMessages((m) => ({
         ...m,
         [id]: [
-          ...(m[id] || []),
-          { id: crypto.randomUUID(), role: "user", content },
+          ...(m[id] || []).filter(message=>!retrying||message.request_id!==previousRequest),
+          { id:'local-user-'+requestId, role: "user", content, request_id:requestId, local:true },
         ],
       }));
     }
@@ -254,7 +291,8 @@ function App() {
     let failed = false;
     try {
       const t = await auth?.accessToken();
-      const r = await fetch(
+      let r:Response;
+      for(let attempt=0;;attempt++){r = await fetch(
         "/api/platform/conversations/" +
           id +
           (suggest ? "/suggest-subtitle" : "/respond"),
@@ -264,19 +302,23 @@ function App() {
             "content-type": "application/json",
             ...(t ? { authorization: "Bearer " + t } : {}),
           },
+          signal:abort.signal,
           body: JSON.stringify({
             content,
+            request_id:requestId,
             consent: true,
-            target: target || undefined,
-            file_ids: attachments.map((f) => f.id),
-            allow_reminders: allowReminders,
+            target: override ? undefined : target || undefined,
+            file_ids: selectedFiles.map((f) => f.id),
+            allow_reminders: override ? false : allowReminders,
           }),
         },
       );
-      if (!r.ok) {
-        const d = await r.json();
-        throw new Error(d.error);
+      if(r.ok)break;
+      const detail=await r.json();
+      if(detail.code==='retry_new_request'&&attempt===0){const oldId=requestId;requestId=crypto.randomUUID();attempts.current[id].request_id=requestId;setMessages(current=>({...current,[id]:(current[id]||[]).map(message=>message.local&&message.request_id===oldId?{...message,request_id:requestId,id:message.role==='user'?'local-user-'+requestId:message.id}:message)}));continue;}
+      throw new Error(detail.error||'The response could not start.');
       }
+      let saved=false;
       if (!r.body) throw new Error("The response stream is missing.");
       const reader = r.body.getReader(),
         decoder = new TextDecoder();
@@ -297,6 +339,11 @@ function App() {
               ev.message || "The Brain could not complete the reply.",
             );
           }
+          if (ev.type === "ecosystem_handoff")
+            setHandoffs((previous) => ({
+              ...previous,
+              [id]: [...(previous[id] || []), ev.proposal],
+            }));
           if (ev.type === "reminder_proposal") {
             setProposals((ps) => ({
               ...ps,
@@ -306,7 +353,9 @@ function App() {
               ],
             }));
           }
+          if(ev.type==='saved')saved=true;
           if (ev.type === "delta") {
+            setWaiting(current=>({...current,[id]:false}));
             if (suggest) {
               subtitle += ev.text;
               setSuggestion(subtitle);
@@ -323,14 +372,16 @@ function App() {
                   role: "assistant",
                   speaker: ev.speaker,
                   content: streams[key],
+                  request_id:requestId,local:true,
                 },
               ],
             }));
           }
-          if (ev.type === "saved" && session === null)
+          if (ev.type === "saved" && session === null && typeof ev.remaining==='number')
             setRemaining(ev.remaining);
         }
       }
+      if(!saved)throw new Error("The connection ended before the reply was saved. Retry safely.");
       setAttachments([]);
       if (session)
         call("/account")
@@ -338,16 +389,20 @@ function App() {
           .catch(() => {});
       if (!suggest) await loadMessages(id, true);
     } catch (e: any) {
-      setErr(e.message);
-      if (!suggest) setDrafts((d) => ({ ...d, [id]: content }));
+      setErr(e.name==='AbortError'?'Generation stopped. Your draft is available to retry.':e.message);
+      if (!suggest){setDrafts((d) => ({ ...d, [id]: content }));setRetryable(current=>({...current,[id]:true}));}
     } finally {
+      delete generations.current[id];setWaiting(current=>({...current,[id]:false}));
       inflight.current.delete(id);
       setBusy((b) => ({ ...b, [id]: false }));
     }
   }
+  async function stopGeneration(){const id=cur?.id;if(!id)return;generations.current[id]?.abort();const attempt=attempts.current[id];if(attempt)try{const result=await call('/conversations/'+id+'/cancel','POST',{request_id:attempt.request_id});if(result.complete)await loadMessages(id,true);}catch{setErr('Stopped locally. The server cancellation could not be confirmed; please wait before retrying.');}}
+  async function retryGeneration(){const previous=attempts.current[cur?.id];if(previous)await send(false,{conversation:previous.conversation,content:previous.content,files:previous.files,requestId:previous.request_id});}
   async function show(p: string) {
     setErr("");
     setPanel(p);
+    if (p) setHome(false);
     try {
       if (p === "reminders") {
         const [a, n, c] = await Promise.all([
@@ -359,9 +414,93 @@ function App() {
         setNotifications(n.items);
         setCareerRecords(c.items);
       }
-      if (p === "files") setFiles((await call("/files")).files);
+      if (p === "files" || p === "projects")
+        setFiles((await call("/files")).files);
     } catch (e: any) {
       setErr(e.message);
+    }
+  }
+  function navigate(view: string, record = true) {
+    setDrawer(false);
+    if (view === "home") {
+      setHome(true);
+      setPanel("");
+    } else if (view === "chats") {
+      setHome(false);
+      setPanel("history");
+    } else {
+      setHome(false);
+      show(view);
+    }
+    if (record) history.pushState({ aelioView: view }, "", "#" + view);
+  }
+  useEffect(() => {
+    const restore = () => {
+      const state = history.state;
+      const view = state?.aelioView || "home";
+      if (view === "chats" && state?.thread) {
+        const thread = threads.find((t) => t.id === state.thread);
+        if (thread) {
+          select(thread, false);
+          return;
+        }
+      }
+      if (
+        [
+          "home",
+          "chats",
+          "agents",
+          "discover",
+          "create",
+          "projects",
+          "connected-apps",
+          "settings",
+          "appearance",
+          "account",
+        ].includes(view)
+      )
+        navigate(view, false);
+    };
+    addEventListener("popstate", restore);
+    return () => removeEventListener("popstate", restore);
+  }, [threads]);
+  async function sendFromHome() {
+    if (homeSending || !homeDraft.trim()) return;
+    if (!consent) {
+      setErr("Please allow AI processing before sending.");
+      return;
+    }
+    setHomeSending(true);
+    try {
+      let thread = cur;
+      if (session) {
+        const mainPal = agents.find((a) => a.kind === "aelio");
+        if (!mainPal) {
+          setErr(
+            "Your Main Pal is still loading. Retry the account connection.",
+          );
+          return;
+        }
+        thread = await newThread([mainPal.id], "New conversation");
+      }
+      if (!thread) {
+        setErr("Chat is still connecting. Your draft is preserved.");
+        return;
+      }
+      const content = homeDraft,
+        selectedFiles = [...homeFiles];
+      setHome(false);
+      setPanel("");
+      setAttachments(selectedFiles);
+      setHomeDraft("");
+      setHomeFiles([]);
+      await send(false, {
+        conversation: thread,
+        content,
+        files: selectedFiles,
+      });
+    } finally {
+      setHomeSending(false);
     }
   }
   const activeAgents =
@@ -462,7 +601,7 @@ function App() {
   return (
     <div
       className={
-        "dream-app " +
+        "dream-app " + (keyboardOpen?"keyboard-open ":"") +
         (design.light ? "light " : "") +
         (collapsed ? "collapsed " : "") +
         (home ? "at-home" : "")
@@ -471,6 +610,7 @@ function App() {
       data-motion={ap.motion || "system"}
       style={
         {
+          "--home-scene-mobile": `url(/assets/dream/${design.mobileScene})`,
           "--home-scene": design.scene
             ? `url(/assets/dream/${design.scene})`
             : "none",
@@ -487,40 +627,43 @@ function App() {
             else setDrawer(!drawer);
           }}
         >
-          ☰
+          <Icon name="menu" />
         </button>
-        <a className="brand" href="/">
-          AELIO
+        <a
+          className="brand"
+          href="/"
+          onClick={(event: any) => {
+            event.preventDefault();
+            navigate("home");
+          }}
+        >
+          AELIO<small>NEVER SAY NEVER.</small>
         </a>
-        <nav>
-          <button
-            onClick={() => {
-              setHome(true);
-              setPanel("");
+        <label className="desktop-search">
+          <Icon name="compass" size={18} />
+          <span className="sr-only">Search conversations and ideas</span>
+          <input
+            value={search}
+            placeholder="Search chats & ideas…"
+            onChange={(event: any) => {
+              setSearch(event.target.value);
+              if (panel !== "discover") navigate("discover");
             }}
+          />
+        </label>
+        <nav className="header-actions">
+          <button
+            aria-label="Discover experiences"
+            onClick={() => navigate("discover")}
           >
-            Home
+            <Icon name="sparkle" />
           </button>
           <button
-            onClick={() => {
-              setHome(false);
-              setPanel("");
-              history.replaceState(null, "", "/chat/");
-            }}
+            className="profile-orb"
+            aria-label={session ? "Account" : "Sign in"}
+            onClick={() => navigate("account")}
           >
-            Chat
-          </button>
-          {session && (
-            <>
-              <button onClick={() => show("agents")}>Agents</button>
-              <button onClick={() => show("reminders")}>Reminders</button>
-              <button onClick={() => show("files")}>Files</button>
-            </>
-          )}
-          <a href="/brain/">Brain</a>
-          <button onClick={() => show("appearance")}>Appearance</button>
-          <button onClick={() => show("account")}>
-            {session ? "Account" : "Sign in"}
+            <Orb small />
           </button>
         </nav>
       </header>
@@ -532,40 +675,53 @@ function App() {
         />
       )}
       <aside className={"sidebar " + (drawer ? "open" : "")}>
+        <a
+          className="sidebar-brand"
+          href="/"
+          onClick={(event: any) => {
+            event.preventDefault();
+            navigate("home");
+          }}
+        >
+          AELIO<small>NEVER SAY NEVER.</small>
+        </a>
         <nav className="home-nav" aria-label="AELIO navigation">
-          <button
-            onClick={() => {
-              setHome(true);
-              setPanel("");
-              setDrawer(false);
-            }}
-          >
-            ⌂ Home
-          </button>
-          <button
-            onClick={() => {
-              setHome(false);
-              setPanel("");
-              setDrawer(false);
-            }}
-          >
-            ◌ Chat
-          </button>
-          <button
-            onClick={() => {
-              show(session ? "agents" : "account");
-              setDrawer(false);
-            }}
-          >
-            ♧ Agents
-          </button>
-          <a href="/agent-campus/">▣ Campus</a>
-          <a href="/live/">▤ Live</a>
-          <a href="/brain/">◈ Brain</a>
-          <a href="/explore/">Explore AELIO</a>
+          {[
+            ["home", "Home", "home"],
+            ["chats", "Chats", "chat"],
+            ["agents", "Agents", "agents"],
+            ["discover", "Discover", "compass"],
+            ["create", "Create", "bulb"],
+            ["projects", "Projects", "plus"],
+            ["connected-apps", "Connected Apps", "sparkle"],
+            ["settings", "Settings", "settings"],
+          ].map(([view, label, icon]) => (
+            <button
+              key={view}
+              title={label}
+              aria-label={label}
+              aria-current={
+                (
+                  view === "home"
+                    ? home && !panel
+                    : view === "chats"
+                      ? (!home && !panel) || panel === "history"
+                      : panel === view
+                )
+                  ? "page"
+                  : undefined
+              }
+              onClick={() =>
+                navigate(view === "agents" && !session ? "account" : view)
+              }
+            >
+              <Icon name={icon} size={19} />
+              <span>{label}</span>
+            </button>
+          ))}
         </nav>
         <div className="side-head">
-          <h2>Your conversations</h2>
+          <h2>Recent chats</h2>
           <button
             aria-label="Close conversations"
             onClick={() => setDrawer(false)}
@@ -682,6 +838,13 @@ function App() {
             </>
           )}
         </nav>
+        <details className="legacy-links">
+          <summary>More experiences</summary>
+          <a href="/agent-campus/">Campus</a>
+          <a href="/live/">Live</a>
+          <a href="/brain/">Brain</a>
+          <a href="/explore/">Explore AELIO</a>
+        </details>
         <footer>
           One Mind. Your Energy.
           <br />
@@ -707,7 +870,155 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel === "appearance" ? (
+        {panel === "history" ? (
+          <section className="panel">
+            <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
+            <h1>Your conversations</h1>
+            <label>
+              Search history
+              <input
+                value={search}
+                onChange={(event: any) => setSearch(event.target.value)}
+              />
+            </label>
+            {threads
+              .filter(
+                (t) =>
+                  !t.archived &&
+                  [t.title, t.subtitle]
+                    .join(" ")
+                    .toLowerCase()
+                    .includes(search.toLowerCase()),
+              )
+              .map((t) => (
+                <article key={t.id}>
+                  <button onClick={() => select(t)}>{t.title}</button>
+                  <p>{t.subtitle}</p>
+                </article>
+              ))}
+            {!threads.length && (
+              <>
+                <p>
+                  {session
+                    ? "Your conversations will appear here."
+                    : "Guest conversations have limited continuity. Sign in to save your history."}
+                </p>
+                {cur && (
+                  <button onClick={() => select(cur)}>
+                    Open current conversation
+                  </button>
+                )}
+              </>
+            )}
+          </section>
+        ) : panel === "discover" ? (
+          <Discover
+            onTopic={startTopic}
+            onNavigate={navigate}
+            search={search}
+            onSearch={setSearch}
+            threads={threads}
+            onResume={select}
+          />
+        ) : panel === "connected-apps" ? (
+          <ConnectedApps />
+        ) : panel === "settings" ? (
+          <section className="panel settings-workspace">
+            <p className="workspace-eyebrow">MAKE YOURSELF AT HOME</p>
+            <h1>Your AELIO, your way.</h1>
+            <button onClick={() => navigate("appearance")}>
+              <Icon name="sparkle" />
+              Appearance & themes
+            </button>
+            <button onClick={() => navigate("account")}>
+              <Icon name="settings" />
+              {session
+                ? "Account, privacy & recovery"
+                : "Sign in or create an account"}
+            </button>
+            <button onClick={() => navigate("connected-apps")}>
+              <Icon name="compass" />
+              Connected Apps
+            </button>
+            <label className="voice-preference">
+              <input
+                type="checkbox"
+                checked={voiceEnabled}
+                onChange={(event: any) => {
+                  setVoiceEnabled(event.target.checked);
+                  try {
+                    localStorage.setItem(
+                      "aelio.voice.enabled",
+                      String(event.target.checked),
+                    );
+                  } catch {
+                    setErr("Your browser could not save the voice preference.");
+                  }
+                }}
+              />
+              Enable browser voice input
+            </label>
+            <p className="muted">
+              Speech input depends on browser and microphone support. Your
+              browser’s speech service may process audio remotely. This device
+              preference does not change your agents.
+            </p>
+            <details>
+              <summary>More AELIO experiences</summary>
+              <a href="/agent-campus/">Campus</a>
+              <a href="/live/">Live</a>
+              <a href="/brain/">Brain</a>
+              <a href="/explore/">Explore AELIO</a>
+            </details>
+          </section>
+        ) : panel === "create" ? (
+          <section className="panel create-workspace">
+            <p className="workspace-eyebrow">
+              FROM POSSIBILITY TO A FIRST STEP
+            </p>
+            <h1>What will you bring to life?</h1>
+            <p>
+              Work with AELIO on ideas, creative briefs and plans using your
+              existing conversation system.
+            </p>
+            <div className="create-options">
+              <button onClick={() => startTopic(TOPICS[1])}>
+                <Icon name="bulb" />
+                <strong>Explore an idea</strong>
+                <span>Brainstorm and shape your next move.</span>
+              </button>
+              <button onClick={() => startTopic(TOPICS[4])}>
+                <Icon name="sparkle" />
+                <strong>Build a business plan</strong>
+                <span>Strategy, structure and practical next steps.</span>
+              </button>
+              <button onClick={() => navigate("projects")}>
+                <Icon name="plus" />
+                <strong>Your project files</strong>
+                <span>Find your private files and generated outputs.</span>
+              </button>
+            </div>
+            <a href="/create/">
+              Open existing AELIO creation experiences{" "}
+              <Icon name="arrow" size={18} />
+            </a>
+            <p className="muted">
+              Image, video and execution tools depend on the configured Brain
+              capabilities. No generated output is claimed before a real service
+              returns it.
+            </p>
+          </section>
+        ) : panel === "projects" ? (
+          <ProjectWorkspace
+            files={files}
+            threads={threads}
+            onResume={select}
+            refresh={() => show("projects")}
+            setErr={setErr}
+            signedIn={!!session}
+            onSignIn={() => navigate("account")}
+          />
+        ) : panel === "appearance" ? (
           <section className="panel appearance-panel">
             <button
               onClick={() => {
@@ -1049,17 +1360,39 @@ function App() {
             setDirect={setHomeDraft}
             appearance={globalAP}
             onTopic={startTopic}
-            onAppearance={(id?: string) => {
-              if (id)
-                setGlobalPreview({
-                  ...globalAppearance,
-                  design: id,
-                  mode: designOf({ design: id }).light ? "light" : "dark",
-                });
-              show("appearance");
-            }}
-            recent={threads.find((t) => !t.archived)}
+            recent={threads
+              .filter((t) => !t.archived)
+              .map((t) => ({
+                ...t,
+                preview:
+                  (messages[t.id] || cache.current[t.id])
+                    ?.slice(-1)[0]
+                    ?.content?.slice(0, 100) ||
+                  t.app_messages?.[0]?.content?.slice(0, 100),
+              }))}
             onResume={select}
+            onNavigate={navigate}
+            onSend={sendFromHome}
+            sending={homeSending}
+            consent={consent}
+            onConsent={setConsent}
+            files={homeFiles}
+            onRemoveFile={(id: string) =>
+              setHomeFiles((previous) => previous.filter((f) => f.id !== id))
+            }
+            signedIn={!!session}
+            error={err}
+            voiceEnabled={voiceEnabled}
+            onFile={async (file: File) => {
+              try {
+                if (file.size > 1000000)
+                  throw Error("AI attachments must be1MB or smaller.");
+                const uploaded = await upload(file, "documents");
+                setHomeFiles((previous) => [...previous, uploaded].slice(0, 3));
+              } catch (error: any) {
+                setErr(error.message);
+              }
+            }}
           />
         ) : (
           <section
@@ -1095,6 +1428,10 @@ function App() {
             }
           >
             <div className="chat-header">
+              <Orb
+                small
+                state={busy[cur?.id] ? "thinking" : err ? "error" : "idle"}
+              />
               <div>
                 <h1>{cur?.title || "AELIO"}</h1>
                 <p>
@@ -1110,7 +1447,7 @@ function App() {
               )}
               {session && cur && (
                 <button
-                  onClick={() => show("settings")}
+                  onClick={() => show("conversation-settings")}
                   aria-label="Conversation settings"
                 >
                   ⚙
@@ -1118,7 +1455,7 @@ function App() {
               )}
             </div>
             <div
-              className="messages"
+              className="messages" ref={messageScroller} onScroll={()=>{const element=messageScroller.current;if(element)followScroll.current=element.scrollHeight-element.scrollTop-element.clientHeight<100;}}
               aria-live="polite"
               aria-busy={!!busy[cur?.id]}
             >
@@ -1169,7 +1506,7 @@ function App() {
               {(messages[cur?.id] || []).map((m: any) => (
                 <article key={m.id} className={"bubble " + m.role}>
                   {m.role === "assistant" && <b>{m.speaker || "AELIO"}</b>}
-                  <p>{m.content}</p>
+                  <Markdown text={m.content}/>
                   {m.role === "assistant" && session && (
                     <button
                       className="save-output"
@@ -1193,7 +1530,7 @@ function App() {
                   )}
                 </article>
               ))}
-              {busy[cur?.id] && (
+              {busy[cur?.id] && waiting[cur?.id] && (
                 <p className="writing" role="status">
                   Writing…
                 </p>
@@ -1201,6 +1538,25 @@ function App() {
               <div ref={end} />
             </div>
             <div className="compose-area">
+              {busy[cur?.id]&&<button type="button" onClick={stopGeneration}>Stop generation</button>}
+              {!busy[cur?.id]&&retryable[cur?.id]&&<button type="button" onClick={retryGeneration}>Retry response</button>}
+              {(handoffs[cur?.id] || []).map((proposal, index) => (
+                <HandoffCard
+                  proposal={proposal}
+                  key={index}
+                  onMila={() => {
+                    const mila = agents.find((a) => a.kind === "mila");
+                    const existing = threads.find(
+                      (t) =>
+                        t.participants.length === 1 &&
+                        t.participants[0] === mila?.id,
+                    );
+                    if (existing) select(existing);
+                    else if (mila) newThread([mila.id], "MILA");
+                    else navigate("account");
+                  }}
+                />
+              ))}
               {(proposals[cur?.id] || []).map((p) => (
                 <article key={p.proposal_id}>
                   <b>Reminder draft: {p.title}</b>
@@ -1374,7 +1730,7 @@ function App() {
             </div>
           </section>
         )}
-        {panel === "settings" && cur && (
+        {panel === "conversation-settings" && cur && (
           <section className="settings-panel panel">
             <button onClick={() => setPanel("")}>Close settings</button>
             <h2>My Pal, My Space</h2>
@@ -1462,7 +1818,133 @@ function App() {
           </section>
         )}
       </main>
+      <nav className="mobile-nav" aria-label="Main navigation">
+        {[
+          ["home", "Home", "home"],
+          ["agents", "Agents", "agents"],
+          ["discover", "Discover", "compass"],
+          ["settings", "Settings", "settings"],
+        ].map(([view, label, icon]) => (
+          <button
+            key={view}
+            aria-label={label}
+            aria-current={
+              (view === "home" ? home && !panel : panel === view)
+                ? "page"
+                : undefined
+            }
+            onClick={() =>
+              navigate(view === "agents" && !session ? "account" : view)
+            }
+          >
+            <Icon name={icon} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
+  );
+}
+function ProjectWorkspace({
+  files,
+  threads,
+  onResume,
+  refresh,
+  setErr,
+  signedIn,
+  onSignIn,
+}: any) {
+  if (!signedIn)
+    return (
+      <section className="panel">
+        <h1>Your projects</h1>
+        <p>Sign in to access your private project files and outputs.</p>
+        <button onClick={onSignIn}>Sign in</button>
+      </section>
+    );
+  const projectFiles = files.filter((file: any) =>
+    ["code-projects", "generated-assets"].includes(file.category),
+  );
+  return (
+    <section className="panel project-workspace">
+      <p className="workspace-eyebrow">YOUR WORK, WITH ROOM TO GROW</p>
+      <h1>Project files & outputs</h1>
+      <label>
+        Add a private project file
+        <input
+          type="file"
+          onChange={async (event: any) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            try {
+              await upload(file, "code-projects");
+              refresh();
+            } catch (error: any) {
+              setErr(error.message);
+            }
+            event.target.value = "";
+          }}
+        />
+      </label>
+      {projectFiles.length ? (
+        projectFiles.map((file: any) => (
+          <article key={file.id}>
+            <strong>{file.name}</strong>
+            <small>
+              {Math.ceil(file.size_bytes / 1024)}KB · {file.category}
+            </small>
+            <button
+              onClick={async () => {
+                try {
+                  const url = await fileURL(file.id);
+                  const anchor = document.createElement("a");
+                  anchor.href = url;
+                  anchor.download = file.name;
+                  anchor.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (error: any) {
+                  setErr(error.message);
+                }
+              }}
+            >
+              Download
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm("Delete this private file?")) return;
+                try {
+                  await call("/files/" + file.id, "DELETE");
+                  refresh();
+                } catch (error: any) {
+                  setErr(error.message);
+                }
+              }}
+            >
+              Delete file
+            </button>
+          </article>
+        ))
+      ) : (
+        <p>Your saved project files and generated outputs will appear here.</p>
+      )}
+      <h2>Continue a conversation</h2>
+      {threads
+        .filter((t: any) => !t.archived)
+        .slice(0, 8)
+        .map((t: any) => (
+          <button key={t.id} onClick={() => onResume(t)}>
+            {t.title}
+          </button>
+        ))}
+      <p>
+        <a href="/brain/my/">Open existing Brain projects and earlier tools</a>
+      </p>
+      <p className="muted">
+        Files use the existing private storage and ownership checks. This
+        workspace does not invent project records or claim code execution is
+        available.
+      </p>
+    </section>
   );
 }
 function relativeTime(value: string) {
@@ -1689,8 +2171,14 @@ function Account({ account, reload, setPanel, setErr }: any) {
       )}
       <button
         onClick={async () => {
-          await auth?.signOut();
-          location.assign("/chat/");
+          try {
+            await auth?.signOut();
+            location.assign("/chat/");
+          } catch (e: any) {
+            await reload();
+            setPanel("");
+            setErr(e.message);
+          }
         }}
       >
         Sign out

@@ -49,7 +49,7 @@ createServer((req, res) => {
   if (path.startsWith("/api/") || path.startsWith("/webhooks/")) {
     return runFunction(req, res).catch((e) => { res.writeHead(500); res.end(String(e)); });
   }
-  if (path === "/assets/config.js" && process.env.SUPABASE_PUBLISHABLE_KEY) { const r=publicConfig(process.env); res.writeHead(200,Object.fromEntries(r.headers)); return r.text().then(t=>res.end(t)); }
+  if (path === "/assets/config.js") { const r=publicConfig(process.env); res.writeHead(200,Object.fromEntries(r.headers)); return r.text().then(t=>res.end(t)); }
   if (path === "/assets/config.js" && process.env.AELIO_DEV_CONFIG === "1") {   // local testing only: dev sign-in, same origin
     res.writeHead(200, { "content-type": "text/javascript" });
     return res.end('window.AELIO_CONFIG={engine:"",dev:true,firebase:{}};');

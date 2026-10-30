@@ -1,0 +1,15 @@
+# AELIO_v1.0.4 validation
+
+2026-10-30. AELIO-only completed update. PATHD is a separate repository/domain and will be validated/pushed separately under the user's authorization. No manual Cloudflare deployment, settings/secret modification or production database mutation was performed.
+
+Passed:48 JavaScript tests; seven disposable real local PostgreSQL/PostgREST integration scenarios; four Python bridge tests; TypeScript; full production build; public check119 files/8773 internal links/8 redirect rules; browser contracts at1440,768,390,320px and guest appearance persistence. The checks cover safe public-key alias/runtime/build propagation, privileged-key rejection, session refresh/retry/local logout, server-only HMAC derivation, real streaming code with explicit synthetic provider fixtures, provider cancellation/error handling, UTF-8 chunks, stable request replay with no duplicate completed turn/provider call, owner isolation, quotas and existing storage/recovery/career behavior. Local streaming tests prove deltas arrive before completion; their millisecond timings are fixtures, not real account latency.
+
+The cinematic browser checks cover explicit Send, drafts, browser back, theme persistence, no page overflow, viewport keyboard behavior and truthful Connected Apps states. The screenshot account/history is explicitly synthetic test data, never a production fallback. The protected legacy Quality Lab browser dependency remains unavailable as documented earlier; its assertions were not weakened.
+
+Cloudflare/public-site inspection and real Supabase/OpenAI account verification are unavailable from this environment. Existing runtime secrets and previously reviewed SQL must be configured. No key was hardcoded or copied from Cloudflare. OpenAI Responses uses store:false, a fixed provider endpoint and bounded output/history/daily requests. Model availability and live first-token/completion latency remain unverified; actual timing logs are produced only during real requests. Provider billing can include already-generated partial output when stopped.
+
+Only completed turns persist. Interrupted/stopped text is retained locally with a retryable draft; an uncommitted partial can disappear on reload. Stable request IDs avoid duplicate saved turns and repeat paid calls when a completed response is replayed. Existing SQL/RLS/RPCs are reused; no new migration is required by this update.
+
+Groove Guide/VYBR8 use the exact owner-provided base URLs without unsupported query parameters, copied tokens or private data. No route/venue API result, OAuth link, reservation or account change is claimed. Account linking requires documented APIs/provider registration/scopes/encrypted token storage, not email matching. Public site reads returned403 here.
+
+No standalone AELIO lint script is configured. Type checking and applicable unit/integration/browser/build checks were used. Original marketing pages whose only differences were generated cache timestamps were preserved to avoid unrelated changes. Previous immutable deliveries remain preserved; the combined archive is no longer in this current AELIO tree.

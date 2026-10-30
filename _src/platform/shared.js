@@ -1,3 +1,5 @@
+import builtPublicAuth from "../generated/public-auth-config.js";
+import { resolveSupabaseConfig } from "../shared/supabase-config.js";
 // Platform services use Supabase Auth + RLS data, never a browser-supplied user ID.
 export class Problem extends Error {
   constructor(status, code, message) {
@@ -64,13 +66,9 @@ export async function limited(req, max) {
   return data;
 }
 export function config(env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY)
-    fail(
-      503,
-      "auth_not_configured",
-      "Account sign-in needs its Supabase configuration.",
-    );
-  return env.SUPABASE_URL.replace(/\/$/, "");
+  const resolved = resolveSupabaseConfig(env, builtPublicAuth);
+  if (resolved.error) fail(503, resolved.errorCode, resolved.error);
+  return resolved.url;
 }
 export async function sb(
   env,
@@ -80,7 +78,7 @@ export async function sb(
   const base = config(env);
   const key = service
     ? env.SUPABASE_SERVICE_ROLE_KEY
-    : env.SUPABASE_PUBLISHABLE_KEY;
+    : resolveSupabaseConfig(env, builtPublicAuth).anonKey;
   if (!key)
     fail(
       503,
@@ -111,6 +109,17 @@ export async function sb(
   }
   const d = await r.json().catch(() => null);
   if (!r.ok) {
+    if (
+      r.status === 401 &&
+      /invalid api key|invalid.*apikey/i.test(
+        String(d?.message || d?.msg || ""),
+      )
+    )
+      fail(
+        503,
+        "auth_key_rejected",
+        "Supabase rejected the configured public key. Check the project URL and public key in Cloudflare.",
+      );
     if (r.status === 401)
       fail(401, "authentication_failed", "Please sign in again.");
     if (r.status === 403)
@@ -168,21 +177,24 @@ export async function digest(s) {
     await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)),
   );
 }
+export function sessionSecretSource(env){
+  if(env.AELIO_SESSION_SECRET!==undefined && env.AELIO_SESSION_SECRET!=='')return typeof env.AELIO_SESSION_SECRET==='string'&&env.AELIO_SESSION_SECRET.length>=32?'explicit':null;
+  const service=env.SUPABASE_SERVICE_ROLE_KEY;
+  if(typeof service!=='string'||service.length<32)return null;
+  if(service.startsWith('sb_secret_'))return 'derived_service_role';
+  try{const value=service.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(atob(value.padEnd(Math.ceil(value.length/4)*4,'='))).role==='service_role'?'derived_service_role':null;}catch{return null;}
+}
 export async function keyed(env, s) {
-  if (!env.AELIO_SESSION_SECRET || env.AELIO_SESSION_SECRET.length < 32)
-    fail(
-      503,
-      "session_not_configured",
-      "The secure session service needs configuration.",
-    );
-  const k = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(env.AELIO_SESSION_SECRET),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  return hex(await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(s)));
+  const source=sessionSecretSource(env);
+  if(!source)fail(503,'session_not_configured','Account services need secure runtime configuration. Please contact the site owner.');
+  let raw;
+  if(source==='explicit')raw=new TextEncoder().encode(env.AELIO_SESSION_SECRET);
+  else{
+    const master=await crypto.subtle.importKey('raw',new TextEncoder().encode(env.SUPABASE_SERVICE_ROLE_KEY),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+    raw=await crypto.subtle.sign('HMAC',master,new TextEncoder().encode('aelio/guest-and-rate-limit/v1'));
+  }
+  const key=await crypto.subtle.importKey('raw',raw,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  return hex(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(s)));
 }
 export function cookie(req, name) {
   const v = req.headers
