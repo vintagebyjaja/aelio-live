@@ -28,6 +28,7 @@ import "./messaging.css";
 import { AppearanceControls } from "./Appearance";
 import { designOf, resolveAppearance, guestAppearance } from "./design-system";
 const Aurevia=lazy(()=>import("./aurevia/Aurevia"));
+const CharacterCreator=lazy(()=>import("./character/Creator"));
 const BACKGROUNDS = [
   "AELIO Original",
   "Space & Galaxies",
@@ -89,7 +90,11 @@ function App() {
   const [aureviaFrom,setAureviaFrom]=useState(()=>history.state?.aureviaOrigin||history.state?.aelioEnvironment||'aelio'),[portal,setPortal]=useState(false),[worldPanel,setWorldPanel]=useState(false),[reactionsAvailable,setReactionsAvailable]=useState<Record<string,boolean>>({});
   useEffect(()=>{if(!portal)return;const timer=setTimeout(()=>setPortal(false),2400);return()=>clearTimeout(timer);},[portal]);
   function enterAurevia(){setWorldPanel(false);setAureviaFrom(environment);navigate('aurevia');let seen=false;try{seen=sessionStorage.getItem('aelio.aurevia.intro')==='seen';sessionStorage.setItem('aelio.aurevia.intro','seen');}catch{}if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)setPortal(true);}
-  function workspace(value:string){setEnvironment(value);if(value==='aelio')navigate('core');else if(value==='native')navigate('native');else navigate('inbox');}
+  const nativeDraft=useRef(false),characterDraft=useRef(false);
+  const [characterOrigin,setCharacterOrigin]=useState('agents');
+  function openCharacter(agent:any=null,origin='agents',record=true){if(!allowNativeExit())return;if(agent&&agent.kind!=='custom'){setErr('Official companions keep their approved identities and portraits.');return;}setEditor(agent?.id?agent:null);setCharacterOrigin(origin);setHome(false);setDrawer(false);setPanel('character-creator');if(record)history.pushState({aelioView:'character-creator',aelioEnvironment:environment,character_agent:agent?.id||null,character_origin:origin},'','#character-creator');}
+  function allowNativeExit(){if(panel==='native'&&nativeDraft.current){if(!confirm('Leave Native Brain and discard unsaved project changes?'))return false;nativeDraft.current=false;}if(panel==='character-creator'&&characterDraft.current){if(!confirm('Discard unsaved character changes?'))return false;characterDraft.current=false;}return true;}
+  function workspace(value:string){if(!allowNativeExit())return;setEnvironment(value);if(value==='aelio')navigate('core');else if(value==='native')navigate('native');else navigate('inbox');}
   async function coreEight(){try{const r=await call('/messaging/core-eight','POST',{});setThreads(ts=>[...ts.filter(t=>t.id!==r.conversation.id),r.conversation]);select(r.conversation);}catch(error){setErr(friendly(error));}}
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavigation,setMobileNavigation]=useState(()=>matchMedia('(max-width: 900px)').matches);
@@ -116,7 +121,7 @@ function App() {
       location.pathname.startsWith("/account") ||
         location.pathname.startsWith("/auth")
         ? "account"
-        : location.hash==='#workspace-inbox'?'inbox':location.hash==='#companions'?'core':['library','brain','echo','allowance','aurevia','core','inbox','native'].includes(location.hash.slice(1))?location.hash.slice(1):!location.hash&&!new URLSearchParams(location.search).has('companion')?'core':"",
+        : location.hash==='#workspace-inbox'?'inbox':location.hash==='#companions'?'core':['library','brain','echo','allowance','aurevia','core','inbox','native','character-creator'].includes(location.hash.slice(1))?location.hash.slice(1):!location.hash&&!new URLSearchParams(location.search).has('companion')?'core':"",
     ),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(""),
@@ -156,7 +161,7 @@ function App() {
   function clearPrivateState(){
     setSupport(null);
     Object.values(generations.current).forEach(controller=>controller.abort());
-    setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setImageSource({});setImageQuote(null);imageQuoteTurn.current++;setImageBusy({});setImagePending({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setFiles([]);setBackgroundURL('');
+    setEditor(null);characterDraft.current=false;nativeDraft.current=false;setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setImageSource({});setImageQuote(null);imageQuoteTurn.current++;setImageBusy({});setImagePending({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setFiles([]);setBackgroundURL('');
     cache.current={};backgroundCache.current.forEach(url=>URL.revokeObjectURL(url));backgroundCache.current.clear();
   }
   useEffect(()=>{const changed=(event:StorageEvent)=>{if(event.key!=='aelio.auth')return;const id=(value:string|null)=>{try{return value?JSON.parse(value)?.user?.id:null;}catch{return null;}};if(!event.newValue||id(event.oldValue)!==id(event.newValue)){clearPrivateState();location.assign('/chat/');}};addEventListener('storage',changed);return()=>removeEventListener('storage',changed);},[]);
@@ -199,7 +204,7 @@ function App() {
               await newThread([agent.id], mila ? "MILA" : "AELIO");
             setHome(!new URLSearchParams(location.search).has("companion"));
             const requested=location.hash.slice(1)||(!q.has("companion")?"core":"chats");
-            if(['library','brain','echo','allowance','aurevia','core','inbox','native'].includes(requested)){setPanel(requested);setHome(false);if(requested==='native')setEnvironment('native');else if(requested==='inbox')setEnvironment('dreambox');else if(requested==='core')setEnvironment('aelio');else if(history.state?.aelioEnvironment)setEnvironment(history.state.aelioEnvironment);}
+            if(['library','brain','echo','allowance','aurevia','core','inbox','native','character-creator'].includes(requested)){setPanel(requested);setHome(false);if(requested==='character-creator'){setEditor(as.agents.find((a:any)=>a.kind==='custom'&&a.id===history.state?.character_agent)||null);setCharacterOrigin(history.state?.character_origin||'agents');}if(requested==='native')setEnvironment('native');else if(requested==='inbox')setEnvironment('dreambox');else if(requested==='core')setEnvironment('aelio');else if(history.state?.aelioEnvironment)setEnvironment(history.state.aelioEnvironment);}
             if(requested==='chats'){setHome(false);setPanel('');}
           }
         } catch (e: any) {
@@ -269,6 +274,7 @@ function App() {
     }
   }
   function select(t: any, record = true, preserveEnvironment=false) {
+    if(!allowNativeExit())return;
     if(!preserveEnvironment)setEnvironment(isOfficialThread(t)?'aelio':'dreambox');
     followScroll.current=true;
     if (record)
@@ -510,7 +516,9 @@ function App() {
     }
   }
   function navigate(view: string, record = true) {
+    if(view!=='native'&&!allowNativeExit())return;
     if(view==='ai-operations')return;
+    if(view==='character-creator'){const saved=!record&&history.state?.character_agent;openCharacter(saved?agents.find(a=>a.id===saved):null,!record?history.state?.character_origin||'agents':'agents',record);return;}
     if(view==='home')setEnvironment('aelio');
     if(view==='native')setEnvironment('native');
     if(view==='core')setEnvironment('aelio');
@@ -557,6 +565,7 @@ function App() {
           "inbox",
           "workspace-inbox",
           "companions",
+          "character-creator",
           "echo",
           "library",
           "allowance",
@@ -707,7 +716,7 @@ function App() {
         "dream-app messaging-app environment-"+environment+" " + (!home&&!panel?"in-chat ":"") + (keyboardOpen?"keyboard-open ":"") +
         (design.light ? "light " : "") +
         (collapsed ? "collapsed " : "") +
-        (home ? "at-home" : "")
+        (home ? "at-home" : "") + (panel==='character-creator'?' creator-open':'')
       }
       data-environment={environment}
       data-native-theme={nativeAppearance}
@@ -789,7 +798,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel==='core'?<OfficialHub agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCore={coreEight} onAurevia={enterAurevia} onDiscover={()=>navigate('discover')} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='inbox'?<div className="full-inbox"><MessagingInbox agents={agents} threads={listedThreads} current={cur} environment={environment} query={search} onQuery={setSearch} onOpen={environment==='dreambox'?openAdditionalCompanion:openCompanion} onSelect={select} onNavigate={navigate} onNew={()=>navigate('new')} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/></div>:panel==='native'?<NativeBrain key={session?.user?.id||'guest'} section={nativeSection} signedIn={!!session} onSignIn={()=>navigate('account')} onAurevia={enterAurevia} onChat={()=>{setEnvironment('dreambox');if(cur)select(cur,false,true);else navigate('inbox');}} onPlans={()=>navigate('brain')} appearance={nativeAppearance} onAppearance={(value:string)=>{setNativeAppearance(value);try{localStorage.setItem('aelio.native.appearance',value);}catch{}}}/>:panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onReturn={()=>workspace(aureviaFrom)} returnLabel={aureviaFrom==='native'?'Native Brain':aureviaFrom==='dreambox'?'Dreambox':'AELIO'} onThread={(t:any)=>{if(t){select(t,false,true);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setEnvironment(aureviaFrom);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onEdit={(file:any)=>{const t=threads.find(t=>t.id===file.conversation_id);if(t){select(t);setImageSource(s=>({...s,[t.id]:file.id}));}else setErr('Open a conversation and attach this saved image to edit it.');}}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
+        {panel==='character-creator'?<Suspense fallback={<AelioLoading/>}><CharacterCreator key={editor?.id||'new'} agent={editor?.id?editor:null} signedIn={!!session} onSignIn={()=>navigate('account')} onDirty={(dirty:boolean)=>{characterDraft.current=dirty;}} onSaved={(agent:any)=>{characterDraft.current=false;setAgents(all=>[...all.filter(a=>a.id!==agent.id),agent]);setEditor(null);navigate(characterOrigin==='aurevia'?'aurevia':'agents');}} onClose={()=>navigate(characterOrigin==='aurevia'?'aurevia':'agents')}/></Suspense>:panel==='core'?<OfficialHub agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCore={coreEight} onAurevia={enterAurevia} onDiscover={()=>navigate('discover')} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='inbox'?<div className="full-inbox"><MessagingInbox agents={agents} threads={listedThreads} current={cur} environment={environment} query={search} onQuery={setSearch} onOpen={environment==='dreambox'?openAdditionalCompanion:openCompanion} onSelect={select} onNavigate={navigate} onNew={()=>navigate('new')} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/></div>:panel==='native'?<NativeBrain key={session?.user?.id||'guest'} section={nativeSection} signedIn={!!session} onSignIn={()=>navigate('account')} onAurevia={enterAurevia} onChat={()=>{setEnvironment('dreambox');if(cur)select(cur,false,true);else navigate('inbox');}} onPlans={()=>navigate('brain')} onNavigate={navigate} onSection={(id:string)=>setNativeSection(id)} onDirty={(dirty:boolean)=>{nativeDraft.current=dirty;}} appearance={nativeAppearance} onAppearance={(value:string)=>{setNativeAppearance(value);try{localStorage.setItem('aelio.native.appearance',value);}catch{}}}/>:panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onReturn={()=>workspace(aureviaFrom)} returnLabel={aureviaFrom==='native'?'Native Brain':aureviaFrom==='dreambox'?'Dreambox':'AELIO'} onThread={(t:any)=>{if(t){select(t,false,true);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setEnvironment(aureviaFrom);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')} onUniversity={()=>{setNativeSection('university');workspace('native');}} onCharacterCreator={(agent:any)=>openCharacter(agent,'aurevia')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onEdit={(file:any)=>{const t=threads.find(t=>t.id===file.conversation_id);if(t){select(t);setImageSource(s=>({...s,[t.id]:file.id}));}else setErr('Open a conversation and attach this saved image to edit it.');}}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>
@@ -900,7 +909,7 @@ function App() {
               Work with AELIO on ideas, creative briefs and plans using your
               existing conversation system.
             </p>
-            <div className="create-options">
+            <div className="create-options"><button onClick={()=>openCharacter()}><Icon name="agents"/><strong>Create Agent</strong><span>Open the four-step Character Creator.</span></button>
               <button onClick={() => startTopic(TOPICS[1])}>
                 <Icon name="bulb" />
                 <strong>Explore an idea</strong>
@@ -1009,12 +1018,12 @@ function App() {
                   memories: [],
                   memory_enabled: false,
                 });
-                setPanel("edit-agent");
+                openCharacter();
               }}
             >
               Create agent
             </button>
-            <CompanionLibrary agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCustomize={a=>{setEditor(a);setPanel('companion-appearance');}} onEdit={a=>{setEditor(a);setPanel('edit-agent');}}/>
+            <CompanionLibrary agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCustomize={a=>{setEditor(a);setPanel('companion-appearance');}} onEdit={a=>{setEditor(a);setPanel('edit-agent');}} onCharacter={a=>openCharacter(a)}/>
 
           </section>
         ) : panel === "companion-appearance" && editor ? (
@@ -1024,7 +1033,7 @@ function App() {
           <button onClick={async()=>{try{const response=await call('/agents/'+editor.id,'PATCH',{appearance_mode:editor.appearance_mode||'inherit',appearance:editor.appearance||{}});setAgents(as=>as.map(a=>a.id===editor.id?response.agent:a));setPanel('agents');}catch(e){setErr(friendly(e));}}}>Save companion appearance</button><p>Switching to your default keeps this companion’s saved custom settings.</p></section>
         ) : panel === "edit-agent" && editor ? (
           <section className="panel">
-            <h1>{editor.id ? "Edit" : "Create"} agent</h1>
+            <h1>{editor.id ? "Edit" : "Create"} agent</h1>{editor.kind==='custom'&&<button onClick={()=>openCharacter(editor)}>Customize Appearance · Character Creator</button>}
             <div className="custom-portrait-editor"><AgentAvatar agent={{...editor,kind:'custom'}} shape="rounded"/><label>Agent portrait<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async(e:any)=>{const file=e.target.files?.[0];if(!file)return;try{const saved=await upload(file,'agents');setEditor({...editor,avatar_file_id:saved.id,avatar_crop:{x:50,y:35,zoom:1}});}catch(error){setErr(friendly(error));}}}/></label>
             {editor.avatar_file_id&&<><p>Position the portrait for your agent. Save the profile to keep your changes.</p>{[['x','Horizontal position',0,100,1],['y','Vertical position',0,100,1],['zoom','Zoom',1,3,.01]].map(([key,label,min,max,step])=><label key={String(key)}>{label}<input type="range" aria-label={String(label)} min={Number(min)} max={Number(max)} step={Number(step)} value={editor.avatar_crop?.[String(key)]??(key==='zoom'?1:key==='y'?35:50)} onChange={(e:any)=>setEditor({...editor,avatar_crop:{x:50,y:35,zoom:1,...editor.avatar_crop,[String(key)]:Number(e.target.value)}})}/></label>)}
             <button type="button" onClick={()=>setEditor({...editor,avatar_crop:{x:50,y:35,zoom:1}})}>Reset crop</button><button type="button" onClick={()=>setEditor({...editor,avatar_file_id:null,avatar_crop:{x:50,y:35,zoom:1}})}>Remove picture</button></>}

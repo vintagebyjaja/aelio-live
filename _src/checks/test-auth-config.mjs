@@ -72,6 +72,7 @@ test("build-only aliases reach the bundled Worker and static browser config with
     mkdirSync(join(root, "_src"), { recursive: true });
     cpSync("_src/platform", join(root, "_src/platform"), { recursive: true });
     cpSync("_src/shared", join(root, "_src/shared"), { recursive: true });
+    cpSync("_src/edge", join(root, "_src/edge"), { recursive: true });
     const result = buildAuthConfig(
       {
         NEXT_PUBLIC_SUPABASE_URL: DEFAULT_SUPABASE_URL,

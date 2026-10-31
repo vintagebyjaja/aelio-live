@@ -1,3 +1,4 @@
+import {characterDocument} from '../shared/character.js';
 import {attributedAgent,assertOwnVoice} from './group-attribution.js';
 import {decorateMessages,decorateInbox} from "./messenger.js";
 import {imageIntent} from "../shared/image-intent.js";
@@ -483,6 +484,7 @@ export function avatarCrop(value){
 }
 function agentFields(d) {
   const a = {};
+  if(d.character!==undefined){try{a.character=characterDocument(d.character);}catch(e){fail(400,'invalid_character',e.message);}}
   if(d.avatar_crop!==undefined)a.avatar_crop=avatarCrop(d.avatar_crop);
   if(d.avatar_file_id!==undefined){if(d.avatar_file_id!==null&&!uuid(d.avatar_file_id))fail(400,"invalid_avatar","Choose an uploaded portrait.");a.avatar_file_id=d.avatar_file_id;}
   if (d.appearance !== undefined) a.appearance = appearance(d.appearance);

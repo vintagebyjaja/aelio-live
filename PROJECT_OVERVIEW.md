@@ -1,3 +1,9 @@
+## AELIO 1.0.15 — completion and main push authorized — 2026-10-31
+
+The owner explicitly requested finishing Native Brain expansion, Dolphin campus navigation and the reference-led Character Creator, then pushing main without another review. They waived preview delivery and asked for SQL only if needed. This supersedes earlier migration-review restrictions for this combined delta. Foundation: approved main129ce3b. Keep remote migration and PATHD unchanged. Existing Git-triggered deployment may run; no manual deploy, production SQL, provider activation, secrets, payment/pricing or role changes. SQL17/18 are owner-run full scripts, in order, after prior migrations. See docs/releases/AELIO_v1.0.15_IMPLEMENTATION.md for actual features, checks and limits. Native AI runner/deployment/payout functions remain setup-gated; procedural characters/world geometry are not production-reference fidelity or rigged animation. No new preview approval is required.
+
+---
+
 ## AELIO 1.0.14 — combined local review only — 2026-10-31
 
 Latest approved main is acfb35e (official logo; owner subsequently approved main). New AUREVIA Orb Plaza/office, Dream Team/mobile, missed unified-navigation brief and marketing Explore changes are authorized locally on migration only. Do not push even migration, merge main, deploy, apply SQL or change provider/pricing/role/settings/secrets without explicit approval. PATHD is unchanged. Keep actual rendered benchmarks separate from approved 2D references; no full world fidelity or physical iOS/live-provider verification is claimed. See docs/releases/AELIO_v1.0.14_REVIEW.md for implementation, checks, limitations and remaining assets. New generated wallpapers are review-pending chat backgrounds only, never AUREVIA world substitutes.

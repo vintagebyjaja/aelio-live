@@ -1,3 +1,9 @@
+## AELIO 1.0.15 — completion and main push authorized — 2026-10-31
+
+The owner explicitly requested finishing Native Brain expansion, Dolphin campus navigation and the reference-led Character Creator, then pushing main without another review. They waived preview delivery and asked for SQL only if needed. This supersedes earlier migration-review restrictions for this combined delta. Foundation: approved main129ce3b. Keep remote migration and PATHD unchanged. Existing Git-triggered deployment may run; no manual deploy, production SQL, provider activation, secrets, payment/pricing or role changes. SQL17/18 are owner-run full scripts, in order, after prior migrations. See docs/releases/AELIO_v1.0.15_IMPLEMENTATION.md for actual features, checks and limits. Native AI runner/deployment/payout functions remain setup-gated; procedural characters/world geometry are not production-reference fidelity or rigged animation. No new preview approval is required.
+
+---
+
 ## AELIO 1.0.14 main promotion approved — 2026-10-31
 
 The owner explicitly requested deploying the reviewed combined update through main Git. Push this reviewed delta to AELIO main so the existing Git-triggered deployment can run. Do not push remote migration or change PATHD. No production SQL, provider activation, secrets, pricing or role/settings changes are needed or authorized. Local checks passed; physical iOS Safari, live-provider behavior and hosted deployment remain unverified until checked. AUREVIA remains a code-authored benchmark awaiting further visual refinement, not full reference-level restoration. This approval supersedes local-only notes for this reviewed delta only.

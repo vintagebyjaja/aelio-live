@@ -1,3 +1,4 @@
+import {nativeWorkspace} from "./native.js";
 import {messenger,nativeCatalog} from "./messenger.js";
 import {consumerMessage} from "../shared/experience.js";
 import {sessionSecretSource} from "./shared.js";
@@ -314,6 +315,7 @@ export async function platform(req, env) {
     if(p.startsWith('/billing/'))return await billing(req,env,p.slice(8));
     if(p.startsWith('/messaging/'))return await messenger(req,env,p.slice(10));
     if(p==='/native/catalog')return await nativeCatalog(req,env);
+    if(p.startsWith('/native/'))return await nativeWorkspace(req,env,p.slice(7));
     if(p.startsWith('/images/'))return await imageRoutes(req,env,p.slice(7));
     if(p==='/aurevia'||p.startsWith('/aurevia/'))return await aurevia(req,env,p.slice(8));
     if (p.startsWith("/career")) return await career(req, env, p.slice(7));

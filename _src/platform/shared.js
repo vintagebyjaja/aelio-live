@@ -134,10 +134,14 @@ export async function sb(
         "permission_denied",
         "This account cannot access that resource.",
       );
+    if (d?.code === "PGRST204" && /character/i.test(String(d?.message || "")) && path.startsWith("/rest/v1/app_agents"))
+      fail(503,"character_setup_required","Character saving needs the character storage update. Your agent and conversations are unchanged.");
     if (d?.code === "P0001")
       fail(429, "message_limit", "Your message allowance has been reached.");
     if (d?.code === "55P03")
       fail(409, "reply_in_progress", "Wait for the current reply to finish.");
+    if(d?.code === "22023")fail(400,"invalid_input","Check the project fields and file limits.");
+    if(d?.code === "40001")fail(409,"revision_conflict","Saved data changed in another session. Reload before saving again.");
     if (d?.code === "23505")
       fail(409, "already_exists", "This item already exists.");
     console.error(

@@ -5,6 +5,7 @@ rmSync("public/assets/chat", { recursive: true, force: true });
 await build({
   entryPoints: ["_src/chat/main.tsx"],
   bundle: true,
+  external: ["/assets/*"],
   splitting: true,
   minify: true,
   format: "esm",
@@ -33,3 +34,6 @@ mkdirSync("public/dreambox",{recursive:true});writeFileSync("public/dreambox/ind
 // Publish only fallback frames captured from the actual Orb Plaza renderer. Source references stay outside the public experience.
 rmSync("public/assets/aurevia", { recursive: true, force: true });
 cpSync("assets/aurevia/plaza", "public/assets/aurevia/plaza", { recursive: true });
+
+cpSync('assets/aurevia-map','public/assets/aurevia-map',{recursive:true});
+cpSync('assets/character-creator','public/assets/character-creator',{recursive:true});

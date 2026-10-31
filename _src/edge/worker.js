@@ -14,7 +14,7 @@ export default {
     let pathname;try{pathname=decodeURIComponent(new URL(request.url).pathname).replace(/\/+/g,'/');}catch{return new Response('Not found',{status:404});}
     if(pathname.startsWith('/api/studio/ai/'))return studioAPI(request,env);
     if(pathname==='/studiobrain'||pathname.startsWith('/studiobrain/'))return studioPage(request,env);
-    if(pathname.startsWith('/api/brain/')||pathname.startsWith('/api/studio/')){try{await requireStudioFounder(request,env);}catch(e){return new Response(JSON.stringify({error:'Private workspace.'}),{status:e.status||503,headers:{'content-type':'application/json','cache-control':'no-store'}});}}
+    if(pathname.startsWith('/api/brain/')||pathname.startsWith('/api/studio/')||pathname==='/api/voices'||pathname.startsWith('/api/voices/')){try{await requireStudioFounder(request,env);}catch(e){return new Response(JSON.stringify({error:'Private workspace.'}),{status:e.status||503,headers:{'content-type':'application/json','cache-control':'no-store'}});}}
     if(pathname==='/webhooks/ai-subscriptions')return platform(request,env);
     if (pathname === "/assets/config.js") return publicConfig(env);
     if (pathname.startsWith("/api/platform/")) return platform(request, env);

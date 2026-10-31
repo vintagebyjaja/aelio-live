@@ -1,6 +1,8 @@
 // Public product language only. Diagnostic codes stay separate from consumer copy.
 export const EXPERIENCE_STATES=Object.freeze({ready:'What’s on your mind today?',loading:'Getting your space ready…',processing:'Working on it…',action:'One more step and you’re ready.',unavailable:'I can’t do that here right now. Let’s try another way.',not_offered:'Let’s explore what you can do here.',interrupted:'We lost our connection for a moment. Want to pick up where we left off?',authentication:'Sign in to make this space yours.',completed:'You’re all set.',failed:'That didn’t go through. Your work is still here.'});
 const errors={
+ character_setup_required:"Character saving needs a storage update. Your agent and conversations are unchanged.",
+ native_setup_required:"Native Brain project and wallet storage needs a setup update. Existing chats and tools remain available.",
  engine_not_connected:"This part of your space needs a moment. You can keep exploring or try again.",
  engine_unreachable:"I can’t open that right now. Please try again shortly.",
  session_not_configured:'I’m having a little trouble opening your space. Let’s try again.',

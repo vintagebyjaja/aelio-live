@@ -1,0 +1,67 @@
+{
+  "checks": [
+    {
+      "width": 1440,
+      "theme": "midnight",
+      "navigation": true,
+      "projects_versions_export": true,
+      "memory_deploy_config": true,
+      "preview_opaque_and_scripts_removed": true,
+      "wallet_confirmation_no_charge": true,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "midnight",
+      "navigation": true,
+      "projects_versions_export": true,
+      "memory_deploy_config": true,
+      "preview_opaque_and_scripts_removed": true,
+      "wallet_confirmation_no_charge": true,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "blueprint",
+      "navigation": true,
+      "projects_versions_export": true,
+      "memory_deploy_config": true,
+      "preview_opaque_and_scripts_removed": true,
+      "wallet_confirmation_no_charge": true,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "blueprint",
+      "navigation": true,
+      "projects_versions_export": true,
+      "memory_deploy_config": true,
+      "preview_opaque_and_scripts_removed": true,
+      "wallet_confirmation_no_charge": true,
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "theme": "midnight",
+      "navigation": true,
+      "projects_versions_export": true,
+      "memory_deploy_config": true,
+      "preview_opaque_and_scripts_removed": true,
+      "wallet_confirmation_no_charge": true,
+      "overflow": false
+    },
+    {
+      "width": 430,
+      "theme": "midnight",
+      "navigation": true,
+      "projects_versions_export": true,
+      "memory_deploy_config": true,
+      "preview_opaque_and_scripts_removed": true,
+      "wallet_confirmation_no_charge": true,
+      "overflow": false
+    }
+  ],
+  "all_financial_data": "SYNTHETIC LOCAL FIXTURES",
+  "live_payment_or_payout": false,
+  "physical_iOS_tested": false
+}

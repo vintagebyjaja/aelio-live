@@ -4,7 +4,7 @@ import type {PlazaMaterials} from './materials';
 
 // A single authored plaza kit: dimensional arch openings, curved glass and stepped cornices.
 // Static architectural parts batch by material; this avoids one draw call per detail.
-export function architecture(scene:T.Scene,m:PlazaMaterials){
+export function architecture(scene:T.Scene,m:PlazaMaterials,buildPlaza=true){
  const batches=new Map<T.Material,T.BufferGeometry[]>();
  function add(geometry:T.BufferGeometry,material:T.Material,position:T.Vector3,rotation=new T.Euler(),scale=new T.Vector3(1,1,1)){
   const matrix=new T.Matrix4().compose(position,new T.Quaternion().setFromEuler(rotation),scale);geometry.applyMatrix4(matrix);
@@ -20,6 +20,7 @@ export function architecture(scene:T.Scene,m:PlazaMaterials){
   return new T.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.055,bevelThickness:.055,curveSegments:24});
  }
  // Colonnade follows a real arc around the plaza, framing the Orb against the ocean.
+ if(buildPlaza){
  const radius=24;
  for(let i=0;i<15;i++){
   const a=-1.6+i*3.2/14;
@@ -72,6 +73,7 @@ export function architecture(scene:T.Scene,m:PlazaMaterials){
   const a=i/12*Math.PI*2,x=Math.sin(a)*16,z=Math.cos(a)*16;
   if(z>8)continue;box(3,.45,1,x,.5,z,m.stone,a);box(2.8,.09,.8,x,.77,z,m.darkGold,a);
   cylinder(.12,.18,x,.12,z+1.4,m.light);
+ }
  }
  function finish(){for(const [mat,geometries] of batches){const geometry=mergeGeometries(geometries.map(g=>g.index?g.toNonIndexed():g),false);if(!geometry)throw Error('Could not build the plaza architecture');const mesh=new T.Mesh(geometry,mat);mesh.castShadow=mat!==m.glass;mesh.receiveShadow=true;scene.add(mesh);geometries.forEach(g=>g.dispose());}batches.clear();}
  return {add,box,cylinder,arch,finish};
