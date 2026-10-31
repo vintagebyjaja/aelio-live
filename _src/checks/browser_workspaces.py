@@ -43,10 +43,10 @@ with sync_playwright() as p:
   page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
   page.route('**/api/platform/**',handler);page.route('**/assets/config.js',handler)
   page.goto(BASE+'/',wait_until='networkidle');page.locator('.hero-composer').wait_for()
-  page.get_by_label('Experience',exact=True).select_option('brain');page.get_by_role('heading',name='Brain',exact=True).wait_for()
+  page.get_by_label('Workspace',exact=True).select_option('brain');page.get_by_role('heading',name='Brain',exact=True).wait_for()
   page.get_by_role('button',name='Dream Beyond',exact=True).click();page.get_by_role('button',name='New entry',exact=True).click()
   page.get_by_label('Title',exact=True).fill('Synthetic goal '+str(width));page.get_by_label('Details',exact=True).fill('Fixture private plan');page.get_by_role('button',name='Save entry',exact=True).click();page.get_by_role('heading',name='Synthetic goal '+str(width),exact=True).wait_for()
-  page.reload(wait_until='networkidle');page.get_by_label('Experience',exact=True).select_option('brain');page.get_by_role('button',name='Dream Beyond',exact=True).click();page.get_by_role('heading',name='Synthetic goal '+str(width),exact=True).wait_for()
+  page.reload(wait_until='networkidle');page.get_by_label('Workspace',exact=True).select_option('brain');page.get_by_role('button',name='Dream Beyond',exact=True).click();page.get_by_role('heading',name='Synthetic goal '+str(width),exact=True).wait_for()
   page.get_by_role('button',name='Technology',exact=True).click();assert page.get_by_role('heading',name='Synthetic goal '+str(width),exact=True).count()==0
   page.get_by_role('button',name='Dream Beyond',exact=True).click();page.get_by_role('heading',name='Synthetic goal '+str(width),exact=True).wait_for()
   page.screenshot(path=str(shots/f'brain-{width}.png'))

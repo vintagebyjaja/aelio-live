@@ -1,3 +1,4 @@
+import {requireStudioFounder} from "./studio-auth.js";
 import { safeRouterSettings, ROUTER_FIELDS } from "./providers/settings.js";
 import { providerHealth } from "./providers/router.js";
 import { body, fail, limited, reply, rpc, who, sb } from "./shared.js";
@@ -18,26 +19,11 @@ export async function billing(req, env, path) {
       });
     return reply({ configured: true, ...(await subscriptionAccess(env, u)) });
   }
-  if (path === "/operations" && ["GET", "PATCH"].includes(req.method)) {
-    const account = await sb(env, "/rest/v1/rpc/app_account_bootstrap", {
-      token: u.token,
-      method: "POST",
-      data: {},
-    });
-    if (account.role !== "founder")
-      fail(403, "permission_denied", "This page is private.");
-    let claims;
-    try {
-      claims = JSON.parse(
-        atob(u.token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-      );
-    } catch {}
-    if (claims?.aal !== "aal2")
-      fail(
-        403,
-        "mfa_required",
-        "Verify your second factor before opening financial operations.",
-      );
+  fail(404,"not_found","Not found.");
+}
+export async function studioOperations(req,env){
+  if (["GET", "PATCH"].includes(req.method)) {
+    const u = await requireStudioFounder(req,env);
     if (req.method === "PATCH") {
       const d = await body(req);
       await rpc(env, "app_ai_update_router_config", {

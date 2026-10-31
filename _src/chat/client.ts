@@ -77,3 +77,9 @@ export function download(data: string, name: string, type = "text/plain") {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export async function openStudio(){
+ const token=await auth?.accessToken();
+ const r=await fetch('/api/studio/ai/session',{method:'POST',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},body:'{}',credentials:'same-origin'});
+ const d=await r.json();if(!r.ok)throw Object.assign(new Error(d.error||'Studio Brain is private.'),{code:d.code});location.assign(d.url);
+}

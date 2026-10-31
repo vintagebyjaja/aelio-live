@@ -50,12 +50,7 @@ with sync_playwright()as p:
   assert not errors,errors
   print('PASS',width,'Library pagination/search/preview/Escape/download/deletion; allowance/funding display; compact navigation; no overflow')
   context.close()
- # Founder controls preview is explicit synthetic data. Real endpoints independently enforce founder + aal2.
- original=account['role'];account['role']='founder'
- context=browser.new_context(viewport={'width':1440,'height':1100});banner(context)
- context.add_init_script("localStorage.setItem('aelio.auth',"+json.dumps(json.dumps({'access_token':'fixture-user','refresh_token':'fixture-refresh','expires_at':time.time()+3600,'user':{'id':A}}))+");")
- page=context.new_page();page.route('**/api/platform/**',handler);page.route('**/assets/config.js',handler);page.goto(BASE+'/chat/#ai-operations',wait_until='networkidle');page.get_by_role('heading',name='AI Operations',exact=True).wait_for();page.screenshot(path=str(OUT/'ai-operations-1440.png'))
- page.get_by_label('GEMINI Standard model',exact=True).fill('updated-sample-model');page.get_by_role('button',name='Save routing controls',exact=True).click();page.get_by_text('Routing settings saved. New requests use these settings.',exact=True).wait_for();assert state['settings']['GEMINI_MODEL']=='updated-sample-model';context.close();account['role']=original
+ # Founder controls are now private Studio Brain; public-gallery tests deliberately do not render operational metrics.
  # PATHD pricing is a real local render. Companion/account data below are intercepted synthetic fixtures.
  for width in (390,1440):
   context=browser.new_context(viewport={'width':width,'height':1100});banner(context,'LOCAL MIGRATION PREVIEW')

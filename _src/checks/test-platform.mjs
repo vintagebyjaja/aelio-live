@@ -25,13 +25,10 @@ test("account config is Supabase only and never contains privileged settings", a
   assert.match(s, /supabase/);
   assert.doesNotMatch(s, /private-secret|private-session|firebase/i);
 });
-test("platform distinguishes missing accounts and missing engine configuration", async () => {
+test("public platform status does not disclose internal configuration", async () => {
   const r = await platform(req("/api/platform/status"), {});
   const d = await r.json();
-  assert.equal(d.accounts, false);
-  assert.equal(d.engineBinding, false);
-  assert.equal(d.storageBinding, false);
-  assert.equal(d.inferenceVerified, false);
+  assert.deepEqual(d,{service:'aelio',available:true});
 });
 test("mutations reject cross-origin requests before touching any service", async () => {
   const r = await platform(

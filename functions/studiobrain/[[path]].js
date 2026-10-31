@@ -1,4 +1,2 @@
-// Pages: Brain app deep links load the app shell. Logic: _src/edge/app-shell.js
-import { serveAppShell } from "../../_src/edge/app-shell.js";
-
-export const onRequest = (context) => serveAppShell(context);
+import {studioPage} from "../../_src/platform/studio.js";
+export const onRequest = context => studioPage(context.request,context.env);

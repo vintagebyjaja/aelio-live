@@ -254,7 +254,7 @@ async def my_conversation(req):
         db.run("UPDATE ai_requests SET conversation_id=NULL WHERE conversation_id=?", (c["id"],))
         db.run("DELETE FROM conversations WHERE id=?", (c["id"],))
         return J({"ok": True})
-    c["messages"] = db.q("SELECT role,text,performer,provider,model,status,credits,ts FROM messages WHERE conversation_id=? ORDER BY id", (c["id"],))
+    c["messages"] = db.q("SELECT role,text,status,credits,ts FROM messages WHERE conversation_id=? ORDER BY id", (c["id"],))
     return J(c)
 
 

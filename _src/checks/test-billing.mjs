@@ -130,7 +130,7 @@ test("Library search/pagination stays owner-scoped and restricts to real generat
 });
 
 test("financial operations require both founder identity and verified second-factor assurance", async () => {
-  const { billing } = await import("../platform/billing.js");
+  const { studioOperations } = await import("../platform/billing.js");
   const original = fetch;
   let role = "member",
     updates = 0;
@@ -147,7 +147,7 @@ test("financial operations require both founder identity and verified second-fac
     throw Error(name);
   };
   const request = (aal, method = "GET", data) =>
-    new Request("https://aelio.test/api/platform/billing/operations", {
+    new Request("https://aelio.test/api/studio/ai/operations", {
       method,
       headers: {
         authorization:
@@ -162,27 +162,25 @@ test("financial operations require both founder identity and verified second-fac
     });
   try {
     await assert.rejects(
-      () => billing(request("aal2"), env, "/operations"),
+      () => studioOperations(request("aal2"), env),
       (e) => e.status === 403,
     );
     role = "founder";
     await assert.rejects(
-      () => billing(request("aal1"), env, "/operations"),
+      () => studioOperations(request("aal1"), env),
       (e) => e.code === "mfa_required",
     );
-    const r = await billing(
+    const r = await studioOperations(
       request("aal2"),
       { ...env, GEMINI_API_KEY: "never-expose" },
-      "/operations",
     );
     assert.equal(r.status, 200);
     assert.doesNotMatch(await r.text(), /never-expose/);
     await assert.rejects(
       () =>
-        billing(
+        studioOperations(
           request("aal2", "PATCH", { settings: { OPENAI_API_KEY: "nope" } }),
           env,
-          "/operations",
         ),
       (e) => e.code === "invalid_settings",
     );

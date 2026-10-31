@@ -10,9 +10,10 @@ if (!/^https?:\/\//.test(BASE)) { console.error("usage: node _src/checks/check-d
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const index = JSON.parse(readFileSync(join(ROOT, "public/assets/search-index.json"), "utf8"));
 
-const MUST_LOAD = ["/", ...index.map((p) => p.url), "/brain/", "/brain/my/", "/brain/my/agents", "/studiobrain/", "/studiobrain/models",
+const MUST_LOAD = ["/", ...index.map((p) => p.url), "/brain/", "/brain/my/", "/brain/my/agents",
   "/assets/site.css", "/assets/site.js", "/assets/config.js", "/assets/brain/app.js", "/assets/brain/app.css", "/favicon.webp"];
 // Files that exist in the repository but must never be served.
+const PRIVATE_STUDIO = ["/studiobrain/", "/studiobrain/ai-operations/", "/studiobrain%2Fai-operations/", "/api/studio/ai/operations"];
 const MUST_NOT_SERVE = ["/engine/README.md", "/engine/aelio/server.py", "/engine/aelio/firebase_auth.py", "/engine/.env.example",
   "/engine/requirements.txt", "/engine/docs/DEPLOYMENT.md", "/_src/build.mjs", "/_src/brain/api.ts", "/native/Cargo.toml",
   "/native/crates/aelio-model/src/lib.rs", "/package.json", "/README.md", "/.gitignore", "/.env", "/engine/.env", "/.git/config",
@@ -24,13 +25,14 @@ const problems = [];
 let checked = 0;
 async function get(path) {
   const r = await fetch(BASE + path, { redirect: "manual" });
-  const body = [200, 404, 503].includes(r.status) ? await r.text() : "";
+  const body = await r.text();
   return { status: r.status, body, headers: r.headers };
 }
 for (const p of MUST_LOAD) {
   const r = await get(p); checked++;
   if (r.status !== 200) problems.push(`${p} returned ${r.status} (expected 200)`);
 }
+for(const p of PRIVATE_STUDIO){const r=await get(p);checked++;if(![401,403].includes(r.status))problems.push(`${p} returned ${r.status} (expected private 401/403)`);if(r.body.includes("/assets/brain/app.js")||r.body.includes("configured_providers"))problems.push(`${p} leaked Studio content`);}
 for (const p of MUST_NOT_SERVE) {
   const r = await get(p); checked++;
   const leaked = LEAK_MARKERS.find((m) => r.body.includes(m));

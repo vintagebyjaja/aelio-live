@@ -330,7 +330,7 @@ def test_streaming_chat_end_to_end(fbclient, monkeypatch, fake_openai):
     with c.stream("POST", f"/api/my/agents/{aid}/chat/stream", headers=h, json={"message": "hi"}) as r:
         assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
         evs = [json.loads(l[6:]) for l in r.iter_lines() if l.startswith("data: ")]
-    assert evs[0]["type"] == "meta" and evs[0]["provider"] == "openai"
+    assert evs[0]["type"] == "meta" and "provider" not in evs[0]
     assert "".join(e["text"] for e in evs if e["type"] == "delta") == "Hello from fake GPT"
     assert evs[-1]["type"] == "done" and evs[-1]["conversation_id"]
     assert "The Homie" not in fake_openai.seen[0]["body"]["instructions"]
@@ -341,7 +341,7 @@ def test_streaming_chat_end_to_end(fbclient, monkeypatch, fake_openai):
     assert [m["content"] for m in fake_openai.seen[1]["body"]["input"]] == ["hi", "Hello from fake GPT", "again"]
     conv = c.get(f"/api/my/conversations/{cid}", headers=h).json()
     assert [m["role"] for m in conv["messages"]] == ["user", "assistant", "user", "assistant"]
-    assert conv["messages"][1]["provider"] == "openai" and conv["messages"][1]["status"] == "ok"
+    assert "provider" not in conv["messages"][1] and conv["messages"][1]["status"] == "ok"
     # a failed reply is stored as failed, excluded from future context, and not charged
     fake_openai.script = ["midfail"]
     with c.stream("POST", f"/api/my/agents/{aid}/chat/stream", headers=h, json={"message": "third", "conversation_id": cid}) as r:

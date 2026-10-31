@@ -1,4 +1,3 @@
-// aelio.live/api/* -> AELIO engine (same origin). Logic: _src/edge/engine-proxy.js
-import { proxyToEngine } from "../../_src/edge/engine-proxy.js";
-
-export const onRequest = (context) => proxyToEngine(context);
+// Pages uses the same Worker dispatcher/authorization boundary as the production Worker.
+import worker from "../../_src/edge/worker.js";
+export const onRequest = context => worker.fetch(context.request, context.env);

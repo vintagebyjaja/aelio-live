@@ -1,3 +1,9 @@
+## Main promotion authorized — 2026-10-31
+
+The owner explicitly approved pushing the reviewed AELIO 1.0.10 and PATHD 0.1.6 changes to their respective main branches. This supersedes earlier no-push review boundaries for those completed updates only. Normal Git-triggered builds may run; no manual deployment, production SQL, secrets or settings changes are authorized. Owner reports shared SQL13 applied. AUREVIA is a new, separate phased integration on local migration for review; do not push that new work or merge it into main without approval. Preserve approved homepage and portraits. Existing hosted integration limits remain documented; local tests do not prove production Auth/inference.
+
+---
+
 # AELIO coding agent instructions
 
 Read `PROJECT_OVERVIEW.md`, `PROJECT_HANDOFF.md`, `CHANGELOG.md`, `RELEASE_MANIFEST.md`, and `AELIO_VISUAL_LOCK.md` before development. Current authorized work replaces the historical visual-lock restrictions on authentication/backend changes; the official Dream Beyond icon and approved public design remain protected. Preserve Studio Brain's visual design.
@@ -69,3 +75,16 @@ The current user chose ECHO, Brain and conversation projects first. Work remains
 ## Current remaining-handoff implementation — 2026-10-30
 
 The current user authorizes the remaining implementation and migration-branch pushes in both separate repositories, with another visual preview. Never push main until approval. Allocation is now explicitly60% with a $10 minimum for eligible paid AI plans. SQL13 is new and owner-applied only after reported11/12; no production SQL/configuration/secret changes are authorized. Preserve legacy checkout/credit purchases; subscription mappings require verified UUIDs and price IDs, never client metadata. Router activation/subscription mode requires13 and real provider models/prices/caps; ambiguous or partial requests are not automatically replayed. Founder operations require verified founder plus aal2. Keep PATHD free core features and annual prices. See config/V1_0_9_ROUTER.md and docs/releases/AELIO_v1.0.9_REVIEW.md for actual validation/activation limits. Preview images must label sample account, usage and Library data.
+
+
+## AELIO 1.0.10 — local review only — 2026-10-31
+
+Latest instruction supersedes historical push permissions: keep changes local on `migration`. Do not push either branch, merge, deploy, change production settings/secrets or run production SQL without explicit authorization. PATHD is unchanged. Owner reports SQL11/12/13 applied; no new migration is required for this review.
+
+Workspace selection now occupies the upper-left navigation header, with persistent resizable/collapsible sidebar and mobile access. Approved homepage content, photographs, portraits and design tokens are preserved; utility panels inherit cinematic global themes while chat-specific appearance remains independent.
+
+AI Operations now lives only inside Studio Brain. Server verification requires Supabase-verified identity, canonical database founder role and aal2; a short-lived Secure/HttpOnly/Strict cookie gates Studio HTML. Private APIs independently recheck bearer identity/role/MFA. Legacy Studio proxies receive the same guard. Public operations/diagnostics routes are retired; member history/stream responses omit provider/model/cost internals. Existing legal disclosures and background accounting remain. SQL13 already restricts financial tables and operational RPCs; no new RLS migration is introduced. `assets.run_worker_first` ensures static aliases cannot bypass Studio authorization. These source settings have not been deployed.
+
+Verified locally: 85 JavaScript tests; 29 Python intelligence/bridge tests; TypeScript; isolated production build/public validation; 84-URL local smoke; real desktop/mobile browser renders and workspace/resize/theme checks. Synthetic founder, member, paid subscriber and agent-creator identities cover valid founder access, forged roles/tokens, MFA, revoked founder, direct URLs/APIs and unauthorized denial. Hosted founder/member accounts, actual Supabase RLS deployment, live provider routing and deployed Cloudflare behavior are not verified by these fixtures.
+
+Review: [visual comparisons](docs/previews/v1.0.10-local/README.md). Generated public output has not been committed; rebuild before any separately authorized release. No remote GitHub diff can contain these unpublished changes; the supplied local patch is the review diff.

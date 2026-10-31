@@ -1,0 +1,59 @@
+/* The approved home composition/photography stays intact. Shared shell and utility surfaces inherit its tokens. */
+.dream-app{grid-template-columns:var(--sidebar-width,245px) minmax(0,1fr)}
+.dream-app .navigation-header{grid-column:1;grid-row:1;z-index:35;display:flex;align-items:center;gap:.55rem;padding:.7rem .8rem;min-width:0;background:var(--surface);border-bottom:1px solid var(--line);backdrop-filter:blur(24px)}
+.navigation-header .sidebar-toggle{display:grid;place-items:center;flex:0 0 40px;width:40px;height:44px;padding:.5rem;border:1px solid var(--line);background:transparent}
+.workspace-switcher{display:grid;gap:.15rem;flex:1;min-width:0;margin:0;color:var(--muted)}
+.workspace-switcher>span{padding-left:.55rem;font-size:.58rem;letter-spacing:.17em;text-transform:uppercase}
+.dream-app .workspace-switcher select{width:100%;min-width:0;margin:0;padding:.35rem .5rem;background:transparent;border:1px solid transparent;border-radius:9px;font-size:1.04rem;font-weight:500;color:var(--ink);letter-spacing:.015em;cursor:pointer}
+.dream-app .workspace-switcher select:hover,.dream-app .workspace-switcher select:focus-visible{border-color:var(--accent);background:var(--card);outline-offset:2px}
+.dream-app .topbar{grid-column:2;grid-row:1;min-width:0}
+.dream-app .topbar .desktop-search{width:min(430px,65%)}
+.dream-app .sidebar,.dream-app.at-home .sidebar{grid-column:1;grid-row:2;margin-top:0;padding-top:1.1rem}
+.dream-app .sidebar-brand{display:none}
+.dream-app .workspace,.dream-app.at-home .workspace{grid-column:2;grid-row:2}
+.sidebar-resizer{grid-column:1;grid-row:2;justify-self:end;align-self:stretch;width:8px;margin-right:-4px;z-index:36;cursor:col-resize;touch-action:none;position:relative;outline:none}
+.sidebar-resizer:after{content:'';position:absolute;inset:0 3px;background:transparent;transition:background .15s}
+.sidebar-resizer:hover:after,.sidebar-resizer:focus-visible:after{background:var(--accent);box-shadow:0 0 12px color-mix(in srgb,var(--accent) 40%,transparent)}
+.dream-app:not(.at-home)::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(100deg,color-mix(in srgb,var(--page) 80%,transparent),color-mix(in srgb,var(--page) 38%,transparent) 60%,color-mix(in srgb,var(--page) 65%,transparent)),var(--home-scene) center/cover no-repeat}
+.dream-app:not(.at-home) .workspace{background:transparent;padding:clamp(12px,2.2vw,32px)}
+.dream-app:not(.at-home) .workspace:has(>.chat){padding:0}
+.dream-app:not(.at-home) .panel{width:min(100%,1080px);max-width:1080px;margin:0 auto;padding:clamp(1.2rem,3vw,2.5rem);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));border-radius:22px;background:linear-gradient(135deg,color-mix(in srgb,var(--surface-solid) 90%,transparent),color-mix(in srgb,var(--surface-solid) 68%,transparent));box-shadow:0 24px 80px #0002,inset 0 1px 0 #ffffff0d;backdrop-filter:blur(24px)}
+.dream-app:not(.at-home) .panel>h1{font-size:clamp(2rem,4.2vw,3.5rem);margin:.65rem 0 1.2rem;font-family:Georgia,serif;font-weight:400}
+.dream-app:not(.at-home) .panel>p{max-width:65ch;line-height:1.75}
+.dream-app:not(.at-home) .panel article,.dream-app .workspace-form{background:color-mix(in srgb,var(--surface-solid) 70%,transparent);border-color:color-mix(in srgb,var(--accent) 20%,var(--line));box-shadow:var(--shadow);backdrop-filter:blur(16px)}
+.dream-app .image-grid{gap:1.2rem;margin-top:1.5rem}
+.dream-app .image-grid article{padding:.8rem .8rem 1rem;border-radius:19px;overflow:hidden}
+.dream-app .image-tile{padding:0;margin:0 0 1rem;aspect-ratio:16/10;border-radius:12px;min-height:0}
+.dream-app .image-tile img{display:block;width:100%;height:100%;object-fit:cover}
+.dream-app .image-grid h2{font-size:1rem;line-height:1.5;font-weight:500;letter-spacing:.01em}
+.dream-app .library-filters{padding:1rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dream-app .library-filters label{font-size:.75rem;letter-spacing:.025em;color:var(--muted)}
+.dream-app .chat-header{background:color-mix(in srgb,var(--surface-solid) 80%,transparent);backdrop-filter:blur(20px)}
+.dream-app .image-preview{background:var(--surface-solid);color:var(--ink);border-color:var(--accent);box-shadow:0 30px 100px #0009}
+@media(min-width:901px){
+ .dream-app.collapsed{grid-template-columns:76px minmax(0,1fr)}
+ .dream-app.collapsed .navigation-header{width:245px;position:relative}
+ .dream-app.collapsed .topbar{padding-left:calc(245px - 76px + 1.6rem)}
+ .dream-app.collapsed .sidebar{visibility:visible;padding:1rem .6rem;border-right:1px solid var(--line)}
+ .dream-app.collapsed .sidebar>.home-nav{display:grid}
+ .dream-app.collapsed .sidebar>:not(.home-nav){display:none}
+ .dream-app.collapsed .home-nav button{justify-content:center;padding:.7rem}
+ .dream-app.collapsed .home-nav button span{display:none}
+}
+@media(max-width:900px){
+ .dream-app,.dream-app.collapsed{grid-template-columns:minmax(0,1fr)}
+ .dream-app .navigation-header{grid-column:1;grid-row:1;width:min(260px,calc(100vw - 66px));position:relative;z-index:5;border:0;background:transparent;backdrop-filter:none}
+ .dream-app .topbar{grid-column:1;grid-row:1;justify-self:stretch;padding-left:min(260px,calc(100vw - 66px));background:var(--surface);z-index:4}
+ .dream-app.at-home .topbar{background:transparent}
+ .dream-app .topbar .header-actions{margin-left:auto}
+ .dream-app .topbar .header-actions button:first-child{display:none!important}
+ .dream-app .sidebar{grid-column:1;grid-row:2;width:min(86vw,330px)}
+ .dream-app .workspace,.dream-app.at-home .workspace{grid-column:1;grid-row:2}
+ .dream-app:not(.at-home) .workspace{padding:12px 10px calc(96px + env(safe-area-inset-bottom))}
+ .dream-app:not(.at-home).in-chat .workspace{padding:0}
+ .dream-app:not(.at-home)::before{background:linear-gradient(180deg,color-mix(in srgb,var(--page) 25%,transparent),color-mix(in srgb,var(--page) 72%,transparent)),var(--home-scene-mobile) center/cover no-repeat}
+ .dream-app:not(.at-home) .panel{border-radius:18px;padding:1.3rem 1rem}
+ .sidebar-resizer{display:none}
+ .workspace-switcher>span{font-size:.54rem}
+ .dream-app .workspace-switcher select{font-size:1rem}
+}

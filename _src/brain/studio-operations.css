@@ -1,0 +1,10 @@
+/* Internal Studio controls use the existing Studio tokens; nothing imports these controls into the public app. */
+.ai-operations .workspace-eyebrow{color:var(--gold);font-size:11px;letter-spacing:.12em}
+.ai-operations .allowance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0}
+.ai-operations article{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:16px;margin:12px 0}
+.ai-operations .allowance-grid strong{font-size:22px;color:var(--text)}
+.ai-operations .workspace-form{max-width:760px;display:grid;gap:12px;margin:24px 0}
+.ai-operations fieldset{border:1px solid var(--line2);border-radius:var(--r);padding:16px}
+.ai-operations .check{display:flex;align-items:center;gap:10px}
+.ai-operations .check input{width:auto}
+.ai-operations legend{color:var(--gold);padding:0 6px}

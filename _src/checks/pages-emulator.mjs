@@ -5,6 +5,8 @@
 // Also runs the Pages Functions for /api/* and /webhooks/* (the same-origin engine proxy), with env from
 // AELIO_ENGINE_ORIGIN and AELIO_PROXY_SECRET, exactly as Cloudflare would call them.
 // Usage: node _src/checks/pages-emulator.mjs <folder> <port>
+import worker from "../edge/worker.js";
+import {studioPage} from "../platform/studio.js";
 import { platform, publicConfig } from "../platform/index.js";
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
@@ -37,7 +39,7 @@ async function runFunction(req, res) {
   if (!["GET", "HEAD"].includes(req.method)) { init.body = Readable.toWeb(req); init.duplex = "half"; }
   const env = { AELIO_ENGINE_ORIGIN: process.env.AELIO_ENGINE_ORIGIN, AELIO_PROXY_SECRET: process.env.AELIO_PROXY_SECRET };
   const request = new Request(url, init);
-  const r = (url.pathname.startsWith("/api/platform/")||url.pathname==="/webhooks/ai-subscriptions") ? await platform(request, {...process.env,AELIO_LOCAL_TEST:"1"}) : await proxyToEngine({ request, env });
+  const r = await worker.fetch(request,{...process.env,AELIO_LOCAL_TEST:'1'});
   res.writeHead(r.status, Object.fromEntries(r.headers));
   if (!r.body) return res.end();
   for await (const chunk of r.body) res.write(chunk);
@@ -46,6 +48,10 @@ async function runFunction(req, res) {
 
 createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, "http://x").pathname);
+  if(path==='/studiobrain'||path.startsWith('/studiobrain/')){
+    const request=new Request('http://'+req.headers.host+req.url,{headers:Object.fromEntries(Object.entries(req.headers).filter(([,v])=>typeof v==='string'))});
+    return studioPage(request,{...process.env,ASSETS:{fetch:async r=>{const f=file(new URL(r.url).pathname);return new Response(f?readFileSync(f):'Not found',{status:f?200:404,headers:{'content-type':'text/html'}});}}}).then(async r=>{res.writeHead(r.status,Object.fromEntries(r.headers));res.end(await r.text());});
+  }
   if (path.startsWith("/api/") || path.startsWith("/webhooks/")) {
     return runFunction(req, res).catch((e) => { res.writeHead(500); res.end(String(e)); });
   }

@@ -1,6 +1,7 @@
 // The aelio.live Worker (wrangler.jsonc): API to the private engine, Brain deep links to the app shell, never loops.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import {withStudioFixture,studioToken} from "./studio-fixtures.mjs";
 import worker from "../edge/worker.js";
 
 function assets(files) {
@@ -11,18 +12,17 @@ function assets(files) {
 const FILES = { "/studiobrain/": "STUDIO SHELL", "/brain/my/": "MY SHELL", "/brain/my/index.html": "MY SHELL", "/assets/brain/app.js": "js" };
 
 test("Studio Brain and My AELIO deep links load their app shell", async () => {
+  await withStudioFixture(async({env})=>{
   const A = assets(FILES);
   for (const [p, want] of [["/studiobrain/web-designer", "STUDIO SHELL"], ["/studiobrain/security", "STUDIO SHELL"], ["/brain/my/chat", "MY SHELL"], ["/studiobrain/", "STUDIO SHELL"]]) {
-    const r = await worker.fetch(new Request("https://aelio.live" + p), { ASSETS: A });
+    const r = await worker.fetch(new Request("https://aelio.live" + p,{headers:{authorization:'Bearer '+studioToken()}}), {...env,ASSETS: A});
     assert.equal(r.status, 200, p); assert.equal(await r.text(), want, p);
   }
-  assert.ok(A.seen.length <= 8, "at most two asset lookups per request: no loops");
+  assert.ok(A.seen.length <= 8, "at most two asset lookups per request: no loops");});
 });
 
 test("a missing shell is a 404, not a loop", async () => {
-  const A = assets({});
-  const r = await worker.fetch(new Request("https://aelio.live/studiobrain/x"), { ASSETS: A });
-  assert.equal(r.status, 404); assert.equal(A.seen.length, 2);
+  await withStudioFixture(async({env})=>{const A=assets({});const r=await worker.fetch(new Request("https://aelio.live/studiobrain/x",{headers:{authorization:'Bearer '+studioToken()}}),{...env,ASSETS:A});assert.equal(r.status,404);assert.equal(A.seen.length,2);});
 });
 
 test("/api goes to the engine (503 until connected); other paths are plain assets", async () => {

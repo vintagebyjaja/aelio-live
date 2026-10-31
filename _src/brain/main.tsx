@@ -1,12 +1,13 @@
 import {consumerMessage} from "../shared/experience.js";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { api, ApiError, currentUser, isDev, post, setDevToken, signOut, supa } from "./api";
+import { api, ApiError, currentUser, isDev, post, setDevToken, signOut, supa, openStudio } from "./api";
 import { AgentTransferAdmin, CreditsBilling, UsageAccess } from "./founder";
 import { BrainGame } from "./game";
 import { Core } from "./core";
 import { WebDesigner } from "./designer";
 import { Engine } from "./engine";
+import {AIOperations} from "./StudioOperations";
 import { Intelligence } from "./intelligence";
 import { MySecurity, StudioGate, StudioSecurity } from "./security";
 import { CodeStudio, NativeLab, Overview } from "./pages1";
@@ -16,7 +17,7 @@ import { Badge, Err } from "./ui";
 import "./styles.css";
 
 const STUDIO: [string, string, any][] = [
-  ["", "Overview", Overview], ["engine", "Engine", Engine], ["core", "AELIO Core", Core], ["web-designer", "Web Designer", WebDesigner], ["intelligence", "Intelligence", Intelligence], ["native-lab", "Native Lab", NativeLab], ["code-studio", "Code Studio", CodeStudio], ["quality-lab", "Quality Lab", QualityLab],
+  ["", "Overview", Overview], ["ai-operations", "AI Operations", AIOperations], ["engine", "Engine", Engine], ["core", "AELIO Core", Core], ["web-designer", "Web Designer", WebDesigner], ["intelligence", "Intelligence", Intelligence], ["native-lab", "Native Lab", NativeLab], ["code-studio", "Code Studio", CodeStudio], ["quality-lab", "Quality Lab", QualityLab],
   ["voice-lab", "Voice Lab", VoiceLab], ["vision-lab", "Vision Lab", VisionLab], ["live-lab", "Live Lab", LiveLab], ["agent-campus", "Agent Campus", AgentCampus],
   ["operations", "Operations", Operations], ["credits", "Credits & Billing", CreditsBilling], ["usage-access", "Usage & Access", UsageAccess],
   ["agent-transfer", "Agent Transfer", AgentTransferAdmin], ["security", "Security", StudioSecurity], ["settings", "Settings", Settings],
@@ -154,7 +155,7 @@ function MyApp({ path }: any) {
   else if (page === "chat") body = <MyChat agentId={rest[1]} />;
   else body = ({ "": <MyHome />, agents: <MyAgents />, import: <MyImport />, history: <MyHistory />, usage: <MyUsage />, wallet: <MyWallet />, billing: <MyBilling me={me} />, security: <MySecurity me={me} /> } as any)[page] || <MyHome />;
   return <Shell brand="My AELIO" nav={MY} base="/brain/my/" cur={page} me={me}
-    extra={me.role === "founder" ? <A href="/studiobrain/" className="dark-btn sm" >Open Studio Brain →</A> : null}>{body}</Shell>;
+    extra={me.role === "founder" ? <button className="dark-btn sm" onClick={()=>openStudio().catch(e=>alert(e.message))}>Open Studio Brain →</button> : null}>{body}</Shell>;
 }
 
 function Mfa({ me, onDone }: any) {
@@ -188,7 +189,7 @@ function StudioGated({ path, me, reload, reverify, setReverify }: any) {
   const entry = STUDIO.find(s => s[0] === key) || STUDIO[0];
   const Page = entry[2];
   return (
-    <Shell brand="Studio Brain" nav={STUDIO.map(([k, l]) => [k, l])} base="/studiobrain/" cur={entry[0]} me={me} extra={<><A href="/brain/my/" className="dark-btn sm">My AELIO →</A><A href="/chat/#ai-operations" className="dark-btn sm">Worker AI Operations →</A></>}>
+    <Shell brand="Studio Brain" nav={STUDIO.map(([k, l]) => [k, l])} base="/studiobrain/" cur={entry[0]} me={me} extra={<><A href="/brain/my/" className="dark-btn sm">My AELIO →</A></>}>
       {!me.mfa_fresh && <div className="notice" style={{ marginBottom: 14 }}>Approving, publishing and changing secrets need a fresh code. <button className="ghost sm" onClick={() => setReverify(true)}>Re-verify</button></div>}
       {reverify && <Mfa me={{ mfa: "verify" }} onDone={() => { setReverify(false); reload(); }} />}
       <Page go={(p: string) => go("/studiobrain/" + (({ native: "native-lab", quality: "quality-lab", operations: "operations" } as any)[p] || ""))} me={{ ...me, mfa_fresh: me.mfa_fresh }} reverify={() => setReverify(true)} />

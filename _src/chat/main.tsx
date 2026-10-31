@@ -1,4 +1,4 @@
-import {AllowancePanel,AIOperations} from "./Billing";
+import {AllowancePanel} from "./Billing";
 import {ImageLibrary} from "./ImageLibrary";
 import {BrainWorkspace,EchoWorkspace,ConversationProjects} from "./Workspaces";
 import {AccountSecurity} from "./ModernAuth";
@@ -7,7 +7,7 @@ import {companion} from "../shared/companions.js";
 import {AelioLoading,FeatureBoundary,ConnectionNotice,friendly} from "./Experience";
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { auth, call, upload, fileURL, download } from "./client";
+import { auth, call, upload, fileURL, download, openStudio } from "./client";
 import { AuthPanel } from "./Auth";
 import "./styles.css";
 import { DreamHome, Discover, TOPICS } from "./DreamHome";
@@ -16,6 +16,7 @@ import { Icon, Orb } from "./Icon";
 import { ConnectedApps, HandoffCard } from "./ConnectedApps";
 import "./premium.css";
 import "./workspaces.css";
+import "./workspace-shell.css";
 import { AppearanceControls } from "./Appearance";
 import { designOf, resolveAppearance, guestAppearance } from "./design-system";
 const BACKGROUNDS = [
@@ -75,6 +76,13 @@ function App() {
     !new URLSearchParams(location.search).has("companion"),
   );
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileNavigation,setMobileNavigation]=useState(()=>matchMedia('(max-width: 900px)').matches);
+  const [sidebarWidth,setSidebarWidth]=useState(()=>{try{const n=Number(localStorage.getItem('aelio.sidebar.width'));return Number.isFinite(n)&&n>=220&&n<=420?n:245;}catch{return 245;}});
+  const sidebarSize=useRef(sidebarWidth),draggingSidebar=useRef<any>(null);
+  useEffect(()=>{const media=matchMedia('(max-width: 900px)');const changed=()=>setMobileNavigation(media.matches);media.addEventListener('change',changed);return()=>media.removeEventListener('change',changed);},[]);
+  function resizeSidebar(n:number,persist=false){const width=Math.max(220,Math.min(420,Math.round(n)));sidebarSize.current=width;setSidebarWidth(width);if(persist)try{localStorage.setItem('aelio.sidebar.width',String(width));}catch{}}
+  function finishSidebarResize(){draggingSidebar.current=null;resizeSidebar(sidebarSize.current,true);}
+
   const [globalAppearance, setGlobalAppearance] =
     useState<any>(guestAppearance);
   const [globalPreview, setGlobalPreview] = useState<any>(null);
@@ -92,7 +100,7 @@ function App() {
       location.pathname.startsWith("/account") ||
         location.pathname.startsWith("/auth")
         ? "account"
-        : ['library','brain','echo','allowance','ai-operations'].includes(location.hash.slice(1))?location.hash.slice(1):"",
+        : ['library','brain','echo','allowance'].includes(location.hash.slice(1))?location.hash.slice(1):"",
     ),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(""),
@@ -164,7 +172,7 @@ function App() {
               await newThread([agent.id], mila ? "MILA" : "AELIO");
             setHome(!new URLSearchParams(location.search).has("companion"));
             const requested=location.hash.slice(1);
-            if(['library','brain','echo','allowance','ai-operations'].includes(requested)){setPanel(requested);setHome(false);}
+            if(['library','brain','echo','allowance'].includes(requested)){setPanel(requested);setHome(false);}
           }
         } catch (e: any) {
           setAccountError(friendly(e));
@@ -182,6 +190,7 @@ function App() {
     }
   }
   useEffect(() => {
+    if(location.hash==='#ai-operations')history.replaceState(null,'',location.pathname);
     reload();
   }, []);
   useEffect(() => {
@@ -455,6 +464,7 @@ function App() {
     }
   }
   function navigate(view: string, record = true) {
+    if(view==='ai-operations')return;
     setDrawer(false);
     if (view === "home") {
       setHome(true);
@@ -491,7 +501,6 @@ function App() {
           "echo",
           "library",
           "allowance",
-          "ai-operations",
           "connected-apps",
           "settings",
           "appearance",
@@ -500,7 +509,7 @@ function App() {
       )
         navigate(view, false);
     };
-    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','ai-operations','brain','echo'].includes(view))navigate(view,false);};
+    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo'].includes(view))navigate(view,false);};
     addEventListener("popstate", restore);
     addEventListener("hashchange",fromHash);
     return () => {removeEventListener("popstate", restore);removeEventListener("hashchange",fromHash);};
@@ -552,7 +561,7 @@ function App() {
   const globalAP = globalPreview || globalAppearance;
   const conversationAP = appearance || cur?.appearance || {};
   const ap =
-    home || panel === "appearance"
+    home || (panel && panel !== "conversation-settings")
       ? globalAP
       : resolveAppearance(
           globalAP,
@@ -645,6 +654,7 @@ function App() {
       data-motion={ap.motion || "system"}
       style={
         {
+          "--sidebar-width": sidebarWidth+'px',
           "--home-scene-mobile": `url(/assets/dream/${design.mobileScene})`,
           "--home-scene": design.scene
             ? `url(/assets/dream/${design.scene})`
@@ -652,28 +662,12 @@ function App() {
         } as any
       }
     >
-      <ConnectionNotice/><header className="topbar">
-        <button
-          aria-label="Open conversations"
-          aria-expanded={drawer || (!collapsed && innerWidth > 900)}
-          onClick={() => {
-            if (matchMedia("(min-width: 901px)").matches)
-              setCollapsed(!collapsed);
-            else setDrawer(!drawer);
-          }}
-        >
-          <Icon name="menu" />
-        </button>
-        <a
-          className="brand"
-          href="/"
-          onClick={(event: any) => {
-            event.preventDefault();
-            navigate("home");
-          }}
-        >
-          AELIO<small>NEVER SAY NEVER.</small>
-        </a>
+      <ConnectionNotice/>
+      <header className="navigation-header">
+        <button className="sidebar-toggle" aria-label={mobileNavigation?'Open conversations':collapsed?'Expand sidebar':'Collapse sidebar'} aria-controls="aelio-sidebar" aria-expanded={mobileNavigation?drawer:!collapsed} onClick={()=>mobileNavigation?setDrawer(!drawer):setCollapsed(!collapsed)}><Icon name="menu"/></button>
+        <label className="workspace-switcher"><span>Your workspace</span><select aria-label="Workspace" value={panel==='brain'?'brain':home?'aelio':'dreambox'} onChange={(e:any)=>{const v=e.target.value;if(v==='studio'){openStudio().catch(error=>setErr(friendly(error)));}else if(v==='aelio')navigate('home');else if(v==='brain')navigate('brain');else {setHome(false);setPanel('');setDrawer(false);}}}><option value="aelio">AELIO</option><option value="dreambox">Dream Box</option><option value="brain">Brain</option>{account?.role==='founder'&&<option value="studio">Studio Brain · Private</option>}</select></label>
+      </header>
+      <header className="topbar">
         <label className="desktop-search">
           <Icon name="compass" size={18} />
           <span className="sr-only">Search conversations and ideas</span>
@@ -686,7 +680,7 @@ function App() {
             }}
           />
         </label>
-        <label className="experience-switcher"><span className="sr-only">Experience</span><select aria-label="Experience" value={panel==='brain'?'brain':'dreambox'} onChange={(e:any)=>{if(e.target.value==='studio')location.assign('/studiobrain/');else navigate(e.target.value==='brain'?'brain':'home');}}><option value="dreambox">DreamBox</option><option value="brain">Brain</option>{account?.role==='founder'&&<option value="studio">Studio Brain</option>}</select></label>
+
         <nav className="header-actions">
           <button
             aria-label="Discover experiences"
@@ -710,7 +704,7 @@ function App() {
           onClick={() => setDrawer(false)}
         />
       )}
-      <aside className={"sidebar " + (drawer ? "open" : "")}>
+      <aside id="aelio-sidebar" className={"sidebar " + (drawer ? "open" : "")}>
         <a
           className="sidebar-brand"
           href="/"
@@ -796,7 +790,6 @@ function App() {
               ))}
           </details>
         )}
-        {account?.role==='founder'&&<nav className="side-tools"><button onClick={()=>navigate('ai-operations')}>AI Operations</button></nav>}
         <details className="legacy-links">
           <summary>Explore public AELIO</summary>
           <a href="/agent-campus/">Campus</a>
@@ -813,6 +806,7 @@ function App() {
               : remaining + " guest messages remaining"}
         </footer>
       </aside>
+      {!collapsed&&<div className="sidebar-resizer" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" aria-valuemin={220} aria-valuemax={420} aria-valuenow={sidebarWidth} tabIndex={0} onDoubleClick={()=>resizeSidebar(245,true)} onKeyDown={(e:any)=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();resizeSidebar(e.key==='Home'?220:e.key==='End'?420:sidebarSize.current+(e.key==='ArrowRight'?16:-16),true);}}} onPointerDown={(e:any)=>{e.preventDefault();draggingSidebar.current={x:e.clientX,width:sidebarSize.current};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={(e:any)=>{if(draggingSidebar.current)resizeSidebar(draggingSidebar.current.width+e.clientX-draggingSidebar.current.x);}} onPointerUp={finishSidebarResize} onLostPointerCapture={finishSidebarResize}/>}
       <main className="workspace"><FeatureBoundary key={panel||(home?"home":cur?.id||"chat")} onExit={()=>navigate("home")}>
         {err && (
           <div className="error" role="alert">
@@ -830,7 +824,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='ai-operations'?<AIOperations/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
+        {panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>
@@ -2039,7 +2033,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
       ))}
       <p>Your subscriptions and usage stay separate. Open Plans & allowance to see verified subscriptions and their AI funding.</p>
       {account.role === "founder" && (
-        <a href="/studiobrain/">Open Studio Brain (MFA required)</a>
+        <button onClick={()=>openStudio().catch(error=>setErr(friendly(error)))}>Open Studio Brain (MFA required)</button>
       )}
       <p>
         <a href="/brain/my/">

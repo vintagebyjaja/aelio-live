@@ -332,7 +332,7 @@ await test('stable request IDs replay completed turns without a second AI call o
 await test('owner bootstrap is independent of guest signing, idempotent and permanently preserves eight companions and nine chats',async()=>{
  const local={...env,AELIO_SESSION_SECRET:'short',SUPABASE_SERVICE_ROLE_KEY:undefined};
  const replies=await Promise.all(Array.from({length:3},()=>platform(request('/account'),local)));for(const reply of replies){assert.equal(reply.status,200);assert.equal((await reply.json()).user.id,one);}
- const health=await platform(request('/account/health'),local);const checked=await health.json();assert.equal(checked.authentication.verified,true);assert.equal(checked.account.verified,true);assert.equal(checked.serverDatabase.verified,false);assert.equal(checked.serverDatabase.code,'database_not_configured');assert.equal(checked.ai.inferenceVerified,false);
+ const health=await platform(request('/account/health'),local);const checked=await health.json();assert.equal(checked.authentication.verified,true);assert.equal(checked.account.verified,true);assert.equal(checked.serverDatabase,undefined);assert.equal(checked.ai,undefined);
  const as=(await call('/agents')).agents,permanent=as.filter(a=>a.kind!=='custom');assert.equal(permanent.length,8);assert.equal(new Set(permanent.map(a=>a.kind)).size,8);
  const chats=(await call('/conversations')).conversations.filter(c=>c.permanent_key);assert.equal(chats.length,9);assert.equal(new Set(chats.map(c=>c.permanent_key)).size,9);
  const team=chats.find(c=>c.permanent_key==='dream-team');assert.equal(team.participants.length,6);assert.ok(!team.participants.includes(permanent.find(a=>a.kind==='aelio').id));

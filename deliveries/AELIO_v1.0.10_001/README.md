@@ -1,0 +1,3 @@
+# AELIO 1.0.10 local review delta
+
+Base: cea7e4d on migration. No push/merge/deployment authorized. Extract each archive into AELIO repository root preserving paths; verify INVENTORY_SHA256.txt and archive SHA256SUMS.txt. Source and actual local sample previews are separate. Each ZIP contains at most 100 files. No SQL/configuration secrets or production changes. SQL13 is reported applied by owner; no migration supplied. Run npm ci, npm run typecheck, npm test and the normal build before a separately approved release. Approved images/generated public files are unchanged. See docs/releases/AELIO_v1.0.10_REVIEW.md for security verification and hosted limitations.

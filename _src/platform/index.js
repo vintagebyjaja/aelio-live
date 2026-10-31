@@ -60,11 +60,9 @@ export function publicConfig(env) {
 async function account(req, env, path) {
   const u = await who(req, env);
   if(path==='/health'&&req.method==='GET'){
-    const probes={authentication:{verified:true},account:{verified:false},serverDatabase:{configured:!!env.SUPABASE_SERVICE_ROLE_KEY,verified:false},ai:{configured:!!env.OPENAI_API_KEY||!!env.AELIO_ENGINE?.fetch,inferenceVerified:false}};
-    for(const [key,probe] of [['account',()=>sb(env,'/rest/v1/rpc/app_account_bootstrap',{token:u.token,method:'POST',data:{}})],['serverDatabase',()=>rpc(env,'app_service_health',{})]]){
-      try{const value=await probe();probes[key].verified=!!value;}catch(error){probes[key].code=error.code||'internal_failure';}
-    }
-    return reply(probes);
+    const result={authentication:{verified:true},account:{verified:false}};
+    try{result.account.verified=!!await sb(env,'/rest/v1/rpc/app_account_bootstrap',{token:u.token,method:'POST',data:{}});}catch{result.account.code='account_unavailable';}
+    return reply(result);
   }
   if (path === "" && req.method === "GET") {
     const result = await sb(env, "/rest/v1/rpc/app_account_bootstrap", {token:u.token,method:"POST",data:{}});
@@ -298,24 +296,9 @@ export async function platform(req, env) {
     if(new URL(req.url).pathname==='/webhooks/ai-subscriptions')return await subscriptionWebhook(req,env);
     sameOrigin(req);
     const p = new URL(req.url).pathname.replace(/^\/api\/platform/, "");
-    if (p === "/status" && req.method === "GET")
-      return reply({
-        accounts: !!resolveSupabaseConfig(env, builtPublicAuth).anonKey,
-        databaseConfigured: !!env.SUPABASE_SERVICE_ROLE_KEY,
-        sessionConfigured:
-          !!sessionSecretSource(env),
-        storageBinding: !!env.AELIO_STORAGE,
-        engineBinding: !!env.AELIO_ENGINE?.fetch,
-        engineDevelopmentOrigin: !!env.AELIO_ENGINE_ORIGIN,
-        openAIConfigured: !!env.OPENAI_API_KEY,
-        inferenceVerified: false,
-      });
-    if(p==='/diagnostics'&&req.method==='GET'){
-      const user=await who(req,env);
-      const own=await sb(env,'/rest/v1/rpc/app_account_bootstrap',{token:user.token,method:'POST',data:{}});
-      if(own.role!=='founder')fail(403,'permission_denied','This page is private.');
-      return reply({accountAuthConfigured:!!resolveSupabaseConfig(env,builtPublicAuth).anonKey,sessionSigning:sessionSecretSource(env)||'unavailable',explicitSessionPresent:!!env.AELIO_SESSION_SECRET,explicitSessionValid:typeof env.AELIO_SESSION_SECRET==='string'&&env.AELIO_SESSION_SECRET.length>=32,databaseConfigured:!!env.SUPABASE_SERVICE_ROLE_KEY,openAIConfigured:!!env.OPENAI_API_KEY,inferenceVerified:false,accountBootstrapVerified:true});
-    }
+    if(p==='/status'&&req.method==='GET')return reply({service:'aelio',available:true});
+    if(p==='/billing/operations'||p.startsWith('/billing/operations/'))return reply({error:'Not found.'},404);
+    if(p==='/diagnostics')return reply({error:'Not found.'},404);
     // Verified members use an owner-scoped SQL throttle, independent of guest-cookie signing.
     const user = await who(req, env, true);
     if(user){

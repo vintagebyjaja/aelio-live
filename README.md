@@ -1,3 +1,17 @@
+## AELIO 1.0.10 — local review only — 2026-10-31
+
+Latest instruction supersedes historical push permissions: keep changes local on `migration`. Do not push either branch, merge, deploy, change production settings/secrets or run production SQL without explicit authorization. PATHD is unchanged. Owner reports SQL11/12/13 applied; no new migration is required for this review.
+
+Workspace selection now occupies the upper-left navigation header, with persistent resizable/collapsible sidebar and mobile access. Approved homepage content, photographs, portraits and design tokens are preserved; utility panels inherit cinematic global themes while chat-specific appearance remains independent.
+
+AI Operations now lives only inside Studio Brain. Server verification requires Supabase-verified identity, canonical database founder role and aal2; a short-lived Secure/HttpOnly/Strict cookie gates Studio HTML. Private APIs independently recheck bearer identity/role/MFA. Legacy Studio proxies receive the same guard. Public operations/diagnostics routes are retired; member history/stream responses omit provider/model/cost internals. Existing legal disclosures and background accounting remain. SQL13 already restricts financial tables and operational RPCs; no new RLS migration is introduced. `assets.run_worker_first` ensures static aliases cannot bypass Studio authorization. These source settings have not been deployed.
+
+Verified locally: 85 JavaScript tests; 29 Python intelligence/bridge tests; TypeScript; isolated production build/public validation; 84-URL local smoke; real desktop/mobile browser renders and workspace/resize/theme checks. Synthetic founder, member, paid subscriber and agent-creator identities cover valid founder access, forged roles/tokens, MFA, revoked founder, direct URLs/APIs and unauthorized denial. Hosted founder/member accounts, actual Supabase RLS deployment, live provider routing and deployed Cloudflare behavior are not verified by these fixtures.
+
+Review: [visual comparisons](docs/previews/v1.0.10-local/README.md). Generated public output has not been committed; rebuild before any separately authorized release. No remote GitHub diff can contain these unpublished changes; the supplied local patch is the review diff.
+
+---
+
 # Migration review — AELIO1.0.9 / PATHD0.1.6 (2026-10-30)
 
 The current user requested all remaining handoff work and selected60% allocation with a $10 minimum for eligible paid AI plans. Implemented router/ledger and signed subscription events, PATHD pricing/access separation, natural streamed response formatting, Image Library and compact navigation. Review only on migration; main remains unchanged. See [validation and boundaries](docs/releases/AELIO_v1.0.9_REVIEW.md), [visual gallery](docs/previews/v1.0.9/README.md) and [configuration/SQL13 prerequisites](config/V1_0_9_ROUTER.md). Owner must manually review/apply only the new13 after the reported11/12 before dependent release; no production SQL or credentials/settings changes occurred. Existing payment/checkout behavior remains intact; paid enrollment and live integrations are not activated or verified. Historical records follow.

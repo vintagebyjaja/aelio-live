@@ -27,7 +27,20 @@ DISCLOSURE = {
 
 
 def _refusal(e: gateway.GatewayRefused):
-    return J({"error": e.message, "code": e.code, **e.info}, e.status)
+    message = e.message
+    if e.code in {'not_configured','spend_cap','exempt_cap','paused'}:
+        message = 'AI replies are temporarily unavailable. Your account and saved work remain available.'
+    elif e.code == 'consent_required':
+        message = 'Review and accept the AI disclosure before sending a message.'
+    return J({"error": message, "code": e.code}, e.status)
+
+
+def _member_event(event: dict) -> dict:
+    allowed = {'type', 'request_id', 'text', 'message', 'code', 'credits_charged', 'estimate_credits', 'exempt', 'conversation_id', 'notice'}
+    visible = {key: value for key, value in event.items() if key in allowed}
+    if event.get('type') == 'error':
+        visible['message'] = 'The reply could not be completed. Your conversation is still available to retry.'
+    return visible
 
 
 def _settings_row(uid: str) -> dict:
@@ -43,7 +56,7 @@ async def my_ai(req):
     row = _settings_row(p["user_id"])
     return J({"disclosure": DISCLOSURE, "consent_at": row["external_ai_consent_at"], "personality_id": row["personality_id"],
               "personalities": personalities.listing(),
-              "provider": {"name": std["provider"], "external": providers.get(std["provider"]).external,
+              "provider": {"external": providers.get(std["provider"]).external,
                            "configured": providers.get(std["provider"]).configured()},
               "paused": st["paused"]})
 
@@ -127,18 +140,18 @@ async def my_agent_chat_stream(req):
     def sse():
         text, final, meta = [], None, first
         try:
-            yield f"data: {json.dumps(first)}\n\n"
+            yield f"data: {json.dumps(_member_event(first))}\n\n"
             for ev in gen:
                 if ev["type"] == "delta":
                     text.append(ev["text"])
                 elif ev["type"] in ("done", "error"):
                     final = ev
                     continue          # sent after saving, with the conversation id
-                yield f"data: {json.dumps(ev)}\n\n"
+                yield f"data: {json.dumps(_member_event(ev))}\n\n"
         finally:
             gen.close()               # if the browser left mid-reply, the gateway settles what was delivered
             saved = _save_turn(p["user_id"], agent["id"], cid, pid, msg, "".join(text), final, meta)
-        out = dict(final or {"type": "error", "code": "failed", "message": "No reply."})
+        out = _member_event(dict(final or {"type": "error", "code": "failed", "message": "No reply."}))
         out["conversation_id"] = saved
         out["usage"] = usage.overview(p["user_id"])
         yield f"data: {json.dumps(out)}\n\n"
@@ -159,8 +172,7 @@ def chat_once(p: dict, aid: str, d: dict) -> dict:
     if final.get("type") == "error":
         raise HTTPError(502, final.get("message", "The AI provider failed. Nothing was charged."))
     return {"conversation_id": cid, "credits_charged": final.get("credits_charged", 0), "usage": usage.overview(p["user_id"]),
-            "reply": {"text": r["text"], "performer": f"{final.get('provider')}:{final.get('model')}",
-                      "provider": final.get("provider"), "model": final.get("model"), "experimental": False}}
+            "reply": {"text": r["text"], "experimental": False}}
 
 
 # ================================================================== founder

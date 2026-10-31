@@ -115,3 +115,5 @@ export const until = (t?: number | null) => {
   const s = Math.max(0, t - Date.now() / 1000), h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
   return h ? `${h} hour${h > 1 ? "s" : ""} and ${m} minute${m === 1 ? "" : "s"}` : `${m} minute${m === 1 ? "" : "s"}`;
 };
+
+export async function openStudio(){const access=await token();const response=await fetch('/api/studio/ai/session',{method:'POST',headers:{'content-type':'application/json',...(access?{authorization:'Bearer '+access}:{})},body:'{}',credentials:'same-origin'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Studio Brain is private.');location.assign(data.url);}
