@@ -1,6 +1,8 @@
 import { fail } from "../shared.js";
 export const ROUTER_FIELDS = [
   "AELIO_PRIMARY_PROVIDER",
+  "AELIO_IMAGE_PRIMARY_PROVIDER",
+  ...["OPENAI","GEMINI"].flatMap(p=>["IMAGE_MODEL","IMAGE_MAX_COST_USD","IMAGE_INPUT_USD_PER_MILLION","IMAGE_OUTPUT_USD_PER_MILLION"].map(k=>p+"_"+k)),
   "AELIO_SECONDARY_PROVIDER",
   "AELIO_EMERGENCY_PROVIDER",
   "AELIO_DAILY_AI_BUDGET_USD",
@@ -34,7 +36,7 @@ export function safeRouterSettings(value) {
         "Only provider models, prices, timeouts and budget controls may be saved.",
       );
     if (key.endsWith("_PROVIDER")) {
-      if (!["gemini", "groq", "openai"].includes(v))
+      if (!(key==="AELIO_IMAGE_PRIMARY_PROVIDER"?["gemini","openai"]:["gemini", "groq", "openai"]).includes(v))
         fail(400, "invalid_settings", "Choose a supported provider.");
       out[key] = v;
     } else if (key.endsWith("_ENABLED")) {

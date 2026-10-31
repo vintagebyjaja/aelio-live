@@ -1,3 +1,6 @@
+import {decorateMessages,decorateInbox} from "./messenger.js";
+import {imageIntent} from "../shared/image-intent.js";
+import {imageChat,imageCapabilityChat} from "./images.js";
 import {consumerMessage} from "../shared/experience.js";
 import {companion,coordinateTeam,coordinateGroup} from "../shared/companions.js";
 import {milaStyleInstruction} from "../shared/mila-style.js";
@@ -331,7 +334,7 @@ export async function chatRoutes(req, env, path) {
       fail(401, "authentication_required", "Sign in to save conversations.");
     if (req.method === "GET")
       return reply({
-        conversations: await table(
+        conversations: await decorateInbox(env,u,await table(
           env,
           "app_conversations",
           "owner_id=eq." +
@@ -339,7 +342,7 @@ export async function chatRoutes(req, env, path) {
             (productScope === "pathd" ? "&product=eq.pathd" : "") +
             "&order=updated_at.desc&limit=500&select=*,app_messages(content,created_at)&app_messages.order=created_at.desc&app_messages.limit=1",
           { token: u.token },
-        ),
+        )),
       });
     if (req.method === "POST") {
       const d = await body(req);
@@ -398,7 +401,7 @@ export async function chatRoutes(req, env, path) {
           "&order=created_at.desc,id.desc&limit=100",
         { ...(u ? { token: u.token } : { service: true }) },
       );
-      return reply({ messages: rows.reverse() });
+      return reply(await decorateMessages(env,u,rows.reverse()));
     }
     if(cm[2]==='/cancel' && req.method==='POST'){
       const data=await body(req);if(!uuid(data.request_id))fail(400,'invalid_request_id','Choose a valid generation request.');
@@ -417,7 +420,7 @@ export async function chatRoutes(req, env, path) {
         fields = {};
       for (const k of ["title", "subtitle"])
         if (d[k] !== undefined) fields[k] = text(d[k], 160);
-      if(c.permanent_key==='dream-team'&&((fields.title!==undefined&&fields.title!==c.title)||(fields.subtitle!==undefined&&fields.subtitle!==c.subtitle)))fail(403,"permanent_conversation","Dream Team keeps its name. You can customize its appearance.");
+      if(['dream-team','core-eight'].includes(c.permanent_key)&&((fields.title!==undefined&&fields.title!==c.title)||(fields.subtitle!==undefined&&fields.subtitle!==c.subtitle)))fail(403,"permanent_conversation","Dream Team keeps its name. You can customize its appearance.");
       for (const k of ["pinned", "archived", "memory_enabled"])
         if (d[k] !== undefined) fields[k] = d[k] === true;
       if(d.project!==undefined) {
@@ -568,6 +571,13 @@ async function generate(req, env, c, u, suggest = false) {
   if(u&&c.product==='pathd'&&env.AELIO_SUBSCRIPTIONS_ENABLED==='true'){const access=await subscriptionAccess(env,u);if(!access.companion_access)fail(403,'companion_subscription_required','Your AELIO subscription or an eligible PATHD plan unlocks companions here.');}
   const d = await body(req);
   const input = text(d.content || "", 8000);
+  if(!suggest){
+    let source=d.source_image_id;
+    if(!source&&u&&d.file_ids?.length){for(const id of d.file_ids){const file=await own(env,'app_files',id,u);if(file.mime.startsWith('image/')){source=id;break;}}}
+    const intent=imageIntent(input,{hasImage:!!source,action:d.image_action});
+    if(intent==='inquire')return imageCapabilityChat(env,c,u,d);
+    if(intent&&intent!=='inquire')return imageChat(req,env,c,u,{...d,source_image_id:source});
+  }
   if (!input && !suggest) fail(400, "empty_message", "Write a message first.");
   if (d.consent !== true)
     fail(

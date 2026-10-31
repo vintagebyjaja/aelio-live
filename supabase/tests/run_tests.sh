@@ -14,4 +14,15 @@ $P -f "$HERE/mock_supabase.sql"
 [ -f "$HERE/mock_supabase_extra.sql" ] && $P -f "$HERE/mock_supabase_extra.sql"
 for m in "$HERE"/../migrations/*.sql; do $P -f "$m"; done
 for m in "$HERE"/../migrations/*.sql; do $P -f "$m"; done
-for t in "$@"; do echo "== $t"; env PGOPTIONS= psql -h $D -p $PORT -U postgres -v ON_ERROR_STOP=1 -q -f "$HERE/$t" 2>&1 | grep -E "NOTICE|ERROR" | sed 's/psql:.*NOTICE:  //'; done
+for t in "$@"; do
+  echo "== $t"
+  test_log="$D/test-output.log"
+  if env PGOPTIONS= psql -h "$D" -p "$PORT" -U postgres -v ON_ERROR_STOP=1 -q -f "$HERE/$t" >"$test_log" 2>&1; then
+    awk '/NOTICE|ERROR|passed/ { sub(/psql:.*NOTICE:  /, ""); print }' "$test_log"
+    echo "PASS: $t"
+  else
+    test_status=$?
+    cat "$test_log"
+    exit "$test_status"
+  fi
+done

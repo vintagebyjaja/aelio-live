@@ -1,34 +1,40 @@
-"""Browser contract tests with explicit local Auth/API fixtures. Not live AI or Supabase verification.
-Start npm run dev first. Uses installed system Chromium via an explicit supported executable option.
-"""
-import json, os, time
+"""Local messaging, official identities, Native Brain and portal fixtures. No real conversations/telemetry."""
+import json,time,uuid,os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from browser_fixtures import *
-with sync_playwright() as p:
- browser=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_EXECUTABLE','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
- for width in (1440,390):
-  context=browser.new_context(viewport={'width':width,'height':900},reduced_motion='reduce')
-  context.add_init_script("localStorage.setItem('aelio.auth',"+json.dumps(json.dumps({'access_token':'fixture-user','refresh_token':'fixture-refresh','expires_at':time.time()+3600,'user':{'id':A,'email':'local-fixture@example.test'}}))+");")
-  page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-  page.route('**/api/platform/**',mock);page.route('**/assets/config.js',mock)
-  page.goto(BASE+'/chat/?companion=aelio',wait_until='networkidle');page.locator('.messages').get_by_text('AELIO fixture conversation',exact=True).wait_for()
-  page.get_by_role('textbox',name='Message',exact=True).fill('Unsent AELIO draft')
-  if width<=900:page.get_by_role('button',name='Open conversations').click()
-  page.locator('button.thread').filter(has_text='Chester').click();page.locator('.messages').get_by_text('Chester fixture conversation',exact=True).wait_for()
-  assert page.get_by_role('textbox',name='Message',exact=True).input_value()==''
-  assert '#226688' in page.locator('.chat').get_attribute('style')
-  page.get_by_role('textbox',name='Message',exact=True).fill('Chester-only message');page.get_by_role('button',name='Send message').click()
-  if width<=900:page.get_by_role('button',name='Open conversations').click()
-  page.locator('.companion-navigation button').filter(has=page.get_by_text('AELIO',exact=True)).click();page.locator('.messages').get_by_text('AELIO fixture conversation',exact=True).wait_for()
-  assert page.get_by_role('textbox',name='Message',exact=True).input_value()=='Unsent AELIO draft'
-  assert '[offline browser fixture] Chester-only message' not in page.locator('.messages').inner_text()
-  if width<=900:page.get_by_role('button',name='Open conversations').click()
-  page.locator('button.thread').filter(has_text='Chester').click();page.get_by_text('[offline browser fixture] Chester-only message',exact=True).first.wait_for()
-  page.get_by_role('button',name='Conversation settings').click();page.get_by_label('Chat background',exact=True).select_option('Minimal White');page.get_by_role('button',name='Save appearance').click();page.get_by_role('button',name='Close settings').click()
-  page.locator('.header-actions').get_by_role('button',name='Account',exact=True).click();page.get_by_role('heading',name='Your account',exact=True).wait_for();assert 'PATHD — Connected' in page.locator('.panel').inner_text()
-  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-  assert not errors,errors
-  print(f'{width}px: chat switching, isolated drafts/replies, appearance persistence, account dashboard, no overflow or JS errors passed')
-  context.close()
- browser.close()
+BASE='http://127.0.0.1:8097';OUT=Path('/workspace/aelio-live/docs/previews/messaging-v0.1');OUT.mkdir(parents=True,exist_ok=True)
+keys=['mila','naomi','angelo','oliver','simone','chloe','reggie'];threads[0]['permanent_key']='aelio';threads[0]['appearance']={}
+for kind in keys:
+ aid=str(uuid.uuid5(uuid.NAMESPACE_DNS,'messaging-'+kind));cid=str(uuid.uuid5(uuid.NAMESPACE_DNS,'messaging-thread-'+kind));agents.append({'id':aid,'kind':kind,'name':'MILA'if kind=='mila'else kind.title(),'subtitle':'Your companion'});threads.append({'id':cid,'title':agents[-1]['name'],'participants':[aid],'permanent_key':kind,'appearance':{},'product':'aelio','created_at':'2026-10-31T01:00:00Z'});messages[cid]=[]
+dream=str(uuid.uuid4());threads.append({'id':dream,'title':'Dream Team','permanent_key':'dream-team','participants':[a['id']for a in agents if a['kind'] in ['naomi','angelo','oliver','simone','chloe','reggie']],'appearance':{},'product':'aelio'});messages[dream]=[]
+bd=str(uuid.uuid4());marcus=str(uuid.uuid4());agents.extend([{'id':bd,'kind':'custom','name':'Big Dre','subtitle':'Local sample agent'},{'id':marcus,'kind':'custom','name':'Marcus','subtitle':'Local sample agent'}]);reggie=next(a['id']for a in agents if a['kind']=='reggie');unc=str(uuid.uuid4());threads.append({'id':unc,'title':'The UNCs','participants':[reggie,bd,marcus],'appearance':{},'product':'aelio','subtitle':'You, Reggie, Big Dre, Marcus','updated_at':'2026-10-31T01:50:00Z','pinned':True})
+messages[unc]=[{'id':str(uuid.uuid4()),'role':'user','content':"Fellas, I’m thinking about opening a lounge. What y’all think?",'created_at':'2026-10-31T01:49:00Z','request_id':'sample-turn'},*({'id':str(uuid.uuid4()),'role':'assistant','agent_id':aid,'speaker':name,'content':text,'created_at':'2026-10-31T01:50:00Z','request_id':'sample-turn'}for aid,name,text in [(reggie,'Reggie',"First thing I’m asking is who’s paying that rent when the lounge empty on a Tuesday? 😂 We gotta talk numbers before velvet couches."),(bd,'Big Dre',"Man Reggie, you ain’t even let him finish the pitch! 😂 But he right though. What’s the concept? Jazz lounge or somewhere folks can watch the game?"),(marcus,'Marcus',"See, I’m thinking we do both. Live music on Fridays, sports on Sundays. But we need to figure out who we’re trying to attract.")])]
+state={'residence':{'owner_id':A,'name':'My residence','destination':'plaza','quality':'low'},'meetings':[]}
+def api(route):
+ p=route.request.url.split('/api/platform',1)[-1].split('?')[0];method=route.request.method
+ if p=='/native/catalog':d={'images':{'enabled':False,'issue':'Image execution is not configured. No credits are spent exploring.'},'aurevia':{'available':True,'assessments_available':False}}
+ elif p=='/messaging/core-eight':
+  t=next((t for t in threads if t.get('permanent_key')=='core-eight'),None)
+  if not t:t={'id':str(uuid.uuid4()),'title':'Core 8','permanent_key':'core-eight','participants':[a['id']for a in agents if a['kind']in ['aelio',*keys]],'appearance':{},'product':'aelio'};threads.append(t);messages[t['id']]=[]
+  d={'conversation':t}
+ elif p=='/messaging/read':d={'ok':True}
+ elif p=='/messaging/reaction':
+  data=route.request.post_data_json;m=next(m for rows in messages.values()for m in rows if m['id']==data['message_id']);m['reactions']=[]if m.get('reactions')and m['reactions'][0]['emoji']==data['emoji']else[{'emoji':data['emoji'],'count':1,'mine':True}];d={'reactions':m['reactions']}
+ elif p.endswith('/messages'):d={'messages':messages[p.split('/')[2]],'reactions_available':True}
+ elif p=='/aurevia':d=state
+ else:return mock(route)
+ route.fulfill(content_type='application/json',body=json.dumps(d))
+def badge(page):page.evaluate("""()=>{const e=document.createElement('div');e.textContent='LOCAL REVIEW · SAMPLE CONVERSATIONS';e.style.cssText='position:fixed;right:8px;bottom:3px;background:#17120ee8;color:#ffe4ba;font:8px sans-serif;letter-spacing:.06em;padding:5px;z-index:9999;pointer-events:none';document.body.append(e)}""")
+with sync_playwright()as p:
+ b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+ for width,theme in [(1440,'og-dark'),(390,'og-dark'),(1440,'og-light'),(390,'og-light'),(390,'ocean-fresh'),(390,'chocolate-cream')]:
+  account['preferences']['appearance']={'design':theme};ctx=b.new_context(viewport={'width':width,'height':1000},reduced_motion='reduce');ctx.add_init_script("localStorage.setItem('aelio.auth',"+json.dumps(json.dumps({'access_token':'fixture-user','refresh_token':'fixture-refresh','expires_at':time.time()+3600,'user':{'id':A,'email':'sample@example.test'}}))+");HTMLCanvasElement.prototype.getContext=new Proxy(HTMLCanvasElement.prototype.getContext,{apply(t,s,args){return String(args[0]).startsWith('webgl')?null:Reflect.apply(t,s,args)}})")
+  page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.route('**/api/platform/**',api);page.route('**/assets/config.js',api);page.goto(BASE+'/',wait_until='networkidle');page.get_by_role('heading',name='Meet your people.',exact=True).wait_for();assert page.get_by_label('Workspace',exact=True).locator('option').count()==3;assert page.locator('.official-people button').count()==8;assert page.locator('.official-hub').get_by_text('Big Dre',exact=True).count()==0;badge(page);page.screenshot(path=str(OUT/f'official-{theme}-{width}.png'))
+  page.get_by_label('Workspace',exact=True).select_option('dreambox');page.locator('.full-inbox').wait_for();assert page.locator('.full-inbox .inbox-row').filter(has_text='The UNCs').count()==1;assert page.locator('.full-inbox .inbox-row').filter(has_text='Dream Team').count()==0;page.screenshot(path=str(OUT/f'inbox-{theme}-{width}.png'));page.locator('.full-inbox .inbox-row').filter(has_text='The UNCs').click();page.locator('.message-speaker').filter(has_text='Marcus').wait_for();assert page.locator('.bubble.assistant').count()==3;assert page.locator('.bubble.user').count()==1;assert page.locator('.chat-header .group-portraits .companion-avatar').count()==3;assert page.get_by_role('button',name='Video call',exact=True).count()==0
+  page.locator('.bubble.assistant').first.locator('summary').click();page.locator('.bubble.assistant').first.get_by_role('button',name='React 😂',exact=True).click();page.locator('.bubble.assistant').first.locator('summary').click();page.screenshot(path=str(OUT/f'conversation-{theme}-{width}.png'))
+  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),(width,theme)
+  page.locator('.composer textarea').fill('Draft must survive switching');page.get_by_label('Workspace',exact=True).select_option('native');page.get_by_role('heading',name='Intelligence, put to work.').wait_for();assert page.get_by_text('Studio Brain',exact=False).count()==0;assert page.locator('.native-brain').get_by_role('button',name='Open image tools in Chat ↗').is_disabled();assert not any(s in page.locator('.native-brain').inner_text()for s in ['OpenAI','Gemini','Groq','API_KEY']);page.screenshot(path=str(OUT/f'native-{theme}-{width}.png'))
+  page.get_by_label('Workspace',exact=True).select_option('dreambox');page.locator('.full-inbox .inbox-row').filter(has_text='The UNCs').click();assert page.locator('.composer textarea').input_value()=='Draft must survive switching';page.get_by_role('button',name='Conversation settings',exact=True).click();page.get_by_role('heading',name='Chat Settings',exact=True).wait_for();page.screenshot(path=str(OUT/f'settings-{theme}-{width}.png'));page.get_by_role('button',name='Close settings').click();assert page.locator('.composer textarea').input_value()=='Draft must survive switching';assert not errors,errors;ctx.close();print('Messaging hub/inbox, shared group identities, independent speakers, Native access, draft/theme preservation:',width,theme,flush=True)
+ # Portal is immediate to skip, and Native return navigation retains account/session.
+ ctx=b.new_context(viewport={'width':390,'height':950},reduced_motion='no-preference');ctx.add_init_script("localStorage.setItem('aelio.auth',"+json.dumps(json.dumps({'access_token':'fixture-user','refresh_token':'fixture-refresh','expires_at':time.time()+3600,'user':{'id':A}}))+");HTMLCanvasElement.prototype.getContext=()=>null;");page=ctx.new_page();page.route('**/api/platform/**',api);page.route('**/assets/config.js',api);page.goto(BASE+'/#native',wait_until='networkidle');page.locator('.native-brain').get_by_role('button',name='Enter AUREVIA ↗').click();page.get_by_role('button',name='Skip Intro',exact=True).wait_for();page.get_by_role('button',name='Skip Intro',exact=True).click();assert page.get_by_role('dialog',name='Entering AUREVIA').count()==0;page.get_by_role('button',name='← Native Brain',exact=True).click();page.get_by_role('heading',name='Intelligence, put to work.').wait_for();ctx.close();b.close();print('AUREVIA skip and return-to-Native navigation: pass')

@@ -50,6 +50,8 @@ select 'messaging ownership, role isolation, credits, recovery and scheduling ch
 rollback;
 -- Independent product suspension check is deliberately separate and rolled back.
 begin;
+-- The earlier transaction was rolled back; seed this scenario instead of referencing a nonexistent account.
+insert into auth.users(id,email)values('11111111-1111-4111-8111-111111111111','suspension-fixture@local.test');
 update core.memberships set status='suspended' where user_id='11111111-1111-4111-8111-111111111111' and product_id='aelio';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);

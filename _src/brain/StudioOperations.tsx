@@ -21,6 +21,7 @@ export function AIOperations() {
     <section className="panel ai-operations">
       <p className="workspace-eyebrow">FOUNDER · PRIVATE</p>
       <h1>AI Operations</h1>
+      <ImageOperations/>
       {error && <p role="alert">{error}</p>}
       {data && (
         <>
@@ -205,4 +206,11 @@ function RouterControls({ settings, providers, health }: any) {
       <p role="status">{message}</p>
     </form>
   );
+}
+
+function ImageOperations(){
+ const [data,setData]=useState<any>(null),[policy,setPolicy]=useState<any>({}),[settings,setSettings]=useState<any>({}),[error,setError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ useEffect(()=>{Promise.all([studioCall('images'),studioCall('operations')]).then(([images,operations])=>{setData(images);setPolicy(images.policy);setSettings(operations.settings||{});}).catch(e=>setError(friendly(e)));},[]);
+ async function save(e:any){e.preventDefault();setBusy(true);setMessage('');try{await studioCall('operations','PATCH',{settings});const r=await studioCall('images','PATCH',{settings:{enabled:policy.enabled,create_credits:policy.create_credits==null||policy.create_credits===''?null:Number(policy.create_credits),edit_credits:policy.edit_credits==null||policy.edit_credits===''?null:Number(policy.edit_credits),included_plans:policy.included_plans||[]}});setData(r);setPolicy(r.policy);setMessage('Image model and access controls saved. No credentials were changed.');}catch(e){setError(friendly(e));}finally{setBusy(false);}}
+ return <section className="router-controls"><h2>Image creation & editing</h2><p>Uses the existing server credentials. Only supported OpenAI/Gemini image models are eligible. Groq remains on its supported routes. Model configuration does not prove live generation or editing.</p>{error&&<p role="alert">{error}</p>}{data&&<form onSubmit={save}><p>Configured image models: {data.configured_models.map((m:any)=>m.provider+' / '+m.model).join(', ')||'None'}</p>{data.issues.map((x:any)=><p key={x.provider}>{x.provider}: {x.issue}</p>)}<label><input type="checkbox" checked={policy.enabled||false} onChange={(e:any)=>setPolicy({...policy,enabled:e.target.checked})}/>Enable image actions at the approved prices below</label><label>Creation credits<input type="number" min="0" step="1" value={policy.create_credits??''} onChange={(e:any)=>setPolicy({...policy,create_credits:e.target.value})}/></label><label>Editing credits<input type="number" min="0" step="1" value={policy.edit_credits??''} onChange={(e:any)=>setPolicy({...policy,edit_credits:e.target.value})}/></label><label>Included active subscription plan IDs (comma separated)<input value={(policy.included_plans||[]).join(',')} onChange={(e:any)=>setPolicy({...policy,included_plans:e.target.value.split(',').map((s:string)=>s.trim()).filter(Boolean)})}/></label><label>Image routing priority<select value={settings.AELIO_IMAGE_PRIMARY_PROVIDER||'gemini'} onChange={(e:any)=>setSettings({...settings,AELIO_IMAGE_PRIMARY_PROVIDER:e.target.value})}><option value="gemini">Gemini</option><option value="openai">OpenAI</option></select></label>{['OPENAI','GEMINI'].map(p=><fieldset key={p}><legend>{p}</legend><label>Image model<input value={settings[p+'_IMAGE_MODEL']||''} onChange={(e:any)=>setSettings({...settings,[p+'_IMAGE_MODEL']:e.target.value})}/></label>{[['IMAGE_MAX_COST_USD','Conservative maximum USD per image'],['IMAGE_INPUT_USD_PER_MILLION','Verified input USD / million tokens'],['IMAGE_OUTPUT_USD_PER_MILLION','Verified output USD / million tokens']].map(([key,label])=><label key={key}>{label}<input type="number" min="0" step="any" value={settings[p+'_'+key]||''} onChange={(e:any)=>setSettings({...settings,[p+'_'+key]:e.target.value})}/></label>)}</fieldset>)}<button disabled={busy}>Save image model and pricing controls</button><p role="status">{message}</p></form>}</section>;
 }

@@ -1,0 +1,17 @@
+# Orb Plaza correction — visual benchmark awaiting owner review
+
+The previous concept-image hero and unrelated simple walking scene were not approved. The new local iteration replaces that approach with one spatial scene for cinematic and interactive modes. No new destinations have been expanded; the other physical destinations remain unapproved/unbuilt. Existing office conversations, residence preferences, identities and permissions remain functional.
+
+Actual renderer views: arrival, Orb close-up, ground-level arcade, coastal panorama and mobile. The cinematic camera and walking use the same meshes, positions, lighting and materials. Mode changes preserve a valid ground position; wide aerial views return to a safe walkable entry. Swept collision, axis sliding and rail/glass boundaries prevent tunneling or trapping. A campus map retains shared destination geography; only the office/residence functions and plaza entry are open. Closed destinations are marked “Not open”.
+
+This iteration adds dimensional ivory arches, connected curved colonnades, curved glass, copper pavilion roofs/ribs, layered terraces, procedural marble/bump materials, shadows, a latticed armillary Orb with luminous core/filigree, reflective water, cascades, sculpted cliffs/mountain horizon and instanced olive foliage. Static architecture is batched by material. Quality controls bound DPR, shadow/reflection resolution and foliage counts; animation honors reduced motion and pauses rendering when hidden/offscreen. Context loss uses actual renderer-derived fallback views. Generated public assets no longer publish the reference-image set. The images are retained as source references only.
+
+No public development labels, concept boards or unrelated reference backdrops remain. Scene controls are placed outside the world view, readable panels use explicit high-contrast colors, and the floating guest widget no longer covers AUREVIA navigation/walking controls. Office/source-user records are unchanged; no 3D office, University or residence is falsely represented as complete.
+
+## What remains below the approved direction
+
+The actual screenshots do **not** establish cinematic-reference fidelity or benchmark approval. The supplied ZIP contains no authored GLB/GLTF architecture, baked/photogrammetric PBR surfaces, sculpted terrain set, high-detail vegetation or production lighting/HDR assets. Current geometry/materials are code-authored. Compared with the reference, the rendered plaza still lacks its architectural intricacy, weathering/material variation, coastal geography/detail, rich foliage and cinematic light treatment. The current horizon/water are visibly simpler. There are no rigged companions or simulated campus society in this iteration.
+
+Review [reference-versus-render comparisons](../previews/orb-plaza-v0.2/README.md) before choosing the next art pass. Do not describe this benchmark as approved/finished merely because it is navigable. No production expansion to University, Harbor, Courthouse, Terraces or other destinations is authorized until the owner approves Orb Plaza's visual direction. Professional authored environment/terrain/vegetation assets and lighting refinement are the outstanding production-art inputs; no unrelated image or AI-generated painting is used to conceal those gaps.
+
+Desktop/software-WebGL and mobile-viewport browser tests establish local function and actual rendering, not real-device FPS, memory/thermal performance or cinematic quality. No push, merge or deployment has occurred for this correction.

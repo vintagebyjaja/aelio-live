@@ -136,7 +136,7 @@ test("financial operations require both founder identity and verified second-fac
     updates = 0;
   globalThis.fetch = async (url, opts) => {
     const name = new URL(url).pathname.split("/").at(-1);
-    if (name === "user") return Response.json({ id: uid });
+    if (name === "user") return Response.json({ id: uid,email:"jaja@vybr8.live",email_confirmed_at:"2026-10-31T00:00:00Z" });
     if (name === "app_account_bootstrap") return Response.json({ role });
     if (name === "app_ai_router_config") return Response.json({});
     if (name === "app_ai_operations") return Response.json({ providers: [] });

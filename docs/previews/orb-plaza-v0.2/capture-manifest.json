@@ -1,0 +1,19 @@
+{
+  "base_commit": "3405bbf",
+  "capture": "Actual local Chromium/WebGL canvas screenshots; no reference-image backdrop or generated painting",
+  "source_files": {
+    "_src/chat/aurevia/WorldScene.tsx": "baed2fd1e199bd89074068f5ced1257f915c360311ab6d186bbad522c853a9ff",
+    "_src/shared/aurevia-plaza.js": "56b06cd0d56b8ff9b99d7ca06e1668ae67d7ef2e41964f96a0ce73d08cd276fd",
+    "_src/chat/aurevia/plaza/landmark.ts": "ded906f92081d720066b267814607991a818fd67e415ebffa36cfcd83400ceea",
+    "_src/chat/aurevia/plaza/materials.ts": "103a7c612b0159860f2ab37ae6beea51edeb5323e3d5a2b075119d02bc164f8e",
+    "_src/chat/aurevia/plaza/architecture.ts": "4ebe2050aa9c460e11d01b4ceefacfd9dd8becbebba1aaf72bb0d914d2c5cc7f",
+    "_src/chat/aurevia/plaza/landscape.ts": "e7fc1955c9e5d0877ee7f77f42b17e625217d804301c51ae26d73bd0e8224201"
+  },
+  "images": {
+    "arcade-actual.png": "5cb6157ac7b7ee8b1d3695cefbb0c3255606f4379840656ef0a2ca37c50edd8a",
+    "orb-actual.png": "02f7262bc9812cfa79eee66e10664402a30258f61d299229579c094c48faeb6d",
+    "arrival-actual.png": "b0663b1f45c7591aabd48e94e91ced1c93830bdb856c9dbfb2c526639da8964f",
+    "mobile-actual.png": "5d07ea3570944ad38cdd6bc33558fb24c85086396caa8f3c39a0b0bf41dfd94e",
+    "coast-actual.png": "984fa4f0aab437dbb6e6fb334617be09f6bf0adb7a82f0a1e12e2803d9fe35ed"
+  }
+}

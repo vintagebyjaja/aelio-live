@@ -7,6 +7,7 @@ export function ImageLibrary({
   agents,
   threads,
   onOpen,
+  onEdit,
 }: any) {
   const [files, setFiles] = useState<any[]>([]),
     [next, setNext] = useState<any>(null),
@@ -198,7 +199,7 @@ export function ImageLibrary({
             <small>{new Date(f.created_at).toLocaleDateString()}</small>
             <div>
               <button onClick={() => open(f)}>Preview</button>
-              <button onClick={() => download(f)}>Download</button>
+              <button onClick={() => download(f)}>Download</button>{onEdit&&<button onClick={()=>onEdit(f)}>Edit in chat</button>}{f.parent_file_id&&<small>Edited version · original preserved</small>}
               {threads.some((t: any) => t.id === f.conversation_id) && (
                 <button
                   onClick={() =>

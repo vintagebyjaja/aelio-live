@@ -1,3 +1,23 @@
+## AELIO 1.0.12 main promotion approved — 2026-10-31
+
+The owner explicitly approved pushing the reviewed messaging, Native Brain, image-routing and Orb Plaza iteration to AELIO main. This supersedes earlier local-only restrictions for this reviewed delta only. Push main only; remote migration and PATHD remain unchanged. Normal Git-triggered builds may run; no manual deployment, production SQL, provider activation, pricing/secret/settings changes or expansion of other AUREVIA destinations is authorized. SQL15's selected-fragment error was diagnosed and the full 146-line script rechecked/provided; successful owner application of SQL14/15/16 is not confirmed here. Live image generation/editing and hosted deployment/Auth verification remain outstanding. Do not turn fixture results into operational claims or treat this promotion as proof of cinematic-reference fidelity.
+
+---
+
+## Current 1.0.12 local review — messaging, Native Brain, images and Orb Plaza
+
+Latest requests are implemented locally on migration, based on main 3405bbf. Do not push even migration, merge main, deploy, run production SQL or activate provider/pricing settings without explicit authorization. Earlier approval covered 1.0.11 only. PATHD is unchanged. Exactly three primary environments (AELIO, Dreambox, Native Brain); AUREVIA is a destination and Studio Brain is inside Native Brain only. Preserve fixed companion identities/portraits, separate per-chat histories/themes, drafts, original cinematic homepage via More and all existing integrations.
+
+Studio requires confirmed server-verified jaja@vybr8.live PLUS the canonical founder role PLUS aal2; never grant/link by email or client metadata. SQL15/16 are new owner-reviewed migrations, default image pricing OFF; no production SQL applied. SQL13 is reported applied and SQL14's execution is unconfirmed. Image routing reuses existing provider keys/storage/credit systems, with one funding source, exact confirmations and refunds. Live generation/editing is BLOCKED here, not operationally verified. Orb Plaza now uses the same scene for cinema/walking, but its cinematic fidelity is NOT approved; do not expand destinations before review. Native tools expose only real configured access; never fabricate public metrics, event counts, trained skills or marketplace values. See docs/releases/AELIO_v1.0.12_REVIEW.md, config/V1_0_12_IMAGES.md and docs/aurevia/ORB_PLAZA_VISUAL_REVIEW.md for scope/evidence/limitations. New ZIP deliveries must remain immutable with at most 100 files per part.
+
+---
+
+## Brain visual references selected — 2026-10-31
+
+The owner explicitly chose the images inside AELIO_Studio_Brain_References.zip for Studio Brain / Native Brain visual references. Originals, hashes and design/security mapping are at docs/design-references/brain/README.md. This is reference preparation only: no runtime redesign, new entitlements, SQL, billing or role assignment is claimed. The supplied briefs remain implementation requirements to assess separately; screenshot data is not live telemetry or authorization. Keep subsequent work local on migration for review; no new push/deploy authorized by this reference choice.
+
+---
+
 ## AUREVIA Phase 1 main promotion approved — 2026-10-31
 
 The owner explicitly authorized pushing the reviewed AELIO 1.0.11 AUREVIA Phase 1 update to main. This supersedes the local-only review restriction for this completed delta. Push main only; leave remote migration and PATHD unchanged. Existing Git-triggered builds may run; no manual deployment, production SQL, provider activation, settings or secrets changes are authorized. SQL14 has been supplied to the owner but application is not confirmed; residence/meeting persistence remains unavailable until applied. Preserve the documented distinction between approved 2D concepts, early procedural 3D, fixture-tested Chat continuity and future University/court/valuation/rigged-avatar features. Hosted deployment/inference and provider cost savings remain unverified.

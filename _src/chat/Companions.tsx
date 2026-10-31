@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 import {COMPANIONS,companion} from '../shared/companions.js';
 import {fileURL} from './client';
 import {Orb} from './Icon';
-export function AgentAvatar({agent,group=false,shape='circle'}:{agent?:any;group?:boolean;shape?:'circle'|'rounded'}){
+export function AgentAvatar({agent,group=false,shape='circle'}:{agent?:any;group?:boolean;shape?:'circle'|'rounded';key?:string|number}){
  const official=companion(agent?.kind),[custom,setCustom]=useState(''),[failed,setFailed]=useState(false);
  useEffect(()=>{let live=true,url='';setCustom('');setFailed(false);
   if(!official&&agent?.avatar_file_id)fileURL(agent.avatar_file_id).then(value=>{url=value;if(live)setCustom(value);else URL.revokeObjectURL(value);}).catch(()=>{});
@@ -12,7 +12,7 @@ export function AgentAvatar({agent,group=false,shape='circle'}:{agent?:any;group
  const src=official?(official.portrait?'/assets/img/'+official.portrait:''):custom;
  const crop=official?{x:50,y:30,zoom:1}:{x:50,y:35,zoom:1,...agent?.avatar_crop};
  return <span className={'companion-avatar '+(shape==='rounded'?'avatar-rounded ':'')+(group?'team-avatar':'')}>
- {src&&!failed?<img src={src} onError={()=>setFailed(true)} alt="" loading="lazy" style={{objectPosition:`${crop.x}% ${crop.y}%`,transform:`translate(${(50-crop.x)*(crop.zoom-1)}%, ${(50-crop.y)*(crop.zoom-1)}%) scale(${crop.zoom})`}}/>:group?'✦':(official?.name||agent?.name||'A').slice(0,1)}
+ {src&&!failed?<img src={src} onError={()=>setFailed(true)} alt="" loading="lazy" style={{objectPosition:`${crop.x}% ${crop.y}%`,transform:`translate(${(50-crop.x)*(crop.zoom-1)}%, ${(50-crop.y)*(crop.zoom-1)}%) scale(${crop.zoom})`}}/>:group?'✦':(official?.name?official.name.slice(0,1):String(agent?.name||'A').split(/\s+/).map((s:string)=>s[0]).join('').slice(0,2))}
  </span>;
 }
 export function CompanionNavigation({agents,threads,current,query,onOpen,onSelect}:{agents:any[];threads:any[];current:any;query:string;onOpen:(a:any)=>void;onSelect:(t:any)=>void}){

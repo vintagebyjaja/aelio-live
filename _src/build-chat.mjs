@@ -30,5 +30,6 @@ writeFileSync("public/index.html",html.replace('<meta name="robots" content="noi
 await build({entryPoints:["_src/chat/DreamBox.tsx"],bundle:true,minify:true,format:"esm",target:"es2020",outdir:"public/assets/dreambox",entryNames:"widget",jsx:"automatic",define:{"process.env.NODE_ENV":'"production"'}});
 mkdirSync("public/dreambox",{recursive:true});writeFileSync("public/dreambox/index.html",'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>AELIO DreamBox</title><link rel="stylesheet" href="/assets/dreambox/widget.css?v='+version+'"></head><body><div id="dreambox-root"></div><script src="/assets/config.js"></script><script type="module" src="/assets/dreambox/widget.js?v='+version+'"></script></body></html>');
 
-// Publish only optimized approved references under a new prefix. Never replace existing art.
-cpSync("assets/aurevia", "public/assets/aurevia", { recursive: true });
+// Publish only fallback frames captured from the actual Orb Plaza renderer. Source references stay outside the public experience.
+rmSync("public/assets/aurevia", { recursive: true, force: true });
+cpSync("assets/aurevia/plaza", "public/assets/aurevia/plaza", { recursive: true });

@@ -1,3 +1,9 @@
+import {ChatVoice} from "./ChatVoice";
+import {OfficialHub,MessagingInbox,GroupPortrait,AureviaPortal,AureviaEntry} from "./Messaging";
+import {NativeBrain,NativeNavigation} from "./NativeBrain";
+import {isOfficialThread,bubbleInk,readableInk} from "../shared/messaging.js";
+import {ChatImage,ImageQuote} from "./ChatImages";
+import {imageIntent} from "../shared/image-intent.js";
 import {AllowancePanel} from "./Billing";
 import {ImageLibrary} from "./ImageLibrary";
 import {BrainWorkspace,EchoWorkspace,ConversationProjects} from "./Workspaces";
@@ -17,6 +23,7 @@ import { ConnectedApps, HandoffCard } from "./ConnectedApps";
 import "./premium.css";
 import "./workspaces.css";
 import "./workspace-shell.css";
+import "./messaging.css";
 import { AppearanceControls } from "./Appearance";
 import { designOf, resolveAppearance, guestAppearance } from "./design-system";
 const Aurevia=lazy(()=>import("./aurevia/Aurevia"));
@@ -74,8 +81,15 @@ function App() {
   });
   const [homeDraft, setHomeDraft] = useState("");
   const [home, setHome] = useState(
-    !new URLSearchParams(location.search).has("companion"),
+    location.hash === "#home",
   );
+  const [environment,setEnvironment]=useState(()=>location.hash==='#native'?'native':history.state?.aelioEnvironment||'aelio');
+  const [nativeSection,setNativeSection]=useState('overview'),[nativeAppearance,setNativeAppearance]=useState(()=>{try{return localStorage.getItem('aelio.native.appearance')||'midnight';}catch{return 'midnight';}});
+  const [aureviaFrom,setAureviaFrom]=useState(()=>history.state?.aureviaOrigin||history.state?.aelioEnvironment||'aelio'),[portal,setPortal]=useState(false),[worldPanel,setWorldPanel]=useState(false),[reactionsAvailable,setReactionsAvailable]=useState<Record<string,boolean>>({});
+  useEffect(()=>{if(!portal)return;const timer=setTimeout(()=>setPortal(false),2400);return()=>clearTimeout(timer);},[portal]);
+  function enterAurevia(){setWorldPanel(false);setAureviaFrom(environment);navigate('aurevia');let seen=false;try{seen=sessionStorage.getItem('aelio.aurevia.intro')==='seen';sessionStorage.setItem('aelio.aurevia.intro','seen');}catch{}if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)setPortal(true);}
+  function workspace(value:string){setEnvironment(value);if(value==='aelio')navigate('core');else if(value==='native')navigate('native');else navigate('inbox');}
+  async function coreEight(){try{const r=await call('/messaging/core-eight','POST',{});setThreads(ts=>[...ts.filter(t=>t.id!==r.conversation.id),r.conversation]);select(r.conversation);}catch(error){setErr(friendly(error));}}
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavigation,setMobileNavigation]=useState(()=>matchMedia('(max-width: 900px)').matches);
   const [sidebarWidth,setSidebarWidth]=useState(()=>{try{const n=Number(localStorage.getItem('aelio.sidebar.width'));return Number.isFinite(n)&&n>=220&&n<=420?n:245;}catch{return 245;}});
@@ -101,7 +115,7 @@ function App() {
       location.pathname.startsWith("/account") ||
         location.pathname.startsWith("/auth")
         ? "account"
-        : ['library','brain','echo','allowance','aurevia'].includes(location.hash.slice(1))?location.hash.slice(1):"",
+        : ['library','brain','echo','allowance','aurevia','core','inbox','native'].includes(location.hash.slice(1))?location.hash.slice(1):!location.hash&&!new URLSearchParams(location.search).has('companion')?'core':"",
     ),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(""),
@@ -114,6 +128,16 @@ function App() {
     [suggestion, setSuggestion] = useState(""),
     [proposals, setProposals] = useState<Record<string, any[]>>({}),
     [allowReminders, setAllowReminders] = useState(false);
+  const imageQuoteTurn=useRef(0);
+  const [imagePending,setImagePending]=useState<Record<string,string>>({});
+  const [imageBusy,setImageBusy]=useState<Record<string,boolean>>({});
+  const [imageSource,setImageSource]=useState<Record<string,string>>({}),[imageQuote,setImageQuote]=useState<any>(null);
+  async function prepareImage(conversation:any,content:string,files:any[]=[],source?:string,action?:string,aspect='square'){
+    const turn=++imageQuoteTurn.current;
+    const pending={conversation,content,files,source,action,aspect,loading:true};setImageQuote(pending);
+    try{const quote=await call('/images/quote','POST',{conversation_id:conversation.id,content,source_image_id:source||null,aspect});setImageQuote((current:any)=>turn===imageQuoteTurn.current&&current?.conversation.id===conversation.id&&current?.content===content?{...pending,loading:false,quote}:current);}catch(error){setImageQuote((current:any)=>turn===imageQuoteTurn.current&&current?.conversation.id===conversation.id?{...pending,loading:false,error:friendly(error)}:current);}
+  }
+  function editImage(fileId:string){if(cur){setImageSource(s=>({...s,[cur.id]:fileId}));input.current?.focus();}}
   const [mention,setMention]=useState(""),[searchHits,setSearchHits]=useState<any[]>([]);
   useEffect(()=>{let live=true;if(!session||search.trim().length<2){setSearchHits([]);return;}const timer=setTimeout(()=>{call('/conversations/search?q='+encodeURIComponent(search.trim().slice(0,100))).then(result=>{if(live)setSearchHits(result.conversations);}).catch(error=>{if(live)setErr(friendly(error));});},250);return()=>{live=false;clearTimeout(timer);};},[search,session?.user?.id]);
   const listedThreads=search.length>=2?[...searchHits,...threads.filter(thread=>!searchHits.some(found=>found.id===thread.id))]:threads;
@@ -131,7 +155,7 @@ function App() {
   function clearPrivateState(){
     setSupport(null);
     Object.values(generations.current).forEach(controller=>controller.abort());
-    setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setFiles([]);setBackgroundURL('');
+    setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setImageSource({});setImageQuote(null);imageQuoteTurn.current++;setImageBusy({});setImagePending({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setFiles([]);setBackgroundURL('');
     cache.current={};backgroundCache.current.forEach(url=>URL.revokeObjectURL(url));backgroundCache.current.clear();
   }
   useEffect(()=>{const changed=(event:StorageEvent)=>{if(event.key!=='aelio.auth')return;const id=(value:string|null)=>{try{return value?JSON.parse(value)?.user?.id:null;}catch{return null;}};if(!event.newValue||id(event.oldValue)!==id(event.newValue)){clearPrivateState();location.assign('/chat/');}};addEventListener('storage',changed);return()=>removeEventListener('storage',changed);},[]);
@@ -164,7 +188,8 @@ function App() {
             const agent = as.agents.find(
               (x: any) => x.kind === (mila ? "mila" : "aelio"),
             );
-            const t = cs.conversations.find(
+            const restored=!q.has("companion")&&cs.conversations.find((thread:any)=>thread.id===history.state?.thread);
+            const t = restored||cs.conversations.find(
               (c: any) =>
                 c.participants.length === 1 && c.participants[0] === agent?.id,
             );
@@ -172,8 +197,9 @@ function App() {
             else if (agent)
               await newThread([agent.id], mila ? "MILA" : "AELIO");
             setHome(!new URLSearchParams(location.search).has("companion"));
-            const requested=location.hash.slice(1);
-            if(['library','brain','echo','allowance','aurevia'].includes(requested)){setPanel(requested);setHome(false);}
+            const requested=location.hash.slice(1)||(!q.has("companion")?"core":"chats");
+            if(['library','brain','echo','allowance','aurevia','core','inbox','native'].includes(requested)){setPanel(requested);setHome(false);if(requested==='native')setEnvironment('native');else if(requested==='inbox')setEnvironment('dreambox');else if(requested==='core')setEnvironment('aelio');else if(history.state?.aelioEnvironment)setEnvironment(history.state.aelioEnvironment);}
+            if(requested==='chats'){setHome(false);setPanel('');}
           }
         } catch (e: any) {
           setAccountError(friendly(e));
@@ -234,15 +260,18 @@ function App() {
       const r = await call("/conversations/" + id + "/messages");
       if (inflight.current.has(id) && !force) return;
       cache.current[id] = r.messages;
+      setReactionsAvailable(s=>({...s,[id]:r.reactions_available===true}));
       setMessages((m) => ({ ...m, [id]: r.messages }));
+      const last=r.messages.slice(-1)[0];if(last?.id?.length===36&&!document.hidden)call('/messaging/read','POST',{message_id:last.id}).then(()=>setThreads(ts=>ts.map(t=>t.id===id?{...t,unread_count:0}:t))).catch(()=>{});
     } catch (e: any) {
       setErr(friendly(e));
     }
   }
-  function select(t: any, record = true) {
+  function select(t: any, record = true, preserveEnvironment=false) {
+    if(!preserveEnvironment)setEnvironment(isOfficialThread(t)?'aelio':'dreambox');
     followScroll.current=true;
     if (record)
-      history.pushState({ aelioView: "chats", thread: t.id }, "", "#chats");
+      history.pushState({ aelioView: "chats", thread: t.id,aelioEnvironment:isOfficialThread(t)?'aelio':'dreambox' }, "", "#chats");
     setHome(false);
     setPanel("");
     setCur(t);
@@ -260,6 +289,11 @@ function App() {
   async function openCompanion(agent:any){
     const thread=threads.find(t=>t.permanent_key===agent.kind)||threads.find(t=>t.participants.length===1&&t.participants[0]===agent.id);
     if(thread)select(thread);else await newThread([agent.id],companion(agent.kind)?.title||agent.name,agent.kind==='mila'?'pathd':'aelio');
+  }
+  async function openAdditionalCompanion(agent:any){
+    if(agent.kind==='custom'){await openCompanion(agent);return;}
+    const existing=threads.find(t=>!t.permanent_key&&t.participants.length===1&&t.participants[0]===agent.id);
+    if(existing)select(existing);else await newThread([agent.id],agent.name+' · Conversation');
   }
   async function newThread(ids: string[], title: string, product = "aelio") {
     try {
@@ -299,7 +333,7 @@ function App() {
   }
   async function send(
     suggest = false,
-    override?: { conversation: any; content: string; files: any[]; requestId?:string },
+    override?: { conversation: any; content: string; files: any[]; requestId?:string; imageConfirmed?:any },
   ) {
     const conversation = override?.conversation || cur;
     if (!conversation || busy[conversation.id]) return;
@@ -311,6 +345,10 @@ function App() {
       setErr("Please accept the AI disclosure before sending.");
       return;
     }
+    const selectedSource=override?.imageConfirmed?.source||imageSource[id]||selectedFiles.find((f:any)=>f.mime?.startsWith('image/'))?.id;
+    const source=selectedSource||(imageIntent(content,{hasImage:true})==='edit'?(messages[id]||[]).filter((m:any)=>m.image_file_id).slice(-1)[0]?.image_file_id:undefined);
+    const intent=imageIntent(content,{hasImage:!!source,action:override?.imageConfirmed?.action});
+    if(!suggest&&intent&&intent!=='inquire'&&!override?.imageConfirmed){await prepareImage(conversation,content,selectedFiles,source,intent);return;}
     setErr("");
     followScroll.current=true;
     const previousRequest=attempts.current[id]?.request_id;
@@ -321,6 +359,7 @@ function App() {
     setWaiting(current=>({...current,[id]:true}));setRetryable(current=>({...current,[id]:false}));
     inflight.current.add(id);
     setBusy((b) => ({ ...b, [id]: true }));
+    setImageBusy(b=>({...b,[id]:!!override?.imageConfirmed}));
     if (!suggest) {
       setDrafts((d) => ({ ...d, [id]: "" }));
       setMessages((m) => ({
@@ -355,6 +394,7 @@ function App() {
             target: override ? undefined : target || undefined,
             file_ids: selectedFiles.map((f) => f.id),
             allow_reminders: override ? false : allowReminders,
+            ...(override?.imageConfirmed?{image_action:override.imageConfirmed.action,source_image_id:override.imageConfirmed.source||null,aspect:override.imageConfirmed.aspect,image_quote_version:override.imageConfirmed.quote.version,image_accepted_credits:override.imageConfirmed.quote.credits,image_accepted_max_usd:override.imageConfirmed.quote.max_allowance_usd}:{}),
           }),
         },
       );
@@ -426,6 +466,7 @@ function App() {
       }
       if(!saved)throw new Error("The connection ended before the reply was saved. Retry safely.");
       setAttachments([]);
+      setImagePending(p=>{const next={...p};delete next[id];return next;});
       if (session)
         call("/account")
           .then(setAccount)
@@ -433,6 +474,7 @@ function App() {
       if (!suggest) await loadMessages(id, true);
     } catch (e: any) {
       recordFailure(e,'chat_response',requestId);
+      if(override?.imageConfirmed)setImagePending(p=>({...p,[id]:requestId}));
       setErr(e.name==='AbortError'?'Generation stopped. Your draft is available to retry.':friendly(e));
       if (!suggest){setDrafts((d) => ({ ...d, [id]: content }));setRetryable(current=>({...current,[id]:true}));}
     } finally {
@@ -466,6 +508,10 @@ function App() {
   }
   function navigate(view: string, record = true) {
     if(view==='ai-operations')return;
+    if(view==='home')setEnvironment('aelio');
+    if(view==='native')setEnvironment('native');
+    if(view==='core')setEnvironment('aelio');
+    if(view==='inbox')setEnvironment('dreambox');
     setDrawer(false);
     if (view === "home") {
       setHome(true);
@@ -477,7 +523,7 @@ function App() {
       setHome(false);
       show(view);
     }
-    if (record) history.pushState({ aelioView: view }, "", "#" + view);
+    if (record) history.pushState({ aelioView: view,aelioEnvironment:view==='native'?'native':view==='core'?'aelio':view==='inbox'?'dreambox':environment }, "", "#" + view);
   }
   useEffect(() => {
     const restore = () => {
@@ -500,6 +546,9 @@ function App() {
           "projects",
           "brain",
           "aurevia",
+          "native",
+          "core",
+          "inbox",
           "echo",
           "library",
           "allowance",
@@ -511,7 +560,7 @@ function App() {
       )
         navigate(view, false);
     };
-    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo','aurevia'].includes(view))navigate(view,false);};
+    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo','aurevia','native','core','inbox'].includes(view))navigate(view,false);};
     addEventListener("popstate", restore);
     addEventListener("hashchange",fromHash);
     return () => {removeEventListener("popstate", restore);removeEventListener("hashchange",fromHash);};
@@ -647,11 +696,13 @@ function App() {
   return (
     <div
       className={
-        "dream-app " + (!home&&!panel?"in-chat ":"") + (keyboardOpen?"keyboard-open ":"") +
+        "dream-app messaging-app environment-"+environment+" " + (!home&&!panel?"in-chat ":"") + (keyboardOpen?"keyboard-open ":"") +
         (design.light ? "light " : "") +
         (collapsed ? "collapsed " : "") +
         (home ? "at-home" : "")
       }
+      data-environment={environment}
+      data-native-theme={nativeAppearance}
       data-design={design.id}
       data-motion={ap.motion || "system"}
       style={
@@ -665,9 +716,10 @@ function App() {
       }
     >
       <ConnectionNotice/>
+      {imageQuote&&<ImageQuote value={imageQuote} onClose={()=>{imageQuoteTurn.current++;setImageQuote(null);}} onAspect={(aspect:string)=>prepareImage(imageQuote.conversation,imageQuote.content,imageQuote.files,imageQuote.source,imageQuote.action,aspect)} onConfirm={()=>{const q=imageQuote;setImageQuote(null);send(false,{conversation:q.conversation,content:q.content,files:q.files,requestId:crypto.randomUUID(),imageConfirmed:q});}}/>}
       <header className="navigation-header">
         <button className="sidebar-toggle" aria-label={mobileNavigation?'Open conversations':collapsed?'Expand sidebar':'Collapse sidebar'} aria-controls="aelio-sidebar" aria-expanded={mobileNavigation?drawer:!collapsed} onClick={()=>mobileNavigation?setDrawer(!drawer):setCollapsed(!collapsed)}><Icon name="menu"/></button>
-        <label className="workspace-switcher"><span>Your workspace</span><select aria-label="Workspace" value={panel==='aurevia'?'aurevia':panel==='brain'?'brain':home?'aelio':'dreambox'} onChange={(e:any)=>{const v=e.target.value;if(v==='studio'){openStudio().catch(error=>setErr(friendly(error)));}else if(v==='aelio')navigate('home');else if(v==='brain')navigate('brain');else if(v==='aurevia')navigate('aurevia');else {setHome(false);setPanel('');setDrawer(false);}}}><option value="aelio">AELIO</option><option value="dreambox">Dream Box</option><option value="brain">Brain</option><option value="aurevia">AUREVIA</option>{account?.role==='founder'&&<option value="studio">Studio Brain · Private</option>}</select></label>
+        <label className="workspace-switcher"><span>Your workspace</span><select aria-label="Workspace" value={environment} onChange={(e:any)=>workspace(e.target.value)}><option value="aelio">AELIO</option><option value="dreambox">Dreambox</option><option value="native">Native Brain</option></select></label>
       </header>
       <header className="topbar">
         <label className="desktop-search">
@@ -706,107 +758,9 @@ function App() {
           onClick={() => setDrawer(false)}
         />
       )}
-      <aside id="aelio-sidebar" className={"sidebar " + (drawer ? "open" : "")}>
-        <a
-          className="sidebar-brand"
-          href="/"
-          onClick={(event: any) => {
-            event.preventDefault();
-            navigate("home");
-          }}
-        >
-          AELIO<small>NEVER SAY NEVER.</small>
-        </a>
-        <label className="search">Search<input value={search} placeholder="Search conversations" onChange={(e:any)=>setSearch(e.target.value)}/></label>
-        <nav className="home-nav" aria-label="Appearance"><button aria-label="Appearance & themes" onClick={()=>navigate('appearance')}><Icon name="sparkle" size={19}/><span>Appearance / Themes</span></button></nav>
-        <div className="side-head">
-          <h2>Your space</h2>
-          <button
-            aria-label="Close conversations"
-            onClick={() => setDrawer(false)}
-          >
-            ×
-          </button>
-        </div>
-        <button
-          className="primary"
-          onClick={() => (session ? show("new") : show("account"))}
-        >
-          ＋ New chat
-        </button>
-        {session?<CompanionNavigation agents={agents} threads={threads} current={cur} query={search} onOpen={openCompanion} onSelect={select}/>:<button className="permanent" onClick={()=>{setPanel("");setHome(false);}}>AELIO · Your Main Pal</button>}
-        <nav className="home-nav" aria-label="Your collections">{[['echo','ECHO','sparkle'],['library','Library','compass']].map(([view,label,icon])=><button key={view} aria-label={label} onClick={()=>navigate(view)}><Icon name={icon} size={19}/><span>{label}</span></button>)}</nav>
-        <div className="side-head"><h2>Pinned Conversations</h2></div>
-        {listedThreads.filter(t=>t.pinned&&!t.archived&&[t.title,t.subtitle].join(' ').toLowerCase().includes(search.toLowerCase())).map(t=><button key={t.id} className={'thread '+(cur?.id===t.id?'selected':'')} onClick={()=>select(t)}><span><b>★ {t.title}</b><small>{t.subtitle}</small></span></button>)}
-        <div className="side-head"><h2>Recent Conversations</h2></div>
-        {[...listedThreads]
-          .filter(
-            (t) =>
-              !t.archived && !t.pinned && (!t.permanent_key||!!search) &&
-              [t.title, t.subtitle, t.search_preview, ...((messages[t.id]||cache.current[t.id]||t.app_messages||[]).map((m:any)=>m.content))]
-                .join(" ")
-                .toLowerCase()
-                .includes(search.toLowerCase()),
-          )
-          .sort((a, b) => Number(b.pinned) - Number(a.pinned))
-          .map((t) => (
-            <button
-              key={t.id}
-              className={"thread " + (cur?.id === t.id ? "selected" : "")}
-              onClick={() => select(t)}
-            >
-              {t.group_image_file_id?<GroupImage id={t.group_image_file_id}/>:<AgentAvatar agent={agents.find(a=>a.id===t.participants[0])} group={t.participants.length>1}/>}
-              <span>
-                <b>
-                  {t.pinned ? "★ " : ""}
-                  {t.title}
-                </b>
-                <small>
-                  {t.subtitle ||
-                    agents.find((a) => a.id === t.participants[0])?.subtitle ||
-                    "Your conversation"}
-                </small>
-                <small>
-                  {t.search_preview || (messages[t.id] || cache.current[t.id])
-                    ?.slice(-1)[0]
-                    ?.content?.slice(0, 70) ||
-                    t.app_messages?.[0]?.content?.slice(0, 70) ||
-                    "Open conversation"}
-                </small>
-                <small>{relativeTime(t.updated_at || t.created_at)}</small>
-              </span>
-            </button>
-          ))}
-        <nav className="home-nav" aria-label="Projects"><button aria-label="Projects" onClick={()=>navigate('projects')}><Icon name="plus" size={19}/><span>Projects</span></button></nav>
-        <details className="explore-more" open><summary>Explore More</summary><nav className="home-nav" aria-label="More experiences">{[['home','Home','home'],['agents','Agents','agents'],['discover','Discover','compass'],['create','Create','bulb'],['brain','Brain','bulb'],['connected-apps','Connected Apps','sparkle'],['reminders','Reminders & career context','settings'],['files','Private files','compass']].map(([view,label,icon])=><button key={view} aria-label={label} onClick={()=>navigate(view)}><Icon name={icon} size={19}/><span>{label}</span></button>)}</nav></details>
-        <nav className="home-nav" aria-label="Account navigation">{[['settings','Settings','settings'],['allowance','Plans & allowance','settings'],['account','Account','settings']].map(([view,label,icon])=><button key={view} aria-label={label} onClick={()=>navigate(view)}><Icon name={icon} size={19}/><span>{label}</span></button>)}</nav>
-        {threads.some((t) => t.archived) && (
-          <details>
-            <summary>Archived</summary>
-            {threads
-              .filter((t) => t.archived)
-              .map((t) => (
-                <button className="thread" key={t.id} onClick={() => select(t)}>
-                  {t.title}
-                </button>
-              ))}
-          </details>
-        )}
-        <details className="legacy-links">
-          <summary>Explore public AELIO</summary>
-          <a href="/agent-campus/">Campus</a>
-          <a href="/live/">Live</a>
-          <a href="/explore/">Explore AELIO</a>
-        </details>
-        <footer>
-          One Mind. Your Energy.
-          <br />
-          {session
-            ? "Your Free account"
-            : remaining === null
-              ? "Guest chat"
-              : remaining + " guest messages remaining"}
-        </footer>
+      <nav className="environment-rail" aria-label="Environment navigation">{[['aelio','AELIO','◉'],['dreambox','Dreambox','☏'],['native','Native Brain','◇']].map(([id,label,icon])=><button key={id} aria-label={label} aria-current={environment===id?'page':undefined} onClick={()=>workspace(id)}><span>{icon}</span><small>{label}</small></button>)}<button onClick={()=>navigate('discover')}>Discover</button><button onClick={()=>navigate('library')}>Library</button><button onClick={()=>setWorldPanel(true)}>AUREVIA</button><button onClick={()=>navigate('appearance')}>Themes</button></nav>
+      <aside id="aelio-sidebar" className={'sidebar '+(drawer?'open':'')}>
+       {environment==='native'?<NativeNavigation section={nativeSection} onSection={(id:string)=>{setNativeSection(id);navigate('native');setDrawer(false);}} onAurevia={enterAurevia} founder={account?.role==='founder'}/>:<MessagingInbox compact agents={agents} threads={listedThreads} current={cur} environment={environment} query={search} onQuery={setSearch} onOpen={environment==='dreambox'?openAdditionalCompanion:openCompanion} onSelect={select} onNavigate={navigate} onNew={()=>{setEnvironment('dreambox');navigate('new');}} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/>}
       </aside>
       {!collapsed&&<div className="sidebar-resizer" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" aria-valuemin={220} aria-valuemax={420} aria-valuenow={sidebarWidth} tabIndex={0} onDoubleClick={()=>resizeSidebar(245,true)} onKeyDown={(e:any)=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();resizeSidebar(e.key==='Home'?220:e.key==='End'?420:sidebarSize.current+(e.key==='ArrowRight'?16:-16),true);}}} onPointerDown={(e:any)=>{e.preventDefault();draggingSidebar.current={x:e.clientX,width:sidebarSize.current};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={(e:any)=>{if(draggingSidebar.current)resizeSidebar(draggingSidebar.current.width+e.clientX-draggingSidebar.current.x);}} onPointerUp={finishSidebarResize} onLostPointerCapture={finishSidebarResize}/>}
       <main className="workspace"><FeatureBoundary key={panel||(home?"home":cur?.id||"chat")} onExit={()=>navigate("home")}>
@@ -826,7 +780,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onThread={(t:any)=>{if(t){select(t,false);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
+        {panel==='core'?<OfficialHub agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCore={coreEight} onAurevia={enterAurevia} onDiscover={()=>navigate('discover')} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='inbox'?<div className="full-inbox"><MessagingInbox agents={agents} threads={listedThreads} current={cur} environment="dreambox" query={search} onQuery={setSearch} onOpen={openAdditionalCompanion} onSelect={select} onNavigate={navigate} onNew={()=>navigate('new')} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/></div>:panel==='native'?<NativeBrain key={session?.user?.id||'guest'} section={nativeSection} signedIn={!!session} onSignIn={()=>navigate('account')} onAurevia={enterAurevia} onChat={()=>{setEnvironment('dreambox');if(cur)select(cur,false,true);else navigate('inbox');}} onPlans={()=>navigate('brain')} appearance={nativeAppearance} onAppearance={(value:string)=>{setNativeAppearance(value);try{localStorage.setItem('aelio.native.appearance',value);}catch{}}}/>:panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onReturn={()=>workspace(aureviaFrom)} returnLabel={aureviaFrom==='native'?'Native Brain':aureviaFrom==='dreambox'?'Dreambox':'AELIO'} onThread={(t:any)=>{if(t){select(t,false,true);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setEnvironment(aureviaFrom);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onEdit={(file:any)=>{const t=threads.find(t=>t.id===file.conversation_id);if(t){select(t);setImageSource(s=>({...s,[t.id]:file.id}));}else setErr('Open a conversation and attach this saved image to edit it.');}}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>
@@ -1355,13 +1309,14 @@ function App() {
                       : "var(--page)",
                 "--dim": (ap.dim ?? 45) / 100,
                 "--blur": (ap.blur || 0) + "px",
+                "--outgoing-ink":readableInk(ap.outgoing||(design.id==='og-dark'?'#eac28d':design.id==='ocean-fresh'?'#296d85':design.id==='chocolate-cream'?'#795139':'#9d5f32'),ap.text),
                 "--outgoing":
                   ap.outgoing ||
                   (design.id === "ocean-fresh"
                     ? "#296d85"
                     : design.id === "chocolate-cream"
                       ? "#795139"
-                      : "#d95713"),
+                      : design.id==='og-dark'?'#eac28d':"#9d5f32"),
                 "--incoming":
                   ap.incoming ||
                   (design.light
@@ -1370,14 +1325,14 @@ function App() {
                       ? "#31211c"
                       : "#181b23"),
                 "--message-text":
-                  ap.text || (design.light ? "#17191f" : "#fff9f0"),
+                  readableInk(ap.incoming||(design.light?"#fff8f1":design.id==="chocolate-cream"?"#31211c":"#181b23"),ap.text),
               } as any
             }
           >
-            <div className="chat-header"><button className="aurevia-chat-link" onClick={()=>navigate("aurevia")} title="Open your Principal’s Office">Continue in AUREVIA ↗</button>
-              <AgentAvatar agent={activeAgents[0]} group={activeAgents.length>1}/>
+            <div className="chat-header"><button className="message-back" aria-label="Back to conversations" onClick={()=>navigate(environment==='aelio'?'core':'inbox')}>‹</button><button className="aurevia-chat-link" aria-label="Continue in AUREVIA ↗" onClick={enterAurevia} title="Open your Principal’s Office"><Icon name="compass" size={18}/><span className="world-text">Continue in AUREVIA</span></button>
+              {activeAgents.length>1?<GroupPortrait agents={agents} ids={cur?.participants}/>:<AgentAvatar agent={activeAgents[0]}/>}
               <div>
-                <h1>{cur?.permanent_key==='dream-team'?'Dream Team':activeAgents.length===1?(companion(activeAgents[0]?.kind)?.title||cur?.title||'AELIO'):cur?.title||'AELIO'}</h1>
+                <h1>{cur?.permanent_key==='dream-team'?'Dream Team':cur?.permanent_key==='core-eight'?'Core 8':activeAgents.length===1?(companion(activeAgents[0]?.kind)?.title||cur?.title||'AELIO'):cur?.title||'AELIO'}</h1>
                 <p>
                   {cur?.subtitle ||
                     activeAgents.map((a: any) => a.subtitle).join(" · ") ||
@@ -1449,9 +1404,12 @@ function App() {
               )}
               {(messages[cur?.id] || []).map((m: any) => (
                 <article key={m.id} className={"bubble " + m.role}>
+                  {m.created_at&&<time className="message-time" dateTime={m.created_at}>{new Date(m.created_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</time>}
                   {m.role === "assistant" && <b className="message-speaker"><AgentAvatar agent={agents.find(a=>a.id===m.agent_id||a.name===m.speaker)||activeAgents[0]}/>{m.speaker || "AELIO"}</b>}
                   <Markdown text={m.content}/>
-                  {m.role === "assistant" && session && (
+                  {m.image_file_id&&<ChatImage fileId={m.image_file_id} onEdit={editImage} onRegenerate={()=>{const previous=(messages[cur.id]||[]).filter((x:any)=>x.request_id===m.request_id&&x.role==='user').slice(-1)[0];if(previous)prepareImage(cur,previous.content,[],m.source_image_id,m.source_image_id?'edit':'create');}} onVariation={(id:string)=>prepareImage(cur,'Create a fresh variation of this image, preserving its subject.',[],id,'variation')}/>}
+                  {m.reactions?.length>0&&<div className="message-reactions">{m.reactions.map((r:any)=><span key={r.emoji}>{r.emoji} {r.count}</span>)}</div>}
+                  {!m.local&&<details className="message-controls"><summary aria-label="Message actions">•••</summary><div className="message-actions"><button aria-label="Copy message" onClick={()=>navigator.clipboard?.writeText(m.content).catch(()=>setErr('Copy is unavailable in this browser.'))}>Copy</button>{m.role==='user'?<button onClick={()=>{setDrafts(d=>({...d,[cur.id]:m.content}));input.current?.focus();}}>Edit & resend</button>:!m.image_file_id&&<button disabled={busy[cur.id]} onClick={()=>{const original=(messages[cur.id]||[]).filter((x:any)=>x.role==='user'&&x.request_id===m.request_id).slice(-1)[0];if(original)send(false,{conversation:cur,content:original.content,files:[],requestId:crypto.randomUUID()});}}>Regenerate</button>}{session&&reactionsAvailable[cur.id]&&['👍','❤️','😂','✨','🤔'].map(emoji=><button key={emoji} aria-label={'React '+emoji} aria-pressed={m.reactions?.some((r:any)=>r.emoji===emoji)} onClick={async()=>{try{const r=await call('/messaging/reaction','POST',{message_id:m.id,emoji});setMessages(state=>({...state,[cur.id]:(state[cur.id]||[]).map(message=>message.id===m.id?{...message,reactions:r.reactions}:message)}));}catch(error){setErr(friendly(error));}}}>{emoji}{m.reactions?.some((r:any)=>r.emoji===emoji)?' 1':''}</button>)}{m.role === "assistant" && !m.image_file_id && session && (
                     <button
                       className="save-output"
                       onClick={async () => {
@@ -1471,12 +1429,13 @@ function App() {
                     >
                       Save output
                     </button>
-                  )}
+                  )}</div></details>}
+
                 </article>
               ))}
               {busy[cur?.id] && waiting[cur?.id] && (
                 <p className="writing" role="status">
-                  Writing…
+                  {imageBusy[cur?.id]?"Creating your image…":"Writing…"}
                 </p>
               )}
               <div ref={end} />
@@ -1547,13 +1506,13 @@ function App() {
                 </label>
               )}
               {activeAgents.length > 1 && (
-                <label>
-                  Address
+                <details className="recipient-menu"><summary>To: {target&&target!=='group'?activeAgents.find((a:any)=>a.id===target)?.name:'Relevant voices'}</summary><label>
+                  Responders
                   <select
                     value={target}
                     onChange={(e: any) => setTarget(e.target.value)}
                   >
-                    <option value="">{cur.permanent_key==='dream-team'?'Let the team choose':activeAgents[0]?.name}</option>{cur.permanent_key==='dream-team'&&<option value={activeAgents[0]?.id}>{activeAgents[0]?.name}</option>}
+                    <option value="">Let relevant voices respond</option><option value={activeAgents[0]?.id}>{activeAgents[0]?.name}</option>
                     {activeAgents.slice(1).map((a: any) => (
                       <option key={a.id} value={a.id}>
                         {a.name}
@@ -1561,7 +1520,7 @@ function App() {
                     ))}
                     <option value="group">{cur.permanent_key==='dream-team'?'The team chooses relevant speakers':'Relevant voices choose when to join'}</option>
                   </select>
-                </label>
+                </label></details>
               )}
               {!consent && (
                 <label className="disclosure">
@@ -1581,6 +1540,8 @@ function App() {
                   AELIO Native is still in research.
                 </label>
               )}
+              {imagePending[cur?.id]&&<button type="button" onClick={async()=>{try{const status=await call('/images/status/'+imagePending[cur.id]);if(status.status==='complete'){await loadMessages(cur.id,true);setErr('Your image is saved to this conversation and Library.');setImagePending(p=>{const next={...p};delete next[cur.id];return next;});}else setErr(status.status==='running'?'Your image is still being created. Please check again shortly.':'The image request failed. Image credits were refunded; you may start a new request.');}catch(error){setErr(friendly(error));}}}>Check image status</button>}
+              {imageSource[cur?.id]&&<div className="image-edit-source">Editing an image from your account<button onClick={()=>setImageSource(s=>{const next={...s};delete next[cur.id];return next;})}>Cancel image edit</button></div>}
               <form
                 className="composer"
                 onSubmit={(e: any) => {
@@ -1591,13 +1552,13 @@ function App() {
                 {session && (
                   <label
                     className="attach"
-                    title="Attach a text, JSON or PDF file"
+                    title="Attach an image, text, JSON or PDF file"
                   >
                     ＋
                     <input
                       aria-label="Attach file"
                       type="file"
-                      accept=".txt,.md,.json,.pdf"
+                      accept=".txt,.md,.json,.pdf,.png,.jpg,.jpeg,.webp"
                       onChange={async (e: any) => {
                         try {
                           if (e.target.files?.[0]) {
@@ -1618,7 +1579,7 @@ function App() {
                 <textarea onKeyUp={(e:any)=>{const match=e.currentTarget.value.slice(0,e.currentTarget.selectionStart).match(/@([a-z]*)$/i);setMention(match?match[1]:"__closed");}}
                   ref={input}
                   aria-label="Message"
-                  rows={2}
+                  rows={1}
                   value={drafts[cur?.id] || ""}
                   placeholder={"Message " + (cur?.title || "AELIO") + "…"}
                   onChange={(e: any) =>
@@ -1631,11 +1592,12 @@ function App() {
                     }
                   }}
                 />
+                <ChatVoice key={cur?.id} enabled={voiceEnabled&&!busy[cur?.id]} onText={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:[d[cur.id]||'',text].filter(Boolean).join(' ')}));}}/>
                 <button
                   aria-label="Send message"
                   disabled={!cur || busy[cur.id] || !drafts[cur.id]?.trim()}
                 >
-                  ↗
+                  <Icon name="send" size={19}/>
                 </button>
               </form>
               {activeAgents.length>1&&mention!=="__closed"&&drafts[cur?.id]?.includes('@')&&<div className="mention-choices" role="group" aria-label="Mention a companion">{activeAgents.filter((a:any)=>a.name.toLowerCase().startsWith(mention.toLowerCase())).map((a:any)=><button key={a.id} onClick={()=>{setDrafts(d=>({...d,[cur.id]:(d[cur.id]||'').replace(/@[a-z]*$/i,'@'+a.name+' ')}));setMention('__closed');input.current?.focus();}}>{a.name}</button>)}</div>}
@@ -1657,7 +1619,15 @@ function App() {
                   </button>
                 </p>
               )}
-              {session && (
+
+            </div>
+          </section>
+        )}
+        {panel === "conversation-settings" && cur && (
+          <section className="settings-panel panel chat-settings">
+            <button onClick={() => setPanel("")}>Close settings</button>
+            <h2>Chat Settings</h2>
+            <details><summary>Earlier guest history</summary>              {session && (
                 <button
                   className="text-button"
                   onClick={async () => {
@@ -1672,19 +1642,12 @@ function App() {
                 >
                   Import my eligible guest conversation
                 </button>
-              )}
-            </div>
-          </section>
-        )}
-        {panel === "conversation-settings" && cur && (
-          <section className="settings-panel panel">
-            <button onClick={() => setPanel("")}>Close settings</button>
-            <h2>My Pal, My Space</h2>
+              )}</details>
             <label>
               Conversation title
               <input
                 value={cur.title}
-                disabled={cur.permanent_key==='dream-team'}
+                disabled={['dream-team','core-eight'].includes(cur.permanent_key)}
                 onChange={(e: any) => setCur({ ...cur, title: e.target.value })}
                 onBlur={() => change({ title: cur.title })}
               />
@@ -1693,7 +1656,7 @@ function App() {
               Conversation topic / subtitle
               <input
                 value={cur.subtitle}
-                disabled={cur.permanent_key==='dream-team'}
+                disabled={['dream-team','core-eight'].includes(cur.permanent_key)}
                 onChange={(e: any) =>
                   setCur({ ...cur, subtitle: e.target.value })
                 }
@@ -1701,7 +1664,7 @@ function App() {
               />
             </label>
             {session && !cur.permanent_key && <fieldset><legend>Group participants</legend>{agents.filter((a:any)=>cur.product!=='pathd'||['aelio','mila'].includes(a.kind)).map((a:any)=><label key={a.id}><input type="checkbox" checked={cur.participants.includes(a.id)} disabled={busy[cur.id]} onChange={(e:any)=>{const ids=e.target.checked?[...cur.participants,a.id]:cur.participants.filter((id:string)=>id!==a.id);if(ids.length&&ids.length<=8)change({participants:ids});}}/>{a.name}</label>)}<label>Conversation style<select value={cur.group_tone||'natural'} onChange={(e:any)=>change({group_tone:e.target.value})}>{['natural','professional','relaxed','debate'].map(t=><option key={t}>{t}</option>)}</select></label><label>Group image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async(e:any)=>{const file=e.target.files?.[0];if(!file)return;try{const saved=await upload(file,'agents');await change({group_image_file_id:saved.id});}catch(error:any){setErr(friendly(error));}e.target.value='';}}/></label>{cur.group_image_file_id&&<><GroupImage id={cur.group_image_file_id}/><button onClick={()=>change({group_image_file_id:null})}>Remove group image</button></>}</fieldset>}
-            <button disabled={busy[cur.id]} onClick={() => send(true)}>
+            <button disabled={busy[cur.id]||['dream-team','core-eight'].includes(cur.permanent_key)} onClick={() => send(true)}>
               Suggest subtitle with AI
             </button>
             {suggestion && (
@@ -1734,6 +1697,7 @@ function App() {
             </p>
             <AppearanceControls
               value={conversationAP}
+              sceneOptions={SCENES}
               onChange={setAppearance}
               backgrounds={BACKGROUNDS}
               allowFile={!!session}
@@ -1768,30 +1732,9 @@ function App() {
           </section>
         )}
       </FeatureBoundary></main>
-      <nav className="mobile-nav" aria-label="Main navigation">
-        {[
-          ["home", "Home", "home"],
-          ["agents", "Agents", "agents"],
-          ["discover", "Discover", "compass"],
-          ["settings", "Settings", "settings"],
-        ].map(([view, label, icon]) => (
-          <button
-            key={view}
-            aria-label={label}
-            aria-current={
-              (view === "home" ? home && !panel : panel === view)
-                ? "page"
-                : undefined
-            }
-            onClick={() =>
-              navigate(view === "agents" && !session ? "account" : view)
-            }
-          >
-            <Icon name={icon} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
+      <nav className="mobile-nav" aria-label="Main navigation">{[['inbox','Chats'],['discover','Discover'],['core','AELIO'],['library','Library'],['account','Profile']].map(([id,label])=><button key={id} aria-label={label} onClick={()=>navigate(id)}>{label}</button>)}</nav>
+      {worldPanel&&<AureviaEntry onEnter={enterAurevia} onClose={()=>setWorldPanel(false)}/>}
+      {portal&&<AureviaPortal onSkip={()=>setPortal(false)}/>}
     </div>
   );
 }
@@ -2035,7 +1978,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
       ))}
       <p>Your subscriptions and usage stay separate. Open Plans & allowance to see verified subscriptions and their AI funding.</p>
       {account.role === "founder" && (
-        <button onClick={()=>openStudio().catch(error=>setErr(friendly(error)))}>Open Studio Brain (MFA required)</button>
+        <button onClick={()=>{location.hash='native';}}>Open Native Brain</button>
       )}
       <p>
         <a href="/brain/my/">

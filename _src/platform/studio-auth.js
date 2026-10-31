@@ -8,7 +8,7 @@ export async function requireStudioFounder(req,env,allowCookie=false){
  }
  const user=await who(verified,env);
  const account=await sb(env,'/rest/v1/rpc/app_account_bootstrap',{token:user.token,method:'POST',data:{}});
- if(account.role!=='founder')fail(403,'permission_denied','This workspace is private.');
+ if(account.role!=='founder'||user.email?.toLowerCase()!=='jaja@vybr8.live'||!user.user?.email_confirmed_at)fail(403,'permission_denied','This workspace is private.');
  let claims;try{claims=JSON.parse(atob(user.token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));}catch{}
  if(claims?.aal!=='aal2')fail(403,'mfa_required','Verify your second factor to open Studio Brain.');
  return user;

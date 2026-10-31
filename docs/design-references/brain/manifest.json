@@ -1,0 +1,33 @@
+{
+  "source_zip": "AELIO_Studio_Brain_References.zip",
+  "references": [
+    {
+      "file": "Studio_Brain_Reference_1.png",
+      "sha256": "e816c5effa066ba5e440aca029b219d331a4eacb271eafe195346da454c672fa",
+      "use": "Desktop Studio overview: left navigation, readiness panels, compact grids and truthful empty states",
+      "reference_only": true,
+      "publish_as_public_asset": false
+    },
+    {
+      "file": "Studio_Brain_Reference_2.png",
+      "sha256": "ed5f6965ae18b8fc8a6aa8256e3c5683d3e11f8d4540f679a5cb5c99e9531ebb",
+      "use": "Mobile navigation and responsive panel reference; historical account/usage content is not authoritative",
+      "reference_only": true,
+      "publish_as_public_asset": false
+    },
+    {
+      "file": "Studio_Brain_Reference_3.png",
+      "sha256": "eec9650a709a61e07f8dcfadc143196e3508602106c7753be2260babfed1725d",
+      "use": "Founder engine dashboard: health rows, back-office groups and activity layout",
+      "reference_only": true,
+      "publish_as_public_asset": false
+    },
+    {
+      "file": "Studio_Brain_Reference_4.png",
+      "sha256": "ba6215250840caf783f9f114afc448ed2dd07a00cbd89eb318234ba4e4364981",
+      "use": "Code Studio: project rail, tabbed workspace, compact input and task panels",
+      "reference_only": true,
+      "publish_as_public_asset": false
+    }
+  ]
+}

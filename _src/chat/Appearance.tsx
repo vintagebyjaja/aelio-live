@@ -5,6 +5,7 @@ export function AppearanceControls({
   backgrounds = [],
   allowFile = false,
   onUpload,
+  sceneOptions,
 }: any) {
   const ap = value || {};
   return (
@@ -67,6 +68,7 @@ export function AppearanceControls({
           ))}
         </select>
       </label>
+      {sceneOptions&&<div className="background-thumbnails" role="group" aria-label="Quick chat backgrounds">{Object.entries(sceneOptions).filter(([name])=>['Basketball Court','Sunset & Beaches','Luxury Penthouse','City Skyline','Nature & Waterfalls','Executive Office'].includes(name)).map(([name,file])=><button type="button" key={name} aria-pressed={ap.background===name} onClick={()=>onChange({...ap,background:name,file_id:null})}><img src={'/assets/img/'+file} alt="" loading="lazy"/><span>{name}</span></button>)}</div>}
       {allowFile && (
         <label>
           Upload private background

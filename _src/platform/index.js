@@ -1,3 +1,4 @@
+import {messenger,nativeCatalog} from "./messenger.js";
 import {consumerMessage} from "../shared/experience.js";
 import {sessionSecretSource} from "./shared.js";
 import builtPublicAuth from "../generated/public-auth-config.js";
@@ -29,6 +30,7 @@ import { storage, sweepFiles } from "./storage.js";
 import { discovery } from "./discovery.js";
 import { recovery } from "./recovery.js";
 import {billing,subscriptionWebhook} from "./billing.js";
+import {imageRoutes} from "./images.js";
 import {aurevia} from "./aurevia.js";
 import { workspaces } from "./workspaces.js";
 export function publicConfig(env) {
@@ -310,6 +312,9 @@ export async function platform(req, env) {
     if (p.startsWith("/files")) return await storage(req, env, p.slice(6));
     if (p.startsWith("/account")) return await account(req, env, p.slice(8));
     if(p.startsWith('/billing/'))return await billing(req,env,p.slice(8));
+    if(p.startsWith('/messaging/'))return await messenger(req,env,p.slice(10));
+    if(p==='/native/catalog')return await nativeCatalog(req,env);
+    if(p.startsWith('/images/'))return await imageRoutes(req,env,p.slice(7));
     if(p==='/aurevia'||p.startsWith('/aurevia/'))return await aurevia(req,env,p.slice(8));
     if (p.startsWith("/career")) return await career(req, env, p.slice(7));
     if (p === '/workspace' || p.startsWith('/workspace/') || p === '/echo' || p.startsWith('/echo/')) return await workspaces(req, env, p);
@@ -340,6 +345,7 @@ export async function platform(req, env) {
   }
 }
 export async function scheduled(env) {
+  await rpc(env,"app_image_expire",{}).catch(()=>{});
   await rpc(env, "app_deliver_reminders", {});
   await sweepFiles(env);
 }

@@ -1,0 +1,1 @@
+Reference-only delta against main 3405bbf. Extract into the AELIO repository root, preserve paths and verify hashes. This does not implement the attached specifications, deploy, run SQL or alter billing. Images are source design references, not public assets. Do not push without authorization.
