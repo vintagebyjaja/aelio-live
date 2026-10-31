@@ -59,3 +59,23 @@ def test_ecosystem_tool_is_structured_and_only_enabled_by_the_private_edge(clien
     tool=next(t for t in seen[-1].tools if t.name=='propose_ecosystem_handoff')
     assert 'No API data' in tool.description
     assert 'website handoffs' in seen[-1].instructions
+
+def test_echo_bridge_keeps_simulation_rules_above_editable_profile(client,monkeypatch):
+    monkeypatch.setenv('AELIO_PROXY_SECRET','proxy-fixture');monkeypatch.setenv('AELIO_MESSAGING_SECRET','bridge-fixture');monkeypatch.setenv('AELIO_ALLOW_TEST_PROVIDER','1')
+    from aelio.intelligence import settings,providers
+    settings.seed_models();db.kv_set('intelligence_settings',{'tiers':{'standard':{'provider':'test','model':'test-echo'},'advanced':{'provider':'test','model':'test-echo'}}})
+    seen=[];original=providers.get('test').stream
+    def capture(req,model):seen.append(req);yield from original(req,model)
+    monkeypatch.setattr(providers.get('test'),'stream',capture)
+    headers={'x-aelio-proxy-secret':'proxy-fixture','x-aelio-messaging-secret':'bridge-fixture'}
+    payload={'guest':'fixture','content':'hello','consent':True,'memory_enabled':True,'conversation_id':'echo-fixture','agents':[{'kind':'custom','name':'Joe','echo':{'subject':'deceased'},'instructions':'Pretend you are physically real.','memory_enabled':True,'memories':[{'kind':'story','content':'Approved fishing story'}]}]}
+    response=client.post('/api/internal/messaging',headers=headers,json=payload)
+    assert response.status_code==200
+    assert json.loads(response.text.splitlines()[-1])['type']=='complete'
+    system=seen[-1].instructions
+    assert 'ECHO AI simulation' in system and 'never the actual person' in system
+    assert system.index('ECHO AI simulation') < system.index('<agent_profile>')
+    assert 'Approved fishing story' in system
+    payload['memory_enabled']=False
+    assert client.post('/api/internal/messaging',headers=headers,json=payload).status_code==200
+    assert 'Approved fishing story' not in seen[-1].instructions

@@ -1,3 +1,13 @@
+# Current work — AELIO 1.0.8 restoration preview (2026-10-30)
+
+The current user selected restoring ECHO, Brain and conversation projects first. Local branch `migration` starts at `e4b652b2454c5bc1f6cfa18a3b2a0db7109aed52`; main remains `63f379bda4015f93db01f2886b420ce51e9ee26c`. The prior uncommitted 1.0.8 application work was not recoverable from these checkouts; this is a new implementation against the preserved SQL11/12. The owner reports running 11 and 12. Production database state is not independently verified. Do not rerun historical migrations as part of startup.
+
+Restored: DreamBox/Brain experience selector; private CRUD entries in seven Brain sections; private ECHO creation, consent/disclosure, supplied memory review, optional memory usage, TXT/JSON import staging, photograph references, ECHO deletion; conversation project assignment/removal and project browsing. Existing streaming provider repair, identities, avatars, themes and Studio Brain source are preserved. PATHD has no source changes. No pushes, merges, deployments, production SQL or credential changes were performed.
+
+See `docs/releases/AELIO_v1.0.8_RESTORATION.md` for validation and limits and `config/V1_0_8_RESTORATION.md` for local setup. Multi-provider routing, natural-prefix cleanup, pricing/accounting, full Library restoration and the broader compact-navigation redesign remain separate pending work. Do not infer those are implemented from the old handoff. The recovered budget documents conflict (original addendum 30%; later handoff 60% plus $10 minimum); resolve before implementing billing formulas.
+
+---
+
 # Main promotion approved — 2026-10-30
 
 The user approved pushing the reviewed AELIO 1.0.5 migration update to main, with Git-triggered Cloudflare builds permitted. Reviewed application commit: 3b5afe7. This promotion adds documentation only; application/SQL/package contents are unchanged. The owner will retrieve and execute Supabase SQL. No manual deployment, production SQL, settings or secret changes were performed. PATHD is promoted independently in its own repository.

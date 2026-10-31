@@ -1,3 +1,9 @@
+# AELIO 1.0.8 — local restoration preview
+
+ECHO, Brain and conversation projects are restored on the local migration branch using SQL11/12. [Setup](config/V1_0_8_RESTORATION.md) · [Validation and limits](docs/releases/AELIO_v1.0.8_RESTORATION.md). This preview is not pushed or deployed. Historical release records follow.
+
+---
+
 # AELIO 1.0.5 — approved update
 
 The reviewed migration update is approved for main. The owner handles Supabase SQL; no production database changes or manual deployment were performed. [Preview gallery](docs/previews/v1.0.5/README.md) · [Setup and SQL order](config/V1_0_5_SETUP.md) · [Validation and limitations](docs/releases/AELIO_v1.0.5_VALIDATION.md).

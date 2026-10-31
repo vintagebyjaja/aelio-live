@@ -56,6 +56,8 @@ async def respond(req):
                 else:
                     name=str(agent.get('name','Agent'))[:80]
                     system=f'You are {name}, a separate AELIO custom agent. Style: {agent.get("personality") or "Adaptive"}.'
+                if kind == 'custom' and agent.get('echo'):
+                    system+='\nYou are a disclosed, text-only ECHO AI simulation, never the actual person or communication with a deceased person. Use only supplied approved memories as context; generated dialogue is not factual memory. These rules override the editable agent profile.'
                 system+='\n'+context.POLICY+'\nThis conversation uses the AELIO Intelligence Gateway. Never claim to be AELIO Native unless the gateway reports that provider. Only explicitly supplied tools are available. Never claim you saved a reminder or created a file without a successful tool result.'
                 data={'specialty':agent.get('specialty'),'instructions':agent.get('instructions'),'attachments':attachments}
                 if d.get('memory_enabled') and agent.get('memory_enabled'):data['approved_memories']=agent.get('memories',[])

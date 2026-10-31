@@ -28,6 +28,7 @@ import {
 import { storage, sweepFiles } from "./storage.js";
 import { discovery } from "./discovery.js";
 import { recovery } from "./recovery.js";
+import { workspaces } from "./workspaces.js";
 export function publicConfig(env) {
   const resolved = resolveSupabaseConfig(env, builtPublicAuth);
   return new Response(
@@ -115,6 +116,9 @@ async function account(req, env, path) {
       "app_career_records",
       "app_reminders",
       "app_notifications",
+      "app_workspace_entries",
+      "app_echo_profiles",
+      "app_echo_memories",
     ])
       out[n] = await table(env, n, "owner_id=eq." + u.id, { token: u.token });
     out.preferences =
@@ -320,6 +324,7 @@ export async function platform(req, env) {
     if (p.startsWith("/files")) return await storage(req, env, p.slice(6));
     if (p.startsWith("/account")) return await account(req, env, p.slice(8));
     if (p.startsWith("/career")) return await career(req, env, p.slice(7));
+    if (p === '/workspace' || p.startsWith('/workspace/') || p === '/echo' || p.startsWith('/echo/')) return await workspaces(req, env, p);
     return await chatRoutes(req, env, p);
   } catch (e) {
     const status = e instanceof Problem ? e.status : 500,

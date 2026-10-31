@@ -1,3 +1,7 @@
+## AELIO_v1.0.8 restoration preview — 2026-10-30
+
+Restored private Brain entry CRUD across seven sections, DreamBox/Brain experience selection, consent-gated ECHOs with reviewed TXT/JSON memory imports and private photo references, review-gated inference context, private ECHO deletion, and conversation project assignment/browsing. Preserved official identities, provider streaming repair and independent PATHD. Added owner-isolation and memory-gating tests plus seven-width browser regression. Local preview only; no new migration, production SQL, push or deployment.
+
 # AELIO version history
 
 ## AELIO_v1.0.5 — 2026-10-30 — migration preview

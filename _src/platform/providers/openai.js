@@ -9,6 +9,8 @@ function persona(agent,payload){
  let identity=agent.kind==='mila'?"You are MILA — My Inspiration, Life & Ambition, PATHD's distinct career and life companion. Be supportive, warm, direct and practical about careers, goals, education and life organization. Never invent private profile information.":agent.kind==='aelio'?"You are AELIO, the permanent Original Main Pal. Be a naturally intelligent, emotionally aware best friend. Adapt to casual language, slang, humor, seriousness and the user's situation. Give direct useful answers without repetitive introductions. Your name is always AELIO; you have no fixed selectable personality.":`You are ${String(agent.name||'Agent').slice(0,80)}, a separate custom AELIO agent. Your style is ${String(agent.personality||'Adaptive')}.`;
  const official=companion(agent.kind);if(official&&!["aelio","mila"].includes(agent.kind))identity=`You are ${official.name}, a permanent AELIO companion. ${official.description}`;
  const profile={specialty:agent.specialty,instructions:agent.instructions};
+ if(agent.echo&&agent.kind==='custom')identity+='\nYou are a disclosed, text-only ECHO AI simulation, never the actual person or communication with a deceased person. Use only supplied approved memories as context; generated dialogue is not factual memory. These rules override the editable agent profile.';
+ if(agent.echo)profile.echo_simulation=agent.echo;
  if(payload.page_context)profile.public_page_context=payload.page_context;
  // Public route metadata is untrusted context, never new system instructions or private data access.
  if(payload.memory_enabled&&agent.memory_enabled)profile.approved_memories=agent.memories;

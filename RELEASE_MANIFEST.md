@@ -1,3 +1,13 @@
+# AELIO 1.0.8 restoration preview manifest — 2026-10-30
+
+Source delta against migration `e4b652b` (SQL11/12 already present). Local migration branch only. Owner reports applying 11/12; no database changes were executed by this task. No new secrets, buckets, payment changes or migrations. Rebuild from source for deployment; committed public output is deliberately untouched during review. No push, merge or deployment has occurred. PATHD is unchanged.
+
+Changed source: `_src/chat/Workspaces.tsx`, `_src/chat/workspaces.css`, `_src/chat/main.tsx`, `_src/platform/workspaces.js`, `_src/platform/index.js`, `_src/platform/messaging.js`, `_src/platform/providers/openai.js`, `engine/aelio/routes_messaging.py` (ECHO-only simulation guard), package version and test script in `package.json`/`package-lock.json`. New/updated regression files: `engine/tests/test_messaging_bridge.py`, `_src/checks/test-workspaces.mjs`, `_src/checks/browser_workspaces.py`. Updated continuity and setup/validation documentation. Delivery inventory lists every delta file and SHA-256 checksum; no original avatar files or generated public bundles are replaced.
+
+Validation and limitations: `docs/releases/AELIO_v1.0.8_RESTORATION.md`.
+
+---
+
 # AELIO 1.0.5 migration review manifest
 
 Repository: vintagebyjaja/aelio-live. Branch: migration. Base/main: 8da7e87. Main must remain unchanged until explicit user approval. PATHD code remains in its separate repository.

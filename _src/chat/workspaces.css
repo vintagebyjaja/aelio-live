@@ -1,0 +1,135 @@
+.workspace-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.workspace-sections [aria-pressed="true"] {
+  outline: 2px solid currentColor;
+}
+.workspace-form {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 44rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line, #8885);
+  border-radius: 1rem;
+}
+.workspace-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+.workspace-form textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.workspace-form .check,
+.echo-workspace .check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.workspace-form input[type="checkbox"],
+.echo-workspace input[type="checkbox"] {
+  width: auto;
+  flex: none;
+}
+.workspace-entry {
+  padding: 1rem 0;
+  border-bottom: 1px solid #8885;
+}
+.entry-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.workspace-entry button {
+  margin: 0.3rem;
+}
+.brain-workspace,
+.echo-workspace {
+  overflow-wrap: anywhere;
+}
+.workspace-sections button,
+.workspace-sections a {
+  max-width: 100%;
+  white-space: normal;
+}
+.conversation-projects select,
+.workspace-form input,
+.workspace-form select,
+.workspace-form textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+.experience-switcher {
+  max-width: 12rem;
+  margin-inline: 0.5rem;
+}
+.conversation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.conversation-projects article {
+  padding: 0.5rem 0;
+}
+.conversation-projects button {
+  margin: 0.3rem;
+}
+.dream-app.in-chat .mobile-nav {
+  display: none;
+}
+@media (max-width: 900px) {
+  .experience-switcher {
+    max-width: 7.5rem;
+    font-size: 0.8rem;
+  }
+  .dream-app.in-chat {
+    padding-bottom: 0;
+  }
+  .workspace-form {
+    padding: 0.7rem;
+  }
+  .brain-workspace,
+  .echo-workspace {
+    padding-inline: 1rem;
+  }
+}
+.dream-app .topbar .experience-switcher {
+  display: block;
+  min-width: 0;
+  flex: 0 1 12rem;
+  margin: 0;
+}
+.experience-switcher select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.dream-app .topbar .brand {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .dream-app .topbar {
+    gap: 0.4rem;
+    padding-inline: 0.6rem;
+  }
+  .dream-app .topbar .header-actions button:first-child {
+    display: none !important;
+  }
+  .dream-app .topbar .header-actions {
+    flex: none;
+    margin-left: 0;
+  }
+  .dream-app .topbar .experience-switcher {
+    flex: 1 1 6rem;
+  }
+  .dream-app .topbar .brand {
+    font-size: 1.2rem;
+  }
+  .dream-app .brand small {
+    letter-spacing: 0.15em;
+    font-size: 0.35rem;
+  }
+}

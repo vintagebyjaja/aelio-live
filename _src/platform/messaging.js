@@ -2,6 +2,7 @@ import {consumerMessage} from "../shared/experience.js";
 import {companion,coordinateTeam,coordinateGroup} from "../shared/companions.js";
 import {milaStyleInstruction} from "../shared/mila-style.js";
 import {openAIResponses} from "./providers/openai.js";
+import {withEchoContext} from './workspaces.js';
 import { ecosystemHandoff } from "../shared/ecosystem.js";
 import {
   reply,
@@ -244,6 +245,7 @@ export async function chatRoutes(req, env, path) {
     if (!u) fail(401, "authentication_required", "Sign in first.");
     const a = await own(env, "app_agents", am[1], u);
     if (am[2] && req.method === "POST") {
+      if((await table(env,'app_echo_profiles','agent_id=eq.'+a.id+'&owner_id=eq.'+u.id,{token:u.token})).length)fail(403,'private_echo','ECHOs and their memories remain private.');
       if (a.kind !== "custom")
         fail(400, "system_agent", "System companions cannot be published.");
       const d = await body(req);
@@ -415,6 +417,10 @@ export async function chatRoutes(req, env, path) {
       if(c.permanent_key==='dream-team'&&((fields.title!==undefined&&fields.title!==c.title)||(fields.subtitle!==undefined&&fields.subtitle!==c.subtitle)))fail(403,"permanent_conversation","Dream Team keeps its name. You can customize its appearance.");
       for (const k of ["pinned", "archived", "memory_enabled"])
         if (d[k] !== undefined) fields[k] = d[k] === true;
+      if(d.project!==undefined) {
+        if(d.project!==null&&(typeof d.project!=='string'||!d.project.trim()||d.project.trim().length>80))fail(400,'invalid_project','Use a project name between 1 and 80 characters.');
+        fields.project=d.project===null?null:d.project.trim();
+      }
       if (d.participants !== undefined) {
         if(c.permanent_key)fail(403,"permanent_conversation","Permanent conversations keep their participants.");
         if(!Array.isArray(d.participants)||!d.participants.length||d.participants.length>8||new Set(d.participants).size!==d.participants.length)fail(400,"invalid_participants","Choose one to eight different agents.");
@@ -622,6 +628,7 @@ async function generate(req, env, c, u, suggest = false) {
     : null;
   agents=agents.map(agent=>{const official=companion(agent.kind);return official&&!["aelio","mila"].includes(agent.kind)?{...agent,name:official.name,instructions:official.description}:agent;});
   agents=agents.map(agent=>agent.kind==="mila"?{...agent,instructions:[agent.instructions||"",milaStyleInstruction(pref?.mila_style)].filter(Boolean).join("\n")}:agent);
+  agents=await withEchoContext(env,u,agents,c.memory_enabled);
   const career =
     u &&
     pref?.career_consent &&

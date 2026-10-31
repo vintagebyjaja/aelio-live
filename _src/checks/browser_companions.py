@@ -43,7 +43,9 @@ with sync_playwright() as p:
   for name in ['AELIO','MILA','Naomi','Angelo','Oliver','Simone','Chloe','Reggie']:
    page.get_by_role('button',name='Open '+name+' chat',exact=True).click();page.get_by_role('textbox',name='Message',exact=True).wait_for()
    assert name in page.locator('.chat-header h1').inner_text()
-   if width<=900:page.locator('.mobile-nav').get_by_role('button',name='Agents',exact=True).click()
+   if width<=900:
+    page.get_by_role('button',name='Open conversations',exact=True).click()
+    page.locator('.home-nav').get_by_role('button',name='Agents',exact=True).click()
    else:page.locator('.home-nav').get_by_role('button',name='Agents',exact=True).click()
   assert len(threads)==before
   page.get_by_role('button',name='Open Dream Team chat',exact=True).click();page.get_by_role('textbox',name='Message',exact=True).fill('@Na');page.get_by_role('textbox',name='Message',exact=True).press('a');page.get_by_role('textbox',name='Message',exact=True).press('Backspace')

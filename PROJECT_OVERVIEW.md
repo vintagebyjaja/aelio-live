@@ -1,3 +1,7 @@
+## AELIO 1.0.8 local restoration — 2026-10-30
+
+ECHO, seven-section private Brain entries and conversation projects are restored locally on migration using existing SQL11/12. This is a development preview, not a production release. See docs/releases/AELIO_v1.0.8_RESTORATION.md. Brain entries are real owner-scoped records, not fabricated dashboard telemetry. ECHO is a disclosed text-only AI simulation; only explicitly approved supplied memories reach inference, and only with both memory switches enabled. Photo references are never analyzed or sent for inference. Studio Brain remains separate.
+
 # AELIO project overview
 
 Current implementation **AELIO_v1.0.5**, migration-branch review only. Previous implementation **AELIO_v1.0.4**, 2026-10-30. The owner-authorized main push triggered Cloudflare, which rejected publication with error10143 because the configured aelio-engine service was missing. The actual deployment outcome of this repair must be verified.

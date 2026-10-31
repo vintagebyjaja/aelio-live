@@ -1,3 +1,4 @@
+import {BrainWorkspace,EchoWorkspace,ConversationProjects} from "./Workspaces";
 import {AccountSecurity} from "./ModernAuth";
 import {AgentAvatar,CompanionNavigation,CompanionLibrary} from "./Companions";
 import {companion} from "../shared/companions.js";
@@ -12,6 +13,7 @@ import { Markdown } from "./Markdown";
 import { Icon, Orb } from "./Icon";
 import { ConnectedApps, HandoffCard } from "./ConnectedApps";
 import "./premium.css";
+import "./workspaces.css";
 import { AppearanceControls } from "./Appearance";
 import { designOf, resolveAppearance, guestAppearance } from "./design-system";
 const BACKGROUNDS = [
@@ -118,10 +120,15 @@ function App() {
   function clearPrivateState(){
     setSupport(null);
     Object.values(generations.current).forEach(controller=>controller.abort());
-    setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setBackgroundURL('');
+    setAccount(null);setAgents([]);setThreads([]);setCur(null);setMessages({});setDrafts({});setHomeDraft('');setHomeFiles([]);setAttachments([]);setFiles([]);setBackgroundURL('');
     cache.current={};backgroundCache.current.forEach(url=>URL.revokeObjectURL(url));backgroundCache.current.clear();
   }
   useEffect(()=>{const changed=(event:StorageEvent)=>{if(event.key!=='aelio.auth')return;const id=(value:string|null)=>{try{return value?JSON.parse(value)?.user?.id:null;}catch{return null;}};if(!event.newValue||id(event.oldValue)!==id(event.newValue)){clearPrivateState();location.assign('/chat/');}};addEventListener('storage',changed);return()=>removeEventListener('storage',changed);},[]);
+  async function refreshWorkspaces() {
+    const [a,c]=await Promise.all([call('/agents'),call('/conversations')]);
+    setAgents(a.agents);setThreads(c.conversations);
+    if(cur&&!c.conversations.some((t:any)=>t.id===cur.id)){setCur(null);setAttachments([]);}
+  }
   async function reload() {
     setAccountError("");
     try {
@@ -265,7 +272,7 @@ function App() {
     }
   }
   async function remove() {
-    if (!confirm("Delete this conversation and its message history?")) return;
+    if (!confirm("Delete this conversation and its message history? Uploaded files and Library images are kept.")) return;
     try {
       await call("/conversations/" + cur.id, "DELETE");
       setThreads((ts) => ts.filter((t) => t.id !== cur.id));
@@ -475,6 +482,8 @@ function App() {
           "discover",
           "create",
           "projects",
+          "brain",
+          "echo",
           "connected-apps",
           "settings",
           "appearance",
@@ -617,7 +626,7 @@ function App() {
   return (
     <div
       className={
-        "dream-app " + (keyboardOpen?"keyboard-open ":"") +
+        "dream-app " + (!home&&!panel?"in-chat ":"") + (keyboardOpen?"keyboard-open ":"") +
         (design.light ? "light " : "") +
         (collapsed ? "collapsed " : "") +
         (home ? "at-home" : "")
@@ -667,6 +676,7 @@ function App() {
             }}
           />
         </label>
+        <label className="experience-switcher"><span className="sr-only">Experience</span><select aria-label="Experience" value={panel==='brain'?'brain':'dreambox'} onChange={(e:any)=>{if(e.target.value==='studio')location.assign('/studiobrain/');else navigate(e.target.value==='brain'?'brain':'home');}}><option value="dreambox">DreamBox</option><option value="brain">Brain</option>{account?.role==='founder'&&<option value="studio">Studio Brain</option>}</select></label>
         <nav className="header-actions">
           <button
             aria-label="Discover experiences"
@@ -709,6 +719,8 @@ function App() {
             ["discover", "Discover", "compass"],
             ["create", "Create", "bulb"],
             ["projects", "Projects", "plus"],
+            ["brain", "Brain", "bulb"],
+            ["echo", "ECHO", "sparkle"],
             ["connected-apps", "Connected Apps", "sparkle"],
             ["settings", "Settings", "settings"],
           ].map(([view, label, icon]) => (
@@ -859,7 +871,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel === "history" ? (
+        {panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>
@@ -1790,6 +1802,7 @@ function App() {
             <button onClick={() => change({ appearance: {} })}>
               Use inherited appearance
             </button>
+            <form className="workspace-form" key={cur.id+':'+(cur.project||'')} onSubmit={(e:any)=>{e.preventDefault();const value=new FormData(e.currentTarget).get('project') as string;change({project:value.trim()||null});}}><label>Move to Project<input name="project" maxLength={80} defaultValue={cur.project||''} list="conversation-project-names" placeholder="Project name"/></label><datalist id="conversation-project-names">{Array.from(new Set<string>(threads.map(t=>t.project).filter(Boolean))).map(name=><option key={name} value={name}/>)}</datalist><button type="submit">Save project assignment</button>{cur.project&&<button type="button" onClick={()=>change({project:null})}>Remove from project</button>}</form>
             <button onClick={() => change({ pinned: !cur.pinned })}>
               {cur.pinned ? "Unpin" : "Pin"} conversation
             </button>
@@ -1850,7 +1863,9 @@ function ProjectWorkspace({
   return (
     <section className="panel project-workspace">
       <p className="workspace-eyebrow">YOUR WORK, WITH ROOM TO GROW</p>
-      <h1>Project files & outputs</h1>
+      <h1>Your projects</h1>
+      <ConversationProjects threads={threads} onOpen={onResume}/>
+      <h2>Project files & outputs</h2>
       <label>
         Add a private project file
         <input

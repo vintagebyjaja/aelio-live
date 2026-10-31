@@ -59,3 +59,8 @@ Latest owner priority: pause new visual/UI refinement until actual backend respo
 ## Pending migration provider-stream repair — 2026-10-30
 
 Fixed Responses nested failure parsing and safe provider status/category/request-ID diagnostics. Live provider rejection remains unverified without production logs; no automatic retry added. Preserve current UI and pending1.0.8 work. See `docs/diagnostics/PROVIDER_STREAM_REPAIR.md`. No main push or deployment authorized.
+
+
+## Current 1.0.8 restoration scope — 2026-10-30
+
+The current user chose ECHO, Brain and conversation projects first. Work remains on migration, preserving main and PATHD. Owner reports executing SQL11/12; do not rerun those or any production SQL. Do not push, merge or deploy without the user's instruction. The restored modules are `_src/chat/Workspaces.tsx` and `_src/platform/workspaces.js`. Supplied ECHO memories enter pending; only `app_echo_context` may supply approved inference memories, with both conversation and ECHO memory enabled. Ordinary custom-agent memories never bypass ECHO review. Photograph references are not inference input. Keep ECHOs private and preserve official companions. Do not implement router/budget/pricing policy from historical attachments without resolving the current scope and conflicting allocation percentages.
