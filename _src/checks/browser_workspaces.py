@@ -65,7 +65,10 @@ with sync_playwright() as p:
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),('ECHO overflow',width)
   page.get_by_role('button',name='Open conversation',exact=True).click();page.locator('.chat-header').wait_for()
   assert not page.locator('.mobile-nav').is_visible()
-  page.get_by_role('button',name='Conversation settings',exact=True).click();page.get_by_label('Move to Project',exact=True).fill('Fixture project '+str(width));page.get_by_role('button',name='Save project assignment',exact=True).click()
+  page.get_by_role('button',name='Conversation settings',exact=True).click();page.get_by_label('Move to Project',exact=True).fill('Fixture project '+str(width));
+  with page.expect_response(lambda r:r.request.method=='PATCH' and '/api/platform/conversations/' in r.url)as saved_project:
+   page.get_by_role('button',name='Save project assignment',exact=True).click()
+  assert saved_project.value.ok
   assert any(t.get('project')=='Fixture project '+str(width) for t in threads)
   if width<=900:page.get_by_role('button',name='Open conversations',exact=True).click()
   page.locator('.home-nav').get_by_role('button',name='Projects',exact=True).click();page.get_by_role('heading',name='Fixture project '+str(width),exact=True).wait_for()

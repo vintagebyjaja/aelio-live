@@ -188,7 +188,7 @@ function StudioGated({ path, me, reload, reverify, setReverify }: any) {
   const entry = STUDIO.find(s => s[0] === key) || STUDIO[0];
   const Page = entry[2];
   return (
-    <Shell brand="Studio Brain" nav={STUDIO.map(([k, l]) => [k, l])} base="/studiobrain/" cur={entry[0]} me={me} extra={<A href="/brain/my/" className="dark-btn sm">My AELIO →</A>}>
+    <Shell brand="Studio Brain" nav={STUDIO.map(([k, l]) => [k, l])} base="/studiobrain/" cur={entry[0]} me={me} extra={<><A href="/brain/my/" className="dark-btn sm">My AELIO →</A><A href="/chat/#ai-operations" className="dark-btn sm">Worker AI Operations →</A></>}>
       {!me.mfa_fresh && <div className="notice" style={{ marginBottom: 14 }}>Approving, publishing and changing secrets need a fresh code. <button className="ghost sm" onClick={() => setReverify(true)}>Re-verify</button></div>}
       {reverify && <Mfa me={{ mfa: "verify" }} onDone={() => { setReverify(false); reload(); }} />}
       <Page go={(p: string) => go("/studiobrain/" + (({ native: "native-lab", quality: "quality-lab", operations: "operations" } as any)[p] || ""))} me={{ ...me, mfa_fresh: me.mfa_fresh }} reverify={() => setReverify(true)} />

@@ -1,3 +1,9 @@
+# Current handoff — AELIO1.0.9 / PATHD0.1.6 (2026-10-30)
+
+The current user requested all remaining handoff work and selected60% allocation with a $10 minimum for eligible paid AI plans. Implemented router/ledger and signed subscription events, PATHD pricing/access separation, natural streamed response formatting, Image Library and compact navigation. Review only on migration; main remains unchanged. See [validation and boundaries](docs/releases/AELIO_v1.0.9_REVIEW.md), [visual gallery](docs/previews/v1.0.9/README.md) and [configuration/SQL13 prerequisites](config/V1_0_9_ROUTER.md). Owner must manually review/apply only the new13 after the reported11/12 before dependent release; no production SQL or credentials/settings changes occurred. Existing payment/checkout behavior remains intact; paid enrollment and live integrations are not activated or verified. Historical records follow.
+
+---
+
 # Current work — AELIO 1.0.8 restoration preview (2026-10-30)
 
 The current user selected restoring ECHO, Brain and conversation projects first. Local branch `migration` starts at `e4b652b2454c5bc1f6cfa18a3b2a0db7109aed52`; main remains `63f379bda4015f93db01f2886b420ce51e9ee26c`. The prior uncommitted 1.0.8 application work was not recoverable from these checkouts; this is a new implementation against the preserved SQL11/12. The owner reports running 11 and 12. Production database state is not independently verified. Do not rerun historical migrations as part of startup.

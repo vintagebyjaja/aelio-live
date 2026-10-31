@@ -37,7 +37,7 @@ async function runFunction(req, res) {
   if (!["GET", "HEAD"].includes(req.method)) { init.body = Readable.toWeb(req); init.duplex = "half"; }
   const env = { AELIO_ENGINE_ORIGIN: process.env.AELIO_ENGINE_ORIGIN, AELIO_PROXY_SECRET: process.env.AELIO_PROXY_SECRET };
   const request = new Request(url, init);
-  const r = url.pathname.startsWith("/api/platform/") ? await platform(request, {...process.env,AELIO_LOCAL_TEST:"1"}) : await proxyToEngine({ request, env });
+  const r = (url.pathname.startsWith("/api/platform/")||url.pathname==="/webhooks/ai-subscriptions") ? await platform(request, {...process.env,AELIO_LOCAL_TEST:"1"}) : await proxyToEngine({ request, env });
   res.writeHead(r.status, Object.fromEntries(r.headers));
   if (!r.body) return res.end();
   for await (const chunk of r.body) res.write(chunk);

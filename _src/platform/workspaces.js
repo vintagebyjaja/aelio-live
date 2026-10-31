@@ -9,6 +9,7 @@ import {
   uuid,
   who,
 } from "./shared.js";
+import {relevantMemories} from './providers/context.js';
 import { MILA_STYLES } from '../shared/mila-style.js';
 
 export const SECTIONS = [
@@ -316,7 +317,7 @@ export async function workspaces(req, env, path) {
 }
 
 // Ordinary custom-agent memory is never an alternate path around ECHO review.
-export async function withEchoContext(env, u, agents, memoryEnabled) {
+export async function withEchoContext(env, u, agents, memoryEnabled, content = "") {
   if (!u || !agents.some((a) => a.kind === "custom")) return agents;
   const profiles = await table(
     env,
@@ -337,7 +338,7 @@ export async function withEchoContext(env, u, agents, memoryEnabled) {
         echo: { mode: p.mode, subject: p.subject, base_style: p.base_style },
         personality: p.base_style || a.personality,
         memory_enabled: !!memoryEnabled && p.memories_enabled,
-        memories: memories.map((m) => ({ kind: m.kind, content: m.content })),
+        memories: relevantMemories(memories,content).map((m) => ({ kind: m.kind, content: m.content })),
         instructions: [
           a.instructions,
           "This ECHO is a private AI simulation, not the real person or communication with a deceased person. Never present generated dialogue as factual memory.",

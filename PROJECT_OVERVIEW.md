@@ -1,3 +1,9 @@
+# Current review — AELIO1.0.9 / PATHD0.1.6 (2026-10-30)
+
+The current user requested all remaining handoff work and selected60% allocation with a $10 minimum for eligible paid AI plans. Implemented router/ledger and signed subscription events, PATHD pricing/access separation, natural streamed response formatting, Image Library and compact navigation. Review only on migration; main remains unchanged. See [validation and boundaries](docs/releases/AELIO_v1.0.9_REVIEW.md), [visual gallery](docs/previews/v1.0.9/README.md) and [configuration/SQL13 prerequisites](config/V1_0_9_ROUTER.md). Owner must manually review/apply only the new13 after the reported11/12 before dependent release; no production SQL or credentials/settings changes occurred. Existing payment/checkout behavior remains intact; paid enrollment and live integrations are not activated or verified. Historical records follow.
+
+---
+
 ## AELIO 1.0.8 local restoration — 2026-10-30
 
 ECHO, seven-section private Brain entries and conversation projects are restored locally on migration using existing SQL11/12. This is a development preview, not a production release. See docs/releases/AELIO_v1.0.8_RESTORATION.md. Brain entries are real owner-scoped records, not fabricated dashboard telemetry. ECHO is a disclosed text-only AI simulation; only explicitly approved supplied memories reach inference, and only with both memory switches enabled. Photo references are never analyzed or sent for inference. Studio Brain remains separate.

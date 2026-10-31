@@ -2,6 +2,9 @@ import {consumerMessage} from "../shared/experience.js";
 import {companion,coordinateTeam,coordinateGroup} from "../shared/companions.js";
 import {milaStyleInstruction} from "../shared/mila-style.js";
 import {openAIResponses} from "./providers/openai.js";
+import {intelligenceRouter} from "./providers/router.js";
+import {subscriptionAccess} from "./billing.js";
+import {speakerPrefixFilter} from "./formatting.js";
 import {withEchoContext} from './workspaces.js';
 import { ecosystemHandoff } from "../shared/ecosystem.js";
 import {
@@ -510,6 +513,7 @@ function agentFields(d) {
 }
 async function engine(env, payload, signal) {
   const provider=env.AELIO_AI_PROVIDER || (env.OPENAI_API_KEY?'openai':'brain');
+  if(provider==='router'||env.AELIO_SUBSCRIPTIONS_ENABLED==='true')return intelligenceRouter(env,payload,signal);
   if(provider==='openai')return openAIResponses(env,payload,signal);
   if(provider!=='brain')fail(503,'ai_provider_invalid','The AI provider configuration is invalid.');
   if (!env.AELIO_ENGINE?.fetch && !env.AELIO_ENGINE_ORIGIN)
@@ -561,6 +565,7 @@ async function engine(env, payload, signal) {
   return res;
 }
 async function generate(req, env, c, u, suggest = false) {
+  if(u&&c.product==='pathd'&&env.AELIO_SUBSCRIPTIONS_ENABLED==='true'){const access=await subscriptionAccess(env,u);if(!access.companion_access)fail(403,'companion_subscription_required','Your AELIO subscription or an eligible PATHD plan unlocks companions here.');}
   const d = await body(req);
   const input = text(d.content || "", 8000);
   if (!input && !suggest) fail(400, "empty_message", "Write a message first.");
@@ -628,7 +633,7 @@ async function generate(req, env, c, u, suggest = false) {
     : null;
   agents=agents.map(agent=>{const official=companion(agent.kind);return official&&!["aelio","mila"].includes(agent.kind)?{...agent,name:official.name,instructions:official.description}:agent;});
   agents=agents.map(agent=>agent.kind==="mila"?{...agent,instructions:[agent.instructions||"",milaStyleInstruction(pref?.mila_style)].filter(Boolean).join("\n")}:agent);
-  agents=await withEchoContext(env,u,agents,c.memory_enabled);
+  agents=await withEchoContext(env,u,agents,c.memory_enabled,input);
   const career =
     u &&
     pref?.career_consent &&
@@ -700,6 +705,8 @@ async function generate(req, env, c, u, suggest = false) {
     stage="provider_adapter";trace("started");
     first = await engine(env, {
       request_id:rid,
+      billing_user_id:u?.id||null,
+      billing_product:c.product,
       user_token: u?.token || null,
       guest: c.guest_hash,
       conversation_id: c.id,
@@ -733,6 +740,7 @@ async function generate(req, env, c, u, suggest = false) {
   const stream = new ReadableStream({
     async start(controller) {
       const outputs = new Map();
+      const prefixFilters = new Map(agents.map(a=>[a.id,speakerPrefixFilter(a.name)]));
       let done = false;
       try {
         stage='provider_stream';trace('started');
@@ -749,6 +757,12 @@ async function generate(req, env, c, u, suggest = false) {
             buf = buf.slice(i + 1);
             if (!line.trim()) continue;
             const ev = JSON.parse(line);
+            if (ev.type === "delta") {
+              const filter=prefixFilters.get(ev.agent_id);if(filter)ev.text=filter(ev.text);
+            }
+            if (ev.type === "complete") {
+              for(const [agentId,filter] of prefixFilters){const text=filter('',true);if(text){outputs.set(agentId,(outputs.get(agentId)||'')+text);controller.enqueue(enc.encode(JSON.stringify({type:'delta',agent_id:agentId,speaker:agents.find(a=>a.id===agentId)?.name,text})+'\n'));}}
+            }
             if (ev.type === "delta")
               outputs.set(
                 ev.agent_id,
@@ -802,6 +816,7 @@ async function generate(req, env, c, u, suggest = false) {
         }
         if (!done) throw new Error("The Brain response ended early.");
         if (!suggest){
+          if(outputs.size&&!Array.from(outputs.values()).some(value=>value.trim()))throw new Problem(502,'provider_empty_response','The AI service returned no reply.');
           stage='message_persistence';trace('started');
           await rpc(env, "app_commit_chat", {
             rid,

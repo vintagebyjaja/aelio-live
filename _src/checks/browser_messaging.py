@@ -26,7 +26,7 @@ with sync_playwright() as p:
   if width<=900:page.get_by_role('button',name='Open conversations').click()
   page.locator('button.thread').filter(has_text='Chester').click();page.get_by_text('[offline browser fixture] Chester-only message',exact=True).first.wait_for()
   page.get_by_role('button',name='Conversation settings').click();page.get_by_label('Chat background',exact=True).select_option('Minimal White');page.get_by_role('button',name='Save appearance').click();page.get_by_role('button',name='Close settings').click()
-  page.get_by_role('button',name='Account',exact=True).click();page.get_by_role('heading',name='Your account',exact=True).wait_for();assert 'PATHD — Connected' in page.locator('.panel').inner_text()
+  page.locator('.header-actions').get_by_role('button',name='Account',exact=True).click();page.get_by_role('heading',name='Your account',exact=True).wait_for();assert 'PATHD — Connected' in page.locator('.panel').inner_text()
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
   assert not errors,errors
   print(f'{width}px: chat switching, isolated drafts/replies, appearance persistence, account dashboard, no overflow or JS errors passed')

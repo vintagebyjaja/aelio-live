@@ -86,17 +86,23 @@ export async function storage(req, env, path) {
   await member(env, u);
   if (!env.AELIO_STORAGE)
     fail(503, "storage_not_configured", "Private storage is not connected.");
-  if (path === "" && req.method === "GET")
-    return reply({
-      files: await table(
-        env,
-        "app_files",
-        "owner_id=eq." +
-          u.id +
-          "&status=eq.ready&order=created_at.desc&limit=100",
-        { token: u.token },
-      ),
-    });
+  if (path === "" && req.method === "GET") {
+    const params=new URL(req.url).searchParams;
+    const library=params.get('library')==='1';
+    let query='owner_id=eq.'+u.id+'&status=eq.ready';
+    if(library){
+      query+='&category=eq.generated-assets&mime=like.image/*';
+      const q=(params.get('q')||'').replace(/[^\p{L}\p{N} _-]/gu,'').slice(0,100);
+      if(q)query+='&name=ilike.'+encodeURIComponent('*'+q+'*');
+      for(const [key,column] of [['agent','agent_id'],['conversation','conversation_id']]){const value=params.get(key);if(value){if(!uuid(value))fail(400,'invalid_filter','Choose a valid image filter.');query+='&'+column+'=eq.'+value;}}
+      for(const [key,op] of [['from','gte'],['to','lte']]){const value=params.get(key);if(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value)))fail(400,'invalid_filter','Choose a valid date.');query+='&created_at='+op+'.'+encodeURIComponent(value+(key==='to'?'T23:59:59.999Z':'T00:00:00.000Z'));}}
+      const before=params.get('before');const last=params.get('last');
+      if(before||last){if(!uuid(last)||!/^\d{4}-\d{2}-\d{2}T[0-9:.+Z-]+$/.test(before||'')||!Number.isFinite(Date.parse(before)))fail(400,'invalid_filter','Refresh the image list.');query+='&or='+encodeURIComponent('(created_at.lt.'+before+',and(created_at.eq.'+before+',id.lt.'+last+'))');}
+    }
+    const rows=await table(env,'app_files',query+'&order=created_at.desc,id.desc&limit='+(library?101:100),{token:u.token});
+    const files=rows.slice(0,100),last=files.at(-1);
+    return reply({files,...(library?{next:rows.length>100?{before:last.created_at,last:last.id}:null}:{})});
+  }
   if (path === "" && req.method === "POST") {
     const name = text(
       decodeURIComponent(req.headers.get("x-file-name") || ""),
@@ -160,11 +166,7 @@ export async function storage(req, env, path) {
   const id = path.slice(1);
   const f = await own(env, "app_files", id, u);
   if (req.method === "DELETE") {
-    await table(env, "app_files", "id=eq." + id + "&owner_id=eq." + u.id, {
-      method: "PATCH",
-      service: true,
-      data: { status: "deleting" },
-    });
+    await rpc(env,'app_prepare_file_deletion',{uid:u.id,fid:id});
     await env.AELIO_STORAGE.delete(f.object_key);
     await table(env, "app_files", "id=eq." + id + "&owner_id=eq." + u.id, {
       method: "DELETE",

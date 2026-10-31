@@ -28,6 +28,7 @@ import {
 import { storage, sweepFiles } from "./storage.js";
 import { discovery } from "./discovery.js";
 import { recovery } from "./recovery.js";
+import {billing,subscriptionWebhook} from "./billing.js";
 import { workspaces } from "./workspaces.js";
 export function publicConfig(env) {
   const resolved = resolveSupabaseConfig(env, builtPublicAuth);
@@ -294,6 +295,7 @@ async function career(req, env, path) {
 export async function platform(req, env) {
   const id = crypto.randomUUID();
   try {
+    if(new URL(req.url).pathname==='/webhooks/ai-subscriptions')return await subscriptionWebhook(req,env);
     sameOrigin(req);
     const p = new URL(req.url).pathname.replace(/^\/api\/platform/, "");
     if (p === "/status" && req.method === "GET")
@@ -323,6 +325,7 @@ export async function platform(req, env) {
     if (p.startsWith("/recovery/")) return await recovery(req, env, p.slice(9));
     if (p.startsWith("/files")) return await storage(req, env, p.slice(6));
     if (p.startsWith("/account")) return await account(req, env, p.slice(8));
+    if(p.startsWith('/billing/'))return await billing(req,env,p.slice(8));
     if (p.startsWith("/career")) return await career(req, env, p.slice(7));
     if (p === '/workspace' || p.startsWith('/workspace/') || p === '/echo' || p.startsWith('/echo/')) return await workspaces(req, env, p);
     return await chatRoutes(req, env, p);

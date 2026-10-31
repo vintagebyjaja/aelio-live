@@ -1,3 +1,5 @@
+import {AllowancePanel,AIOperations} from "./Billing";
+import {ImageLibrary} from "./ImageLibrary";
 import {BrainWorkspace,EchoWorkspace,ConversationProjects} from "./Workspaces";
 import {AccountSecurity} from "./ModernAuth";
 import {AgentAvatar,CompanionNavigation,CompanionLibrary} from "./Companions";
@@ -90,7 +92,7 @@ function App() {
       location.pathname.startsWith("/account") ||
         location.pathname.startsWith("/auth")
         ? "account"
-        : "",
+        : ['library','brain','echo','allowance','ai-operations'].includes(location.hash.slice(1))?location.hash.slice(1):"",
     ),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(""),
@@ -161,6 +163,8 @@ function App() {
             else if (agent)
               await newThread([agent.id], mila ? "MILA" : "AELIO");
             setHome(!new URLSearchParams(location.search).has("companion"));
+            const requested=location.hash.slice(1);
+            if(['library','brain','echo','allowance','ai-operations'].includes(requested)){setPanel(requested);setHome(false);}
           }
         } catch (e: any) {
           setAccountError(friendly(e));
@@ -183,6 +187,7 @@ function App() {
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if(document.querySelector('dialog[open]'))return;
         setDrawer(false);
         setPanel("");
         setEditor(null);
@@ -484,6 +489,9 @@ function App() {
           "projects",
           "brain",
           "echo",
+          "library",
+          "allowance",
+          "ai-operations",
           "connected-apps",
           "settings",
           "appearance",
@@ -492,8 +500,10 @@ function App() {
       )
         navigate(view, false);
     };
+    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','ai-operations','brain','echo'].includes(view))navigate(view,false);};
     addEventListener("popstate", restore);
-    return () => removeEventListener("popstate", restore);
+    addEventListener("hashchange",fromHash);
+    return () => {removeEventListener("popstate", restore);removeEventListener("hashchange",fromHash);};
   }, [threads]);
   async function sendFromHome() {
     if (homeSending || !homeDraft.trim()) return;
@@ -711,43 +721,8 @@ function App() {
         >
           AELIO<small>NEVER SAY NEVER.</small>
         </a>
-        <nav className="home-nav" aria-label="AELIO navigation">
-          {[
-            ["home", "Home", "home"],
-            ["chats", "Chats", "chat"],
-            ["agents", "Agents", "agents"],
-            ["discover", "Discover", "compass"],
-            ["create", "Create", "bulb"],
-            ["projects", "Projects", "plus"],
-            ["brain", "Brain", "bulb"],
-            ["echo", "ECHO", "sparkle"],
-            ["connected-apps", "Connected Apps", "sparkle"],
-            ["settings", "Settings", "settings"],
-          ].map(([view, label, icon]) => (
-            <button
-              key={view}
-              title={label}
-              aria-label={label}
-              aria-current={
-                (
-                  view === "home"
-                    ? home && !panel
-                    : view === "chats"
-                      ? (!home && !panel) || panel === "history"
-                      : panel === view
-                )
-                  ? "page"
-                  : undefined
-              }
-              onClick={() =>
-                navigate(view === "agents" && !session ? "account" : view)
-              }
-            >
-              <Icon name={icon} size={19} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
+        <label className="search">Search<input value={search} placeholder="Search conversations" onChange={(e:any)=>setSearch(e.target.value)}/></label>
+        <nav className="home-nav" aria-label="Appearance"><button aria-label="Appearance & themes" onClick={()=>navigate('appearance')}><Icon name="sparkle" size={19}/><span>Appearance / Themes</span></button></nav>
         <div className="side-head">
           <h2>Your space</h2>
           <button
@@ -763,20 +738,15 @@ function App() {
         >
           ＋ New chat
         </button>
-        <label className="search">
-          Search
-          <input
-            value={search}
-            placeholder="Search conversations"
-            onChange={(e: any) => setSearch(e.target.value)}
-          />
-        </label>
         {session?<CompanionNavigation agents={agents} threads={threads} current={cur} query={search} onOpen={openCompanion} onSelect={select}/>:<button className="permanent" onClick={()=>{setPanel("");setHome(false);}}>AELIO · Your Main Pal</button>}
+        <nav className="home-nav" aria-label="Your collections">{[['echo','ECHO','sparkle'],['library','Library','compass']].map(([view,label,icon])=><button key={view} aria-label={label} onClick={()=>navigate(view)}><Icon name={icon} size={19}/><span>{label}</span></button>)}</nav>
+        <div className="side-head"><h2>Pinned Conversations</h2></div>
+        {listedThreads.filter(t=>t.pinned&&!t.archived&&[t.title,t.subtitle].join(' ').toLowerCase().includes(search.toLowerCase())).map(t=><button key={t.id} className={'thread '+(cur?.id===t.id?'selected':'')} onClick={()=>select(t)}><span><b>★ {t.title}</b><small>{t.subtitle}</small></span></button>)}
         <div className="side-head"><h2>Recent Conversations</h2></div>
         {[...listedThreads]
           .filter(
             (t) =>
-              !t.archived && (!t.permanent_key||!!search) &&
+              !t.archived && !t.pinned && (!t.permanent_key||!!search) &&
               [t.title, t.subtitle, t.search_preview, ...((messages[t.id]||cache.current[t.id]||t.app_messages||[]).map((m:any)=>m.content))]
                 .join(" ")
                 .toLowerCase()
@@ -811,6 +781,9 @@ function App() {
               </span>
             </button>
           ))}
+        <nav className="home-nav" aria-label="Projects"><button aria-label="Projects" onClick={()=>navigate('projects')}><Icon name="plus" size={19}/><span>Projects</span></button></nav>
+        <details className="explore-more" open><summary>Explore More</summary><nav className="home-nav" aria-label="More experiences">{[['home','Home','home'],['agents','Agents','agents'],['discover','Discover','compass'],['create','Create','bulb'],['brain','Brain','bulb'],['connected-apps','Connected Apps','sparkle'],['reminders','Reminders & career context','settings'],['files','Private files','compass']].map(([view,label,icon])=><button key={view} aria-label={label} onClick={()=>navigate(view)}><Icon name={icon} size={19}/><span>{label}</span></button>)}</nav></details>
+        <nav className="home-nav" aria-label="Account navigation">{[['settings','Settings','settings'],['allowance','Plans & allowance','settings'],['account','Account','settings']].map(([view,label,icon])=><button key={view} aria-label={label} onClick={()=>navigate(view)}><Icon name={icon} size={19}/><span>{label}</span></button>)}</nav>
         {threads.some((t) => t.archived) && (
           <details>
             <summary>Archived</summary>
@@ -823,25 +796,11 @@ function App() {
               ))}
           </details>
         )}
-        <nav className="side-tools">
-          {session && (
-            <>
-              <button onClick={() => show("agents")}>Your agents</button>
-              <button onClick={() => show("reminders")}>
-                Reminders & career context
-              </button>
-              <button onClick={() => show("files")}>Private files</button>
-              <button onClick={() => show("account")}>
-                Account & recovery
-              </button>
-            </>
-          )}
-        </nav>
+        {account?.role==='founder'&&<nav className="side-tools"><button onClick={()=>navigate('ai-operations')}>AI Operations</button></nav>}
         <details className="legacy-links">
-          <summary>More experiences</summary>
+          <summary>Explore public AELIO</summary>
           <a href="/agent-campus/">Campus</a>
           <a href="/live/">Live</a>
-          <a href="/brain/">Brain</a>
           <a href="/explore/">Explore AELIO</a>
         </details>
         <footer>
@@ -871,7 +830,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
+        {panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='ai-operations'?<AIOperations/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>
@@ -2062,6 +2021,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
       >
         Save name
       </button>
+      <button onClick={()=>setPanel("allowance")}>Plans & allowance</button>
       <h2>Connected Apps</h2>
       {account.plans.map((p: any) => (
         <article key={p.product}>
@@ -2077,7 +2037,7 @@ function Account({ account, reload, setPanel, setErr }: any) {
           </a>
         </article>
       ))}
-      <p>Your subscriptions and usage stay separate. Free is the available plan today.</p>
+      <p>Your subscriptions and usage stay separate. Open Plans & allowance to see verified subscriptions and their AI funding.</p>
       {account.role === "founder" && (
         <a href="/studiobrain/">Open Studio Brain (MFA required)</a>
       )}

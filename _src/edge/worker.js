@@ -10,6 +10,7 @@ export default {
   async scheduled(event, env, ctx) { ctx.waitUntil(scheduled(env)); },
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
+    if(pathname==='/webhooks/ai-subscriptions')return platform(request,env);
     if (pathname === "/assets/config.js") return publicConfig(env);
     if (pathname.startsWith("/api/platform/")) return platform(request, env);
     if (pathname.startsWith("/api/internal/")) return new Response("Not found", {status:404});

@@ -284,3 +284,9 @@ test("conversation projects persist through owner-scoped update and reject blank
     );
   });
 });
+
+test('streaming speaker prefixes split across chunks are removed without changing quoted/later content',async()=>{
+ const {speakerPrefixFilter}=await import('../platform/formatting.js');
+ for(const chunks of [['[AE','LIO]',' Hello'],['AE','LIO:', ' Hello'],['[AELIO] Hello']]){const f=speakerPrefixFilter('AELIO');assert.equal(chunks.map(c=>f(c)).join('')+f('',true),'Hello');}
+ for(const content of ['"AELIO: hello"','Discuss AELIO: this is useful','AELIO:Meaningful','[AELIO]s example']){const f=speakerPrefixFilter('AELIO');assert.equal(f(content)+f('',true),content);}
+});
