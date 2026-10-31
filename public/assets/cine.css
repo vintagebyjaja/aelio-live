@@ -22,13 +22,9 @@
   -webkit-mask-image:radial-gradient(ellipse 50% 60% at 50% 0,#000,transparent 80%);mask-image:radial-gradient(ellipse 50% 60% at 50% 0,#000,transparent 80%);animation:shimmer 1.6s linear infinite}
 @keyframes shimmer{to{background-position:0 18px}}
 .intro-emblem,.intro-reflect{position:absolute;left:50%;width:min(64vw,620px);transform:translateX(-50%)}
-.intro-emblem{top:calc(63% - min(64vw,620px)*.5185 - 2.2vh);opacity:0;filter:brightness(.4);animation:emblemOn 1.2s ease-out .9s forwards,emblemGlow 1s ease-in-out 3s forwards}
+.intro-emblem{top:calc(63% - min(64vw,620px)*.5185 - 2.2vh);opacity:0;animation:emblemOn 1.2s ease-out .9s forwards}
 .intro-emblem img,.intro-reflect img{width:100%;height:auto;display:block}
-@keyframes emblemOn{to{opacity:1;filter:brightness(1) drop-shadow(0 0 18px rgba(255,214,150,.25))}}
-@keyframes emblemGlow{to{opacity:1;filter:brightness(1.12) drop-shadow(0 0 40px rgba(255,200,120,.55))}}
-.intro-emblem .sheen{position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.9) 48%,transparent 60%);background-size:260% 100%;background-position:120% 0;mix-blend-mode:overlay;
-  -webkit-mask:url(/assets/img/brand/dream-beyond-logo-675.webp) center/100% 100% no-repeat;mask:url(/assets/img/brand/dream-beyond-logo-675.webp) center/100% 100% no-repeat;animation:sheen 1.3s ease-in-out 1.4s forwards}
-@keyframes sheen{to{background-position:-60% 0}}
+@keyframes emblemOn{to{opacity:1}}
 .intro-reflect{top:calc(63% + .6vh);transform:translateX(-50%) scaleY(-1);opacity:0;filter:blur(1.2px);
   -webkit-mask-image:linear-gradient(0deg,rgba(0,0,0,.55),transparent 62%);mask-image:linear-gradient(0deg,rgba(0,0,0,.55),transparent 62%);animation:reflectOn 1.4s ease-out 1.8s forwards}
 .intro-reflect img{animation:ripple 1.8s ease-in-out infinite}
@@ -226,7 +222,7 @@
 .earth{display:none}
 .site-foot{background:linear-gradient(180deg,#05070b,#020306);position:relative}
 .site-foot:before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,184,62,.6),transparent)}
-.foot-emblem{width:150px;height:auto;margin:16px 0 4px;opacity:.9}
+.foot-emblem{width:150px;height:auto;margin:16px 0 4px;opacity:1}
 
 /* ================================================================ RESPONSIVE */
 @media (max-width:1180px){.worlds{grid-template-columns:repeat(2,1fr)}.world,.world:nth-child(1),.world:nth-child(2){grid-column:auto}

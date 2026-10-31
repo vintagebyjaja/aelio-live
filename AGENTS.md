@@ -1,3 +1,15 @@
+## Logo migration push approved — 2026-10-31
+
+The owner approved pushing the reviewed official-logo update to migration. Main merge and manual deployment remain unauthorized. Earlier local-only notes describe the review stage.
+
+---
+
+## Official Dream Beyond logo — local migration review — 2026-10-31
+
+Use the supplied black-filled, silver-outline PNG unchanged (1742×903). Replace shared marketing footer, entrance and scene references; preserve footer structure/links and existing artwork proportions. The direct logo request does not authorize the separate sidebar proposal in the pasted attachment. Keep this update local on migration: no push, merge, deployment, SQL or production configuration changes. Prior main approval covers 926af81 only.
+
+---
+
 ## AELIO 1.0.12 main promotion approved — 2026-10-31
 
 The owner explicitly approved pushing the reviewed messaging, Native Brain, image-routing and Orb Plaza iteration to AELIO main. This supersedes earlier local-only restrictions for this reviewed delta only. Push main only; remote migration and PATHD remain unchanged. Normal Git-triggered builds may run; no manual deployment, production SQL, provider activation, pricing/secret/settings changes or expansion of other AUREVIA destinations is authorized. SQL15's selected-fragment error was diagnosed and the full 146-line script rechecked/provided; successful owner application of SQL14/15/16 is not confirmed here. Live image generation/editing and hosted deployment/Auth verification remain outstanding. Do not turn fixture results into operational claims or treat this promotion as proof of cinematic-reference fidelity.

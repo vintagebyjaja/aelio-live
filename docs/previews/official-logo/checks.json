@@ -1,0 +1,634 @@
+[
+  {
+    "path": "/values/",
+    "width": 1440,
+    "overflow": false,
+    "src": "/assets/img/brand/dream-beyond-official.png",
+    "natural": [
+      1742,
+      903
+    ],
+    "display": [
+      150,
+      78
+    ],
+    "opacity": "1",
+    "filter": "none",
+    "footerLinks": [
+      [
+        "\u039bELIO.",
+        "/"
+      ],
+      [
+        "AELIO",
+        "/aelio/"
+      ],
+      [
+        "Personalities",
+        "/aelio/personalities/"
+      ],
+      [
+        "Main Pal",
+        "/aelio/main-pal/"
+      ],
+      [
+        "Conversation",
+        "/aelio/conversation/"
+      ],
+      [
+        "Agent Transfer",
+        "/aelio/agent-transfer/"
+      ],
+      [
+        "Our Vision",
+        "/dream-beyond/vision/"
+      ],
+      [
+        "Dream Spaces",
+        "/dream-beyond/dream-spaces/"
+      ],
+      [
+        "Ecosystem",
+        "/dream-beyond/ecosystem/"
+      ],
+      [
+        "Main Pal",
+        "/dream-beyond/main-pal/"
+      ],
+      [
+        "Agent Team",
+        "/dream-beyond/agent-team/"
+      ],
+      [
+        "AELIO Native",
+        "/technology/native/"
+      ],
+      [
+        "Dream Code",
+        "/technology/dream-code/"
+      ],
+      [
+        "Dream Deploy",
+        "/technology/dream-deploy/"
+      ],
+      [
+        "Dream Cloud",
+        "/technology/dream-cloud/"
+      ],
+      [
+        "Dream Memory",
+        "/technology/dream-memory/"
+      ],
+      [
+        "Design & Renders",
+        "/create/design/"
+      ],
+      [
+        "Architecture",
+        "/create/architecture/"
+      ],
+      [
+        "Projects",
+        "/create/projects/"
+      ],
+      [
+        "Animation",
+        "/create/animation/"
+      ],
+      [
+        "Games",
+        "/create/games/"
+      ],
+      [
+        "Privacy First",
+        "/values/privacy/"
+      ],
+      [
+        "Green Guardians",
+        "/values/green-guardians/"
+      ],
+      [
+        "Community Impact",
+        "/values/community/"
+      ],
+      [
+        "Real Opportunity",
+        "/values/opportunity/"
+      ],
+      [
+        "Onboarding Hall",
+        "/agent-campus/onboarding/"
+      ],
+      [
+        "AELIO University",
+        "/agent-campus/university/"
+      ],
+      [
+        "Mentor / Mentee",
+        "/agent-campus/mentor-mentee/"
+      ],
+      [
+        "Agent Draft Block",
+        "/agent-campus/draft-block/"
+      ],
+      [
+        "Agent Reports",
+        "/agent-campus/reports/"
+      ],
+      [
+        "Free",
+        "/live/plans/#free"
+      ],
+      [
+        "AELIO Live",
+        "/live/plans/#live"
+      ],
+      [
+        "Plans",
+        "/live/plans/"
+      ],
+      [
+        "Create Agents",
+        "/live/create-agents/"
+      ],
+      [
+        "Train Agents",
+        "/live/train-agents/"
+      ]
+    ]
+  },
+  {
+    "path": "/values/",
+    "width": 390,
+    "overflow": false,
+    "src": "/assets/img/brand/dream-beyond-official.png",
+    "natural": [
+      1742,
+      903
+    ],
+    "display": [
+      150,
+      78
+    ],
+    "opacity": "1",
+    "filter": "none",
+    "footerLinks": [
+      [
+        "\u039bELIO.",
+        "/"
+      ],
+      [
+        "AELIO",
+        "/aelio/"
+      ],
+      [
+        "Personalities",
+        "/aelio/personalities/"
+      ],
+      [
+        "Main Pal",
+        "/aelio/main-pal/"
+      ],
+      [
+        "Conversation",
+        "/aelio/conversation/"
+      ],
+      [
+        "Agent Transfer",
+        "/aelio/agent-transfer/"
+      ],
+      [
+        "Our Vision",
+        "/dream-beyond/vision/"
+      ],
+      [
+        "Dream Spaces",
+        "/dream-beyond/dream-spaces/"
+      ],
+      [
+        "Ecosystem",
+        "/dream-beyond/ecosystem/"
+      ],
+      [
+        "Main Pal",
+        "/dream-beyond/main-pal/"
+      ],
+      [
+        "Agent Team",
+        "/dream-beyond/agent-team/"
+      ],
+      [
+        "AELIO Native",
+        "/technology/native/"
+      ],
+      [
+        "Dream Code",
+        "/technology/dream-code/"
+      ],
+      [
+        "Dream Deploy",
+        "/technology/dream-deploy/"
+      ],
+      [
+        "Dream Cloud",
+        "/technology/dream-cloud/"
+      ],
+      [
+        "Dream Memory",
+        "/technology/dream-memory/"
+      ],
+      [
+        "Design & Renders",
+        "/create/design/"
+      ],
+      [
+        "Architecture",
+        "/create/architecture/"
+      ],
+      [
+        "Projects",
+        "/create/projects/"
+      ],
+      [
+        "Animation",
+        "/create/animation/"
+      ],
+      [
+        "Games",
+        "/create/games/"
+      ],
+      [
+        "Privacy First",
+        "/values/privacy/"
+      ],
+      [
+        "Green Guardians",
+        "/values/green-guardians/"
+      ],
+      [
+        "Community Impact",
+        "/values/community/"
+      ],
+      [
+        "Real Opportunity",
+        "/values/opportunity/"
+      ],
+      [
+        "Onboarding Hall",
+        "/agent-campus/onboarding/"
+      ],
+      [
+        "AELIO University",
+        "/agent-campus/university/"
+      ],
+      [
+        "Mentor / Mentee",
+        "/agent-campus/mentor-mentee/"
+      ],
+      [
+        "Agent Draft Block",
+        "/agent-campus/draft-block/"
+      ],
+      [
+        "Agent Reports",
+        "/agent-campus/reports/"
+      ],
+      [
+        "Free",
+        "/live/plans/#free"
+      ],
+      [
+        "AELIO Live",
+        "/live/plans/#live"
+      ],
+      [
+        "Plans",
+        "/live/plans/"
+      ],
+      [
+        "Create Agents",
+        "/live/create-agents/"
+      ],
+      [
+        "Train Agents",
+        "/live/train-agents/"
+      ]
+    ]
+  },
+  {
+    "path": "/explore/",
+    "width": 1440,
+    "overflow": false,
+    "src": "/assets/img/brand/dream-beyond-official.png",
+    "natural": [
+      1742,
+      903
+    ],
+    "display": [
+      150,
+      78
+    ],
+    "opacity": "1",
+    "filter": "none",
+    "footerLinks": [
+      [
+        "\u039bELIO.",
+        "/"
+      ],
+      [
+        "AELIO",
+        "/aelio/"
+      ],
+      [
+        "Personalities",
+        "/aelio/personalities/"
+      ],
+      [
+        "Main Pal",
+        "/aelio/main-pal/"
+      ],
+      [
+        "Conversation",
+        "/aelio/conversation/"
+      ],
+      [
+        "Agent Transfer",
+        "/aelio/agent-transfer/"
+      ],
+      [
+        "Our Vision",
+        "/dream-beyond/vision/"
+      ],
+      [
+        "Dream Spaces",
+        "/dream-beyond/dream-spaces/"
+      ],
+      [
+        "Ecosystem",
+        "/dream-beyond/ecosystem/"
+      ],
+      [
+        "Main Pal",
+        "/dream-beyond/main-pal/"
+      ],
+      [
+        "Agent Team",
+        "/dream-beyond/agent-team/"
+      ],
+      [
+        "AELIO Native",
+        "/technology/native/"
+      ],
+      [
+        "Dream Code",
+        "/technology/dream-code/"
+      ],
+      [
+        "Dream Deploy",
+        "/technology/dream-deploy/"
+      ],
+      [
+        "Dream Cloud",
+        "/technology/dream-cloud/"
+      ],
+      [
+        "Dream Memory",
+        "/technology/dream-memory/"
+      ],
+      [
+        "Design & Renders",
+        "/create/design/"
+      ],
+      [
+        "Architecture",
+        "/create/architecture/"
+      ],
+      [
+        "Projects",
+        "/create/projects/"
+      ],
+      [
+        "Animation",
+        "/create/animation/"
+      ],
+      [
+        "Games",
+        "/create/games/"
+      ],
+      [
+        "Privacy First",
+        "/values/privacy/"
+      ],
+      [
+        "Green Guardians",
+        "/values/green-guardians/"
+      ],
+      [
+        "Community Impact",
+        "/values/community/"
+      ],
+      [
+        "Real Opportunity",
+        "/values/opportunity/"
+      ],
+      [
+        "Onboarding Hall",
+        "/agent-campus/onboarding/"
+      ],
+      [
+        "AELIO University",
+        "/agent-campus/university/"
+      ],
+      [
+        "Mentor / Mentee",
+        "/agent-campus/mentor-mentee/"
+      ],
+      [
+        "Agent Draft Block",
+        "/agent-campus/draft-block/"
+      ],
+      [
+        "Agent Reports",
+        "/agent-campus/reports/"
+      ],
+      [
+        "Free",
+        "/live/plans/#free"
+      ],
+      [
+        "AELIO Live",
+        "/live/plans/#live"
+      ],
+      [
+        "Plans",
+        "/live/plans/"
+      ],
+      [
+        "Create Agents",
+        "/live/create-agents/"
+      ],
+      [
+        "Train Agents",
+        "/live/train-agents/"
+      ]
+    ]
+  },
+  {
+    "path": "/explore/",
+    "width": 390,
+    "overflow": false,
+    "src": "/assets/img/brand/dream-beyond-official.png",
+    "natural": [
+      1742,
+      903
+    ],
+    "display": [
+      150,
+      78
+    ],
+    "opacity": "1",
+    "filter": "none",
+    "footerLinks": [
+      [
+        "\u039bELIO.",
+        "/"
+      ],
+      [
+        "AELIO",
+        "/aelio/"
+      ],
+      [
+        "Personalities",
+        "/aelio/personalities/"
+      ],
+      [
+        "Main Pal",
+        "/aelio/main-pal/"
+      ],
+      [
+        "Conversation",
+        "/aelio/conversation/"
+      ],
+      [
+        "Agent Transfer",
+        "/aelio/agent-transfer/"
+      ],
+      [
+        "Our Vision",
+        "/dream-beyond/vision/"
+      ],
+      [
+        "Dream Spaces",
+        "/dream-beyond/dream-spaces/"
+      ],
+      [
+        "Ecosystem",
+        "/dream-beyond/ecosystem/"
+      ],
+      [
+        "Main Pal",
+        "/dream-beyond/main-pal/"
+      ],
+      [
+        "Agent Team",
+        "/dream-beyond/agent-team/"
+      ],
+      [
+        "AELIO Native",
+        "/technology/native/"
+      ],
+      [
+        "Dream Code",
+        "/technology/dream-code/"
+      ],
+      [
+        "Dream Deploy",
+        "/technology/dream-deploy/"
+      ],
+      [
+        "Dream Cloud",
+        "/technology/dream-cloud/"
+      ],
+      [
+        "Dream Memory",
+        "/technology/dream-memory/"
+      ],
+      [
+        "Design & Renders",
+        "/create/design/"
+      ],
+      [
+        "Architecture",
+        "/create/architecture/"
+      ],
+      [
+        "Projects",
+        "/create/projects/"
+      ],
+      [
+        "Animation",
+        "/create/animation/"
+      ],
+      [
+        "Games",
+        "/create/games/"
+      ],
+      [
+        "Privacy First",
+        "/values/privacy/"
+      ],
+      [
+        "Green Guardians",
+        "/values/green-guardians/"
+      ],
+      [
+        "Community Impact",
+        "/values/community/"
+      ],
+      [
+        "Real Opportunity",
+        "/values/opportunity/"
+      ],
+      [
+        "Onboarding Hall",
+        "/agent-campus/onboarding/"
+      ],
+      [
+        "AELIO University",
+        "/agent-campus/university/"
+      ],
+      [
+        "Mentor / Mentee",
+        "/agent-campus/mentor-mentee/"
+      ],
+      [
+        "Agent Draft Block",
+        "/agent-campus/draft-block/"
+      ],
+      [
+        "Agent Reports",
+        "/agent-campus/reports/"
+      ],
+      [
+        "Free",
+        "/live/plans/#free"
+      ],
+      [
+        "AELIO Live",
+        "/live/plans/#live"
+      ],
+      [
+        "Plans",
+        "/live/plans/"
+      ],
+      [
+        "Create Agents",
+        "/live/create-agents/"
+      ],
+      [
+        "Train Agents",
+        "/live/train-agents/"
+      ]
+    ]
+  }
+]

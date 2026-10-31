@@ -62,7 +62,7 @@ function header(cur) {
 const footer = () => `
 <section class="earth" aria-hidden="true"><div class="earth-word">DREAM BEYOND</div><div class="earth-glow"></div></section>
 <footer class="site-foot"><div class="foot-inner">
-  <div><a class="logo" href="/"><span class="lv">Λ</span>ELIO<i>.</i></a><img class="foot-emblem" src="/assets/img/brand/dream-beyond-logo-675.webp" alt="Dream Beyond" width="150" height="78" loading="lazy"><p class="motto">Dream beyond. Never say never.</p><p class="dim small">© ${new Date().getFullYear()} Grooveville LLC. Your space. Your energy.</p></div>
+  <div><a class="logo" href="/"><span class="lv">Λ</span>ELIO<i>.</i></a><img class="foot-emblem" src="/assets/img/brand/dream-beyond-official.png" alt="Dream Beyond" width="150" height="78" loading="lazy"><p class="motto">Dream beyond. Never say never.</p><p class="dim small">© ${new Date().getFullYear()} Grooveville LLC. Your space. Your energy.</p></div>
   ${NAV.map(n => `<div><div class="f-h">${esc(n.label)}</div>${n.groups.flatMap(g => g.links).slice(0, 5).map(h => `<a href="${h}">${esc(info(h).title === "Overview" ? n.label : info(h).title)}</a>`).join("")}</div>`).join("")}
 </div></footer>
 <div class="modal" id="earlyModal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="emT">
@@ -79,7 +79,7 @@ function head(p, desc) {
 <title>${esc(p.home ? p.title : p.title + " · AELIO")}</title><meta name="description" content="${esc(desc)}">
 <meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(desc)}"><meta name="theme-color" content="#05070b">
 <link rel="icon" href="/favicon.webp" type="image/webp"><link rel="icon" href="/icon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest">
-${p.home ? `<script src="/assets/intro.js?v=${VERSION}"></script><link rel="preload" as="image" href="/assets/img/brand/dream-beyond-logo-675.webp">` : ""}
+${p.home ? `<script src="/assets/intro.js?v=${VERSION}"></script><link rel="preload" as="image" href="/assets/img/brand/dream-beyond-official.png">` : ""}
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=${VERSION}"><link rel="stylesheet" href="/assets/cine.css?v=${VERSION}"><link rel="stylesheet" href="/assets/editorial.css?v=${VERSION}"></head><body class="pub${p.green ? " green" : ""}" data-section="${p.home ? "home" : p.green ? "green" : p.nav || ""}" data-overview="${p.overview ? 1 : 0}">${p.home ? intro() : ""}`;
@@ -254,8 +254,8 @@ function intro() {
   <div class="intro-sky"></div><div class="intro-stars" style="box-shadow:${field(140, .9)}"></div><div class="intro-stars s2" style="box-shadow:${field(60, 1.6)}"></div>
   <svg class="intro-clouds" viewBox="0 0 1200 220" preserveAspectRatio="none" aria-hidden="true"><defs><filter id="ib" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="18"/></filter></defs><g filter="url(#ib)">${c}</g></svg>
   <div class="intro-sea"></div>
-  <div class="intro-emblem"><img src="/assets/img/brand/dream-beyond-logo-675.webp" alt="Dream Beyond" width="675" height="350"><span class="sheen"></span></div>
-  <div class="intro-reflect" aria-hidden="true"><img src="/assets/img/brand/dream-beyond-logo-675.webp" alt="" width="675" height="350"></div>
+  <div class="intro-emblem"><img src="/assets/img/brand/dream-beyond-official.png" alt="Dream Beyond" width="1742" height="903"></div>
+  <div class="intro-reflect" aria-hidden="true"><img src="/assets/img/brand/dream-beyond-official.png" alt="" width="1742" height="903"></div>
   </div><button class="intro-skip" id="introSkip" type="button">Skip intro →</button></div>`;
 }
 

@@ -61,8 +61,8 @@ const SCENES = {
         <path d="${ridge(r, 600, 26, 14)}" fill="#0a0d16" opacity=".9"/>
       </svg>
       <div class="env-water"><canvas class="env-canvas" data-water="gold" data-seed="${o.seed || 11}"></canvas></div>
-      ${o.emblem === false ? "" : `<div class="emblem-float"><img class="emblem" src="/assets/img/brand/dream-beyond-logo-675.webp" alt="Dream Beyond emblem" width="675" height="350">
-        <img class="emblem-reflect" src="/assets/img/brand/dream-beyond-logo-675.webp" alt="" width="675" height="350" aria-hidden="true"></div>`}
+      ${o.emblem === false ? "" : `<div class="emblem-float"><img class="emblem" src="/assets/img/brand/dream-beyond-official.png" alt="Dream Beyond emblem" width="1742" height="903">
+        <img class="emblem-reflect" src="/assets/img/brand/dream-beyond-official.png" alt="" width="1742" height="903" aria-hidden="true"></div>`}
       <div class="env-shade env-shade-left"></div>
     </div>`;
   },
