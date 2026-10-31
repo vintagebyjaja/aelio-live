@@ -1,0 +1,65 @@
+[
+  {
+    "id": "city",
+    "supplied_file": "World/Aurevia_City_Master_Reference.png",
+    "source_sha256": "49c79b97b1a6df4f713d2e8202c57b7251da0f9c6ed859946cc2782773f10567",
+    "display_asset": "/assets/aurevia/city.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "office",
+    "supplied_file": "Residence/Principal_Office_Holographic_Concept.png",
+    "source_sha256": "c6b7b06fbc11ad74a93e3cdba187fafed5f90b864bc9e1fa90010ba8a807682a",
+    "display_asset": "/assets/aurevia/office.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "residence",
+    "supplied_file": "Residence/Coastal_Residence_Exterior.png",
+    "source_sha256": "f04b9666a2f1aa2aa4be832d8b94541cd2b89f265fa391931c1d56f9beb0cc0e",
+    "display_asset": "/assets/aurevia/residence.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "bedroom",
+    "supplied_file": "Residence/Private_Bedroom.png",
+    "source_sha256": "4c85bf2b1cc69fea50fc7a0dccab600f8e9daf9aa7f1932fd9a1f542b78d822c",
+    "display_asset": "/assets/aurevia/bedroom.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "conference",
+    "supplied_file": "Residence/Dream_Team_Conference_Room.png",
+    "source_sha256": "5812ff43dda8b3a3a1ee29cd429188ec052bbfd24f70571a0cbf3a25ddc5a64a",
+    "display_asset": "/assets/aurevia/conference.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "companions",
+    "supplied_file": "Characters/Core_Seven_and_AELIO_Orb.png",
+    "source_sha256": "d5be0952715c4e4643e56249af82574f0f276f506f28c019cc005421abc04b7f",
+    "display_asset": "/assets/aurevia/companions.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "style",
+    "supplied_file": "Characters/Character_3D_Style_Reference.png",
+    "source_sha256": "354cddc4f582edab34e69df1aa6b24eb254cb17f51985579095ab07603764651",
+    "display_asset": "/assets/aurevia/style.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "university",
+    "supplied_file": "University/University_and_Brain_Moodboard.png",
+    "source_sha256": "e4274ae5073faed82dcd77cd10c7f59c247dd6c28ff2125c95a2d9a88d0b5956",
+    "display_asset": "/assets/aurevia/university.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  },
+  {
+    "id": "accountability",
+    "supplied_file": "Accountability/Jail_and_Community_Service_Moodboard.png",
+    "source_sha256": "c54e9c5b1cc2e3cc34adda387dfb7b2e746888e0569c871f9b4ae37227c2260a",
+    "display_asset": "/assets/aurevia/accountability.webp",
+    "purpose": "Approved 2D concept reference; not a finished 3D model"
+  }
+]

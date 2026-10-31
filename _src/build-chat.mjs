@@ -1,8 +1,11 @@
 import { build } from "esbuild";
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { cpSync, rmSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
+// This directory contains generated bundles only; remove obsolete lazy chunk names.
+rmSync("public/assets/chat", { recursive: true, force: true });
 await build({
   entryPoints: ["_src/chat/main.tsx"],
   bundle: true,
+  splitting: true,
   minify: true,
   format: "esm",
   target: "es2020",
@@ -26,3 +29,6 @@ writeFileSync("public/index.html",html.replace('<meta name="robots" content="noi
 
 await build({entryPoints:["_src/chat/DreamBox.tsx"],bundle:true,minify:true,format:"esm",target:"es2020",outdir:"public/assets/dreambox",entryNames:"widget",jsx:"automatic",define:{"process.env.NODE_ENV":'"production"'}});
 mkdirSync("public/dreambox",{recursive:true});writeFileSync("public/dreambox/index.html",'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>AELIO DreamBox</title><link rel="stylesheet" href="/assets/dreambox/widget.css?v='+version+'"></head><body><div id="dreambox-root"></div><script src="/assets/config.js"></script><script type="module" src="/assets/dreambox/widget.js?v='+version+'"></script></body></html>');
+
+// Publish only optimized approved references under a new prefix. Never replace existing art.
+cpSync("assets/aurevia", "public/assets/aurevia", { recursive: true });

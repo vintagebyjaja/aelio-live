@@ -6,6 +6,8 @@ declare module "react" {
   export function useRef<T = any>(init?: T): { current: T };
   export function useCallback<T extends (...a: any[]) => any>(fn: T, deps: any[]): T;
   export function useMemo<T>(fn: () => T, deps: any[]): T;
+  export function lazy<T>(loader:()=>Promise<T>): any;
+  export const Suspense: any;
   export const Fragment: any;
   const React: any;
   export default React;

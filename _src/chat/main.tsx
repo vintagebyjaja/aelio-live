@@ -5,7 +5,7 @@ import {AccountSecurity} from "./ModernAuth";
 import {AgentAvatar,CompanionNavigation,CompanionLibrary} from "./Companions";
 import {companion} from "../shared/companions.js";
 import {AelioLoading,FeatureBoundary,ConnectionNotice,friendly} from "./Experience";
-import React, { useState, useEffect, useRef } from "react";
+import React, { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { auth, call, upload, fileURL, download, openStudio } from "./client";
 import { AuthPanel } from "./Auth";
@@ -19,6 +19,7 @@ import "./workspaces.css";
 import "./workspace-shell.css";
 import { AppearanceControls } from "./Appearance";
 import { designOf, resolveAppearance, guestAppearance } from "./design-system";
+const Aurevia=lazy(()=>import("./aurevia/Aurevia"));
 const BACKGROUNDS = [
   "AELIO Original",
   "Space & Galaxies",
@@ -100,7 +101,7 @@ function App() {
       location.pathname.startsWith("/account") ||
         location.pathname.startsWith("/auth")
         ? "account"
-        : ['library','brain','echo','allowance'].includes(location.hash.slice(1))?location.hash.slice(1):"",
+        : ['library','brain','echo','allowance','aurevia'].includes(location.hash.slice(1))?location.hash.slice(1):"",
     ),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(""),
@@ -172,7 +173,7 @@ function App() {
               await newThread([agent.id], mila ? "MILA" : "AELIO");
             setHome(!new URLSearchParams(location.search).has("companion"));
             const requested=location.hash.slice(1);
-            if(['library','brain','echo','allowance'].includes(requested)){setPanel(requested);setHome(false);}
+            if(['library','brain','echo','allowance','aurevia'].includes(requested)){setPanel(requested);setHome(false);}
           }
         } catch (e: any) {
           setAccountError(friendly(e));
@@ -498,6 +499,7 @@ function App() {
           "create",
           "projects",
           "brain",
+          "aurevia",
           "echo",
           "library",
           "allowance",
@@ -509,7 +511,7 @@ function App() {
       )
         navigate(view, false);
     };
-    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo'].includes(view))navigate(view,false);};
+    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo','aurevia'].includes(view))navigate(view,false);};
     addEventListener("popstate", restore);
     addEventListener("hashchange",fromHash);
     return () => {removeEventListener("popstate", restore);removeEventListener("hashchange",fromHash);};
@@ -665,7 +667,7 @@ function App() {
       <ConnectionNotice/>
       <header className="navigation-header">
         <button className="sidebar-toggle" aria-label={mobileNavigation?'Open conversations':collapsed?'Expand sidebar':'Collapse sidebar'} aria-controls="aelio-sidebar" aria-expanded={mobileNavigation?drawer:!collapsed} onClick={()=>mobileNavigation?setDrawer(!drawer):setCollapsed(!collapsed)}><Icon name="menu"/></button>
-        <label className="workspace-switcher"><span>Your workspace</span><select aria-label="Workspace" value={panel==='brain'?'brain':home?'aelio':'dreambox'} onChange={(e:any)=>{const v=e.target.value;if(v==='studio'){openStudio().catch(error=>setErr(friendly(error)));}else if(v==='aelio')navigate('home');else if(v==='brain')navigate('brain');else {setHome(false);setPanel('');setDrawer(false);}}}><option value="aelio">AELIO</option><option value="dreambox">Dream Box</option><option value="brain">Brain</option>{account?.role==='founder'&&<option value="studio">Studio Brain · Private</option>}</select></label>
+        <label className="workspace-switcher"><span>Your workspace</span><select aria-label="Workspace" value={panel==='aurevia'?'aurevia':panel==='brain'?'brain':home?'aelio':'dreambox'} onChange={(e:any)=>{const v=e.target.value;if(v==='studio'){openStudio().catch(error=>setErr(friendly(error)));}else if(v==='aelio')navigate('home');else if(v==='brain')navigate('brain');else if(v==='aurevia')navigate('aurevia');else {setHome(false);setPanel('');setDrawer(false);}}}><option value="aelio">AELIO</option><option value="dreambox">Dream Box</option><option value="brain">Brain</option><option value="aurevia">AUREVIA</option>{account?.role==='founder'&&<option value="studio">Studio Brain · Private</option>}</select></label>
       </header>
       <header className="topbar">
         <label className="desktop-search">
@@ -824,7 +826,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
+        {panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onThread={(t:any)=>{if(t){select(t,false);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>
@@ -1372,7 +1374,7 @@ function App() {
               } as any
             }
           >
-            <div className="chat-header">
+            <div className="chat-header"><button className="aurevia-chat-link" onClick={()=>navigate("aurevia")} title="Open your Principal’s Office">Continue in AUREVIA ↗</button>
               <AgentAvatar agent={activeAgents[0]} group={activeAgents.length>1}/>
               <div>
                 <h1>{cur?.permanent_key==='dream-team'?'Dream Team':activeAgents.length===1?(companion(activeAgents[0]?.kind)?.title||cur?.title||'AELIO'):cur?.title||'AELIO'}</h1>

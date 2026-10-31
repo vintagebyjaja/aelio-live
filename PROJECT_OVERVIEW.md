@@ -1,3 +1,15 @@
+## AUREVIA Phase 1 main promotion approved — 2026-10-31
+
+The owner explicitly authorized pushing the reviewed AELIO 1.0.11 AUREVIA Phase 1 update to main. This supersedes the local-only review restriction for this completed delta. Push main only; leave remote migration and PATHD unchanged. Existing Git-triggered builds may run; no manual deployment, production SQL, provider activation, settings or secrets changes are authorized. SQL14 has been supplied to the owner but application is not confirmed; residence/meeting persistence remains unavailable until applied. Preserve the documented distinction between approved 2D concepts, early procedural 3D, fixture-tested Chat continuity and future University/court/valuation/rigged-avatar features. Hosted deployment/inference and provider cost savings remain unverified.
+
+---
+
+## AUREVIA Phase 1 local review — 2026-10-31
+
+Reviewed AELIO 1.0.10 was promoted to main at 2ecfae8 and reviewed PATHD 0.1.6 at 8cbc6c4 under explicit user approval. Remote migration was deliberately not pushed. This new AELIO 1.0.11 AUREVIA work remains local on migration: no push/merge/manual deployment or production SQL/configuration changes authorized. SQL14 is a new additive residence/meeting migration for owner review, not reported applied; SQL13 was reported applied. Preserve homepage and official portraits. AUREVIA Phase 1 uses existing chat/agent identities and inference consent; procedural 3D is an architecture study, approved images are 2D concepts, and later University/exam/court/valuation/society capabilities are not claimed implemented. See docs/aurevia/INTEGRATION_PLAN.md and docs/releases/AELIO_v1.0.11_AUREVIA_REVIEW.md for full scope and actual local verification. Keep private data out of localStorage/world metadata and never fabricate learning, scores or live provider savings.
+
+---
+
 ## Main promotion authorized — 2026-10-31
 
 The owner explicitly approved pushing the reviewed AELIO 1.0.10 and PATHD 0.1.6 changes to their respective main branches. This supersedes earlier no-push review boundaries for those completed updates only. Normal Git-triggered builds may run; no manual deployment, production SQL, secrets or settings changes are authorized. Owner reports shared SQL13 applied. AUREVIA is a new, separate phased integration on local migration for review; do not push that new work or merge it into main without approval. Preserve approved homepage and portraits. Existing hosted integration limits remain documented; local tests do not prove production Auth/inference.
