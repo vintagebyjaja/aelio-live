@@ -79,3 +79,25 @@ def test_echo_bridge_keeps_simulation_rules_above_editable_profile(client,monkey
     payload['memory_enabled']=False
     assert client.post('/api/internal/messaging',headers=headers,json=payload).status_code==200
     assert 'Approved fishing story' not in seen[-1].instructions
+
+def test_group_bridge_calls_each_identity_and_passes_earlier_turn_replies(client,monkeypatch):
+    monkeypatch.setenv('AELIO_PROXY_SECRET','proxy-fixture')
+    monkeypatch.setenv('AELIO_MESSAGING_SECRET','bridge-fixture')
+    from aelio.intelligence import gateway
+    seen=[]
+    def run(request,caller):
+        seen.append(request)
+        yield {'type':'delta','text':'Independent fixture '+str(len(seen))}
+        yield {'type':'done'}
+    monkeypatch.setattr(gateway,'run',run)
+    headers={'x-aelio-proxy-secret':'proxy-fixture','x-aelio-messaging-secret':'bridge-fixture'}
+    people=[{'id':'chloe-id','kind':'chloe','instructions':'Creative and encouraging.'},{'id':'reggie-id','kind':'reggie','instructions':'Practical and direct.'}]
+    payload={'guest':'fixture','consent':True,'content':'Rank these ideas','conversation_id':'group-fixture','group':{'tone':'natural'},'agents':people}
+    response=client.post('/api/internal/messaging',headers=headers,json=payload)
+    events=[json.loads(line) for line in response.text.splitlines()]
+    assert len(seen)==2
+    assert [(e['agent_id'],e['speaker'])for e in events if e['type']=='delta']==[('chloe-id','Chloe'),('reggie-id','Reggie')]
+    assert 'Speak only as Chloe' in seen[0].instructions
+    assert 'Speak only as Reggie' in seen[1].instructions
+    assert any(m.content=='[Chloe] Independent fixture 1' for m in seen[1].messages)
+    assert events[-1]['type']=='complete'

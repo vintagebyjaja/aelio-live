@@ -1,14 +1,16 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as T from 'three';
+import {Sky} from 'three/addons/objects/Sky.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {PLAZA_VIEWS,plazaStep,plazaWalkable} from '../../shared/aurevia-plaza.js';
 import {plazaMaterials} from './plaza/materials';
 import {architecture} from './plaza/architecture';
 import {landscape} from './plaza/landscape';
 import {landmark} from './plaza/landmark';
+import {coastalArchitecture,principalOffice} from './plaza/coastal';
 
-type Props={quality:string;mode:string;view:string;onUnavailable:()=>void};
-export default function WorldScene({quality,mode,view,onUnavailable}:Props){
+type Props={quality:string;mode:string;view:string;onUnavailable:()=>void;location?:string};
+export default function WorldScene({quality,mode,view,onUnavailable,location="plaza"}:Props){
  const host=useRef<HTMLDivElement|null>(null),move=useRef(new Set<string>()),changeView=useRef<(v:string)=>void>(()=>{}),changeMode=useRef<(v:string)=>void>(()=>{});
  const [ready,setReady]=useState(false);
  useEffect(()=>changeView.current(view),[view]);
@@ -17,22 +19,27 @@ export default function WorldScene({quality,mode,view,onUnavailable}:Props){
   const el=host.current!;let renderer:T.WebGLRenderer;
   try{renderer=new T.WebGLRenderer({antialias:true,powerPreference:'low-power'});}catch{onUnavailable();return;}
   setReady(false);const low=quality==='low',high=quality==='high';
-  renderer.setPixelRatio(Math.min(devicePixelRatio,low?1:high?1.8:1.35));renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;renderer.outputColorSpace=T.SRGBColorSpace;
+  renderer.setPixelRatio(Math.min(devicePixelRatio,low?1:high?1.8:1.35));renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=T.SRGBColorSpace;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
-  renderer.domElement.setAttribute('aria-label','Orb Plaza, AUREVIA');renderer.domElement.setAttribute('role','img');el.prepend(renderer.domElement);
-  const scene=new T.Scene();scene.fog=new T.FogExp2(0xc9a585,.0022);const camera=new T.PerspectiveCamera(55,1,.15,1600);camera.rotation.order='YXZ';
-  const sunVector=new T.Vector3(-.8,.095,-.55).normalize();
-  const sky=new T.Mesh(new T.SphereGeometry(1000,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,uniforms:{sun:{value:sunVector}},vertexShader:'varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}',fragmentShader:`varying vec3 world;uniform vec3 sun;void main(){vec3 d=normalize(world-cameraPosition);float h=max(d.y,0.);vec3 color=mix(vec3(.94,.66,.43),vec3(.11,.28,.44),pow(h,.38));float glow=pow(max(dot(d,sun),0.),20.);color+=vec3(.55,.23,.06)*glow;float disk=smoothstep(.9996,.99985,dot(d,sun));gl_FragColor=vec4(mix(color,vec3(4.,2.3,.9),disk),1.);
-#include <tonemapping_fragment>
-#include <colorspace_fragment>
-}`}));scene.add(sky);
-  scene.add(new T.HemisphereLight(0xafc9dc,0x9c774b,.8));
-  const sun=new T.DirectionalLight(0xffc27b,3.0);sun.position.copy(sunVector).multiplyScalar(90);sun.castShadow=true;sun.shadow.mapSize.setScalar(low?1024:high?4096:2048);sun.shadow.camera.left=-45;sun.shadow.camera.right=45;sun.shadow.camera.top=45;sun.shadow.camera.bottom=-45;sun.shadow.camera.near=1;sun.shadow.camera.far=180;sun.shadow.normalBias=.035;sun.shadow.bias=-.00015;scene.add(sun);
-  const pmrem=new T.PMREMGenerator(renderer);const room=new RoomEnvironment();const environment=pmrem.fromScene(room,.04);scene.environment=environment.texture;scene.environmentIntensity=.55;room.dispose();pmrem.dispose();
-  const materials=plazaMaterials(),kit=architecture(scene,materials),coast=landscape(scene,materials,quality,sunVector),orb=landmark(scene,materials,kit,low);kit.finish();
-  const targetPosition=new T.Vector3(),targetRotation=new T.Quaternion();let transitioning=false,interaction=mode==='explore',staticFrame=0;const reducedQuery=matchMedia('(prefers-reduced-motion: reduce)');
-  function cameraView(id:string,immediate=false){staticFrame=0;const shot=PLAZA_VIEWS[id]||PLAZA_VIEWS.arrival;targetPosition.fromArray(shot.position);const temp=camera.clone();temp.position.copy(targetPosition);temp.lookAt(new T.Vector3().fromArray(shot.look));targetRotation.copy(temp.quaternion);if(immediate||reducedQuery.matches){camera.position.copy(targetPosition);camera.quaternion.copy(targetRotation);transitioning=false;}else transitioning=true;}
-  function setMode(v:string){staticFrame=0;interaction=v==='explore';move.current.clear();if(interaction){const current=[camera.position.x,2.1,camera.position.z];if(plazaWalkable(current))camera.position.fromArray(current);else{camera.position.set(9,2.1,16);camera.lookAt(0,4,-3);}transitioning=false;}}
+  renderer.domElement.setAttribute('aria-label',location==='office'?"Principal’s Office overlooking Orb Plaza, AUREVIA":'Orb Plaza, AUREVIA');renderer.domElement.setAttribute('role','img');el.prepend(renderer.domElement);
+  const scene=new T.Scene();scene.fog=new T.FogExp2(0xc4d6da,.0013);const camera=new T.PerspectiveCamera(55,1,.15,1600);camera.rotation.order='YXZ';
+  const sunVector=new T.Vector3(-.7,.24,.6).normalize();
+  const sky=new Sky();sky.scale.setScalar(1000);sky.material.uniforms.turbidity.value=3.5;sky.material.uniforms.rayleigh.value=1.8;sky.material.uniforms.mieCoefficient.value=.004;sky.material.uniforms.mieDirectionalG.value=.82;sky.material.uniforms.sunPosition.value.copy(sunVector);scene.add(sky);
+  const clouds=new T.Mesh(new T.SphereGeometry(800,48,24),new T.ShaderMaterial({side:T.BackSide,transparent:true,depthWrite:false,uniforms:{sun:{value:sunVector}},vertexShader:'varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:`varying vec3 vDirection;uniform vec3 sun;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+ float fbm(vec2 p){float n=0.;float a=.5;for(int i=0;i<5;i++){n+=noise(p)*a;p=p*2.03+vec2(12.3,4.7);a*=.5;}return n;}
+ void main(){vec3 d=normalize(vDirection);vec2 p=d.xz/(max(d.y,0.)+.14)*1.5;float density=smoothstep(.43,.73,fbm(p));density*=smoothstep(0.,.13,d.y);float light=fbm(p+vec2(.16,.1));vec3 col=mix(vec3(.56,.64,.7),vec3(1.,.91,.76),light*.8+.25);gl_FragColor=vec4(col,density*.9);
+ #include <tonemapping_fragment>
+ #include <colorspace_fragment>
+ }`}));clouds.renderOrder=1;scene.add(clouds);
+  scene.add(new T.HemisphereLight(0xd6e9ff,0x9c9478,.65));
+  const sun=new T.DirectionalLight(0xffd6a0,3.7);sun.position.copy(sunVector).multiplyScalar(90);sun.castShadow=true;sun.shadow.mapSize.setScalar(low?1024:high?4096:2048);sun.shadow.camera.left=-45;sun.shadow.camera.right=45;sun.shadow.camera.top=45;sun.shadow.camera.bottom=-45;sun.shadow.camera.near=1;sun.shadow.camera.far=180;sun.shadow.normalBias=.035;sun.shadow.bias=-.00015;scene.add(sun);
+  const pmrem=new T.PMREMGenerator(renderer);const room=new RoomEnvironment();const environment=pmrem.fromScene(room,.04);scene.environment=environment.texture;scene.environmentIntensity=.65;room.dispose();pmrem.dispose();
+  const materials=plazaMaterials(),kit=architecture(scene,materials),coast=landscape(scene,materials,quality,sunVector),orb=landmark(scene,materials,kit,low);coastalArchitecture(materials,kit);principalOffice(scene,materials,kit);kit.finish();
+  const targetPosition=new T.Vector3(),targetRotation=new T.Quaternion();let transitioning=false,interaction=location==='plaza'&&mode==='explore',staticFrame=0;const reducedQuery=matchMedia('(prefers-reduced-motion: reduce)');
+  function cameraView(id:string,immediate=false){staticFrame=0;const shot=location==='office'?{position:[-29,17.1,-18],look:[-22,17.8,5]}:PLAZA_VIEWS[id]||PLAZA_VIEWS.arrival;targetPosition.fromArray(shot.position);const temp=camera.clone();temp.position.copy(targetPosition);temp.lookAt(new T.Vector3().fromArray(shot.look));targetRotation.copy(temp.quaternion);if(immediate||reducedQuery.matches){camera.position.copy(targetPosition);camera.quaternion.copy(targetRotation);transitioning=false;}else transitioning=true;}
+  function setMode(v:string){staticFrame=0;interaction=location==='plaza'&&v==='explore';move.current.clear();if(interaction){const current=[camera.position.x,2.1,camera.position.z];if(plazaWalkable(current))camera.position.fromArray(current);else{camera.position.set(9,2.1,16);camera.lookAt(0,4,-3);}transitioning=false;}}
   changeView.current=(v)=>cameraView(v);changeMode.current=setMode;cameraView(view,true);if(interaction)setMode(mode);
   let drag:{x:number,y:number}|null=null;
   const down=(e:PointerEvent)=>{if(!interaction)return;drag={x:e.clientX,y:e.clientY};el.setPointerCapture(e.pointerId);el.focus();};
@@ -60,6 +67,6 @@ export default function WorldScene({quality,mode,view,onUnavailable}:Props){
    disposed=true;cancelAnimationFrame(frame);clear();resize.disconnect();observer.disconnect();window.removeEventListener('blur',clear);document.removeEventListener('visibilitychange',visibility);el.removeEventListener('pointerdown',down);el.removeEventListener('pointermove',pointer);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);el.removeEventListener('keydown',keys);el.removeEventListener('keyup',keyup);el.removeEventListener('blur',clear);renderer.domElement.removeEventListener('webglcontextlost',contextLost);delete el.dataset.ready;
    coast.dispose();orb.dispose();const geometries=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{const mesh=o as T.Mesh;if(mesh.geometry)geometries.add(mesh.geometry);if(mesh.material)(Array.isArray(mesh.material)?mesh.material:[mesh.material]).forEach(m=>mats.add(m));});geometries.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());materials.textures.forEach(t=>t.dispose());environment.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();changeView.current=()=>{};changeMode.current=()=>{};
   };
- },[quality]);
- return <div className="aurevia-scene-wrap"><div className="aurevia-scene" ref={host} tabIndex={0} aria-label="Explore Orb Plaza. Drag to look. W A S D or arrow keys to walk."/>{!ready&&<p role="status">Opening Orb Plaza…</p>}{mode==='explore'&&<><div className="aurevia-move" role="group" aria-label="Walking controls">{[['w','Forward','↑'],['a','Left','←'],['s','Back','↓'],['d','Right','→']].map(([key,label,icon])=><button key={key} aria-label={'Walk '+label} onPointerDown={(e:any)=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);move.current.add(key);}} onPointerUp={()=>move.current.delete(key)} onPointerCancel={()=>move.current.delete(key)} onLostPointerCapture={()=>move.current.delete(key)} onKeyDown={(e:any)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();move.current.add(key);}}} onKeyUp={()=>move.current.delete(key)} onBlur={()=>move.current.delete(key)}>{icon}</button>)}</div><p className="aurevia-scene-note">Drag to look · WASD / arrows to walk</p></>}</div>;
+ },[quality,location]);
+ return <div className="aurevia-scene-wrap"><div className="aurevia-scene" ref={host} tabIndex={0} aria-label="Explore Orb Plaza. Drag to look. W A S D or arrow keys to walk."/>{!ready&&<p role="status">Opening Orb Plaza…</p>}{location==='plaza'&&mode==='explore'&&<><div className="aurevia-move" role="group" aria-label="Walking controls">{[['w','Forward','↑'],['a','Left','←'],['s','Back','↓'],['d','Right','→']].map(([key,label,icon])=><button key={key} aria-label={'Walk '+label} onPointerDown={(e:any)=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);move.current.add(key);}} onPointerUp={()=>move.current.delete(key)} onPointerCancel={()=>move.current.delete(key)} onLostPointerCapture={()=>move.current.delete(key)} onKeyDown={(e:any)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();move.current.add(key);}}} onKeyUp={()=>move.current.delete(key)} onBlur={()=>move.current.delete(key)}>{icon}</button>)}</div><p className="aurevia-scene-note">Drag to look · WASD / arrows to walk</p></>}</div>;
 }

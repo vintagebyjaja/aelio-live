@@ -1,0 +1,206 @@
+[
+  {
+    "width": 320,
+    "theme": "og-dark",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 320,
+    "theme": "og-light",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 320,
+    "theme": "ocean-fresh",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 320,
+    "theme": "chocolate-cream",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 375,
+    "theme": "og-dark",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 375,
+    "theme": "og-light",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 375,
+    "theme": "ocean-fresh",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 375,
+    "theme": "chocolate-cream",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 390,
+    "theme": "og-dark",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 390,
+    "theme": "og-light",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 390,
+    "theme": "ocean-fresh",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 390,
+    "theme": "chocolate-cream",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 430,
+    "theme": "og-dark",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 430,
+    "theme": "og-light",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 430,
+    "theme": "ocean-fresh",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 430,
+    "theme": "chocolate-cream",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 480,
+    "innerHeight": 480
+  },
+  {
+    "width": 1440,
+    "theme": "og-dark",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 900,
+    "innerHeight": 900
+  },
+  {
+    "width": 1440,
+    "theme": "og-light",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 900,
+    "innerHeight": 900
+  },
+  {
+    "width": 1440,
+    "theme": "ocean-fresh",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 900,
+    "innerHeight": 900
+  },
+  {
+    "width": 1440,
+    "theme": "chocolate-cream",
+    "overflow": false,
+    "bodyOverflow": false,
+    "composerVisible": true,
+    "zoom": 1,
+    "shellHeight": 900,
+    "innerHeight": 900
+  },
+  {
+    "iOS_Safari": "Physical iPhone unavailable; Chromium viewport/short-height checks do not establish iOS keyboard or pinch behavior.",
+    "WebKit_binary_present": false
+  }
+]

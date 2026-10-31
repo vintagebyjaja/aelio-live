@@ -1,3 +1,15 @@
+## AELIO 1.0.14 main promotion approved — 2026-10-31
+
+The owner explicitly requested deploying the reviewed combined update through main Git. Push this reviewed delta to AELIO main so the existing Git-triggered deployment can run. Do not push remote migration or change PATHD. No production SQL, provider activation, secrets, pricing or role/settings changes are needed or authorized. Local checks passed; physical iOS Safari, live-provider behavior and hosted deployment remain unverified until checked. AUREVIA remains a code-authored benchmark awaiting further visual refinement, not full reference-level restoration. This approval supersedes local-only notes for this reviewed delta only.
+
+---
+
+## AELIO 1.0.14 — combined local review only — 2026-10-31
+
+Latest approved main is acfb35e (official logo; owner subsequently approved main). New AUREVIA Orb Plaza/office, Dream Team/mobile, missed unified-navigation brief and marketing Explore changes are authorized locally on migration only. Do not push even migration, merge main, deploy, apply SQL or change provider/pricing/role/settings/secrets without explicit approval. PATHD is unchanged. Keep actual rendered benchmarks separate from approved 2D references; no full world fidelity or physical iOS/live-provider verification is claimed. See docs/releases/AELIO_v1.0.14_REVIEW.md for implementation, checks, limitations and remaining assets. New generated wallpapers are review-pending chat backgrounds only, never AUREVIA world substitutes.
+
+---
+
 ## Logo migration push approved — 2026-10-31
 
 The owner approved pushing the reviewed official-logo update to migration. Main merge and manual deployment remain unauthorized. Earlier local-only notes describe the review stage.

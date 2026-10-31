@@ -1,0 +1,37 @@
+# AELIO 1.0.14 — combined local migration review
+
+Base: approved main `acfb35e`. Current work is local on migration. No push (including migration), merge, deployment, production SQL, secrets, provider activation, pricing, role changes or PATHD changes are authorized. The owner explicitly included the attached Dream Team/mobile brief and subsequently clarified that the earlier unified-navigation brief must also be implemented. Both are in scope, alongside the AUREVIA benchmark and marketing Explore update.
+
+## Result
+
+- One shared navigation component for AELIO and Dreambox, in this exact order: Chats, Companions, Dream Team, Echo, Library, Groove Guide, VYBR8, More. The same component appears in the mobile drawer. Chats retains the active workspace; companions use the existing directory; Dream Team opens the existing six-agent thread. The upper-left three-workspace switcher, collapsible/resizable inbox, Core 8, custom groups and secondary tools remain. Studio is absent from ordinary navigation; existing server/RLS/MFA guards are unchanged.
+- Original Groove Guide and VYBR8 PNGs copied byte-for-byte from the supplied ZIP, with contained sizing and no filters. Real HTTPS destinations open in a new tab with noopener/noreferrer. No embeds, shared-auth claims or remote actions. Link destinations/attributes verified in the browser; external site availability was not checked.
+- Dream Team uses separate server provider calls and structured agent identity for each message; ranking invites multiple relevant perspectives, explicit addressing stays scoped, prior independent contributions enter the next speaker’s context. Brain bridge now follows the same turn-context behavior. Streaming UI preserves agent IDs and timestamps. The server rejects unknown structured speakers and explicitly name-labelled replies attributed to another participant; it never splits a generated transcript into manufactured speakers. Existing atomic commit writes distinct message rows. Existing histories are untouched and no schema migration is introduced.
+- App height follows the visual viewport at normal scale; safe areas, 16px mobile form controls, constrained grid children and scroll-contained text/code keep Send visible. Browser accessibility zoom remains enabled. Photos stay in conversation areas; directories/navigation/settings use readable surfaces. Compact bubbles preserve official portraits and speaker names. Embedded DreamBox gets matching width/composer constraints.
+- Image viewer supports two-finger zoom/pan, keyboard pan, zoom/reset controls and closing back into chat. Library uploads use the same viewer. Existing download/edit/generation access and private file authorization are retained.
+- The marketing `/aelio/` Explore cards retain every destination. Main Pal reuses the existing golden Orb scene; Dream Spaces uses the existing architectural workspace; Agent Team combines the approved environment with official companion portraits; Create combines an existing studio image with dimensional creative/software artwork. Readability is concentrated below the artwork using local gradients and explicit light text. The approved marketing homepage and official cloud logo are preserved.
+- Existing “Basketball Court” and “Sunset & Beaches” choices were incorrectly mapped to generic site screenshots. They now use newly generated, review-pending 2D chat wallpapers depicting those settings. Default AELIO chat uses the existing clean architectural image instead of a screenshot of a whole website. These are chat backgrounds only, never substitutes for the AUREVIA world.
+
+## AUREVIA benchmark and honest limits
+
+Orb Plaza and the Principal’s Office share one source geometry/material/light/coordinate system. The pass adds an inland terraced coastal district, ivory/champagne architectural kit, turquoise shaded ocean, cascades, atmosphere, room geometry with wraparound arch glazing, furniture and a restrained decorative hologram. Cinematic and walking modes use the same world; the short skippable/reduced-motion entrance remains. Other locations are not opened or represented as finished features. Original office selectors, transcripts, invitations, meeting records, Dream Team integration, private account gates and residence preferences remain.
+
+The original reference archive contains nine 2D PNG concepts and a README. The prototype ZIP contains HTML/CSS/JS and documentation, not GLB/GLTF meshes, PBR atlases, HDR lighting or rigged avatars. Original concepts, approved portraits and branding can be reused as references/UI identity; prototype localStorage messages/random outcomes are not imported into production data. See `docs/previews/restoration-v0.3/references/provenance.json` for untouched review references. Those images are not shipped as interactive world scenery.
+
+**This is a code-authored 3D benchmark, not full reference-level world restoration.** Architectural intricacy, natural cliff/vegetation detail, authored surface maps, cinematic lighting, furniture fidelity and mobile performance still need production art refinement and owner visual approval. Remaining assets: authored modular architecture/furniture GLBs with LODs; sculpted coastal terrain; coherent PBR atlases; optimized vegetation; production lighting/environment assets; future approved rigged companions. Do not expand University, Harbor, Court, residence interiors or other destinations until this benchmark is reviewed.
+
+## Validation
+
+- TypeScript, complete application build and public link/security checks.
+- 112 JavaScript tests, including actual server orchestration under mocked provider/Supabase transports: six calls, six correct participant records, earlier-turn context, and successful persistence event. Provider keys are fixtures, not live credentials.
+- Six private Brain bridge tests, including separate companion calls and earlier-turn context.
+- Local Chromium matrix: 320/375/390/430/1440px × all four themes. No unintended horizontal page overflow; Send stays visible at normal and shorter 480px height; navigation order/links, nine-circle grid, workspace context, drafts and distinct response attribution verified.
+- CDP two-finger touch events: image transform changes while page scale stays 1; closing restores the composer. Uploaded Library image uses the shared viewer.
+- Office continuity fixture checks: 1440 OG Dark, 390 OG Dark/Light; sending a shared transcript, Chat↔office continuity, meeting record, separate invitation thread, existing Dream Team, reload, walking controls, campus gates, anonymous office denial and WebGL fallback passed.
+- Actual software-WebGL desktop/mobile renders are shown beside original 2D references. Those are real renderer captures, not AI paintings or static reference backdrops.
+
+Physical iOS Safari/keyboard/pinch behavior and device FPS/thermal/memory are **unverified** (no physical device or installed WebKit browser here). Short-height Chromium checks are not iOS keyboard tests. Live AI semantic quality, hosted Auth/RLS/provider routing and production deployment are unverified. No changes were pushed/deployed and no production SQL ran.
+
+## Review
+
+Visual galleries: `docs/previews/combined-v1.0.14/index.html` and `docs/previews/restoration-v0.3/index.html`. The review diff is local: GitHub cannot display unpublished changes until the owner authorizes a push. Delivery ZIPs are immutable deltas with at most 100 entries each and SHA-256 inventories. Generated asset deletions are handled by the normal build; preserve all user data.

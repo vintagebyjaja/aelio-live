@@ -1,3 +1,9 @@
+## AELIO 1.0.14 — combined local review only — 2026-10-31
+
+Latest approved main is acfb35e (official logo; owner subsequently approved main). New AUREVIA Orb Plaza/office, Dream Team/mobile, missed unified-navigation brief and marketing Explore changes are authorized locally on migration only. Do not push even migration, merge main, deploy, apply SQL or change provider/pricing/role/settings/secrets without explicit approval. PATHD is unchanged. Keep actual rendered benchmarks separate from approved 2D references; no full world fidelity or physical iOS/live-provider verification is claimed. See docs/releases/AELIO_v1.0.14_REVIEW.md for implementation, checks, limitations and remaining assets. New generated wallpapers are review-pending chat backgrounds only, never AUREVIA world substitutes.
+
+---
+
 ## Official Dream Beyond logo — local migration review — 2026-10-31
 
 Use the supplied black-filled, silver-outline PNG unchanged (1742×903). Replace shared marketing footer, entrance and scene references; preserve footer structure/links and existing artwork proportions. The direct logo request does not authorize the separate sidebar proposal in the pasted attachment. Keep this update local on migration: no push, merge, deployment, SQL or production configuration changes. Prior main approval covers 926af81 only.

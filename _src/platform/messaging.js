@@ -1,3 +1,4 @@
+import {attributedAgent,assertOwnVoice} from './group-attribution.js';
 import {decorateMessages,decorateInbox} from "./messenger.js";
 import {imageIntent} from "../shared/image-intent.js";
 import {imageChat,imageCapabilityChat} from "./images.js";
@@ -615,6 +616,7 @@ async function generate(req, env, c, u, suggest = false) {
     agents.some((a) => !["aelio", "mila"].includes(a.kind))
   )
     fail(403, "pathd_agents", "PATHD offers AELIO and MILA only.");
+  const allParticipants=agents.map(a=>({...a,name:companion(a.kind)?.name||a.name}));
   if(c.permanent_key==="dream-team"&&(!d.target||d.target==="group")){agents=coordinateTeam(agents,input);}
   else if (c.participants.length>1&&(!d.target||d.target==="group")) {agents=coordinateGroup(agents,input);}
   else if (d.target && d.target !== "group") {
@@ -768,8 +770,9 @@ async function generate(req, env, c, u, suggest = false) {
             if (!line.trim()) continue;
             const ev = JSON.parse(line);
             if (ev.type === "delta") {
-              const filter=prefixFilters.get(ev.agent_id);if(filter)ev.text=filter(ev.text);
+              const speaker=attributedAgent(ev,agents);ev.speaker=speaker.name;const filter=prefixFilters.get(ev.agent_id);if(filter)ev.text=filter(ev.text);if(c.participants.length>1)assertOwnVoice((outputs.get(ev.agent_id)||'')+ev.text,speaker,allParticipants);
             }
+            if(ev.type==="tool_call"){const speaker=attributedAgent(ev,agents);ev.speaker=speaker.name;}
             if (ev.type === "complete") {
               for(const [agentId,filter] of prefixFilters){const text=filter('',true);if(text){outputs.set(agentId,(outputs.get(agentId)||'')+text);controller.enqueue(enc.encode(JSON.stringify({type:'delta',agent_id:agentId,speaker:agents.find(a=>a.id===agentId)?.name,text})+'\n'));}}
             }

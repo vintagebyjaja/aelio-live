@@ -1,0 +1,3 @@
+# AUREVIA benchmark v0.3 — awaiting review
+
+Open index.html for original 2D reference versus actual WebGL desktop/mobile comparisons. UI controls use synthetic accounts. The supplied city/office PNGs are copied unchanged into references/ and are not loaded into the runtime scene. Source archives contain no production 3D/PBR/HDR assets. Existing geometry is reused/refined; office and linked cliff architecture are new code-authored meshes. Full cinematic fidelity remains unachieved: authored terrain/architecture/furniture/vegetation/PBR/lighting/LOD assets need further work. Other destinations remain gated. See ../../releases/AELIO_v1.0.14_REVIEW.md for asset needs, real checks and limits.

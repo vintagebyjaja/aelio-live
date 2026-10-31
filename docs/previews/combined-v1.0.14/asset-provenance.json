@@ -1,0 +1,26 @@
+[
+  {
+    "asset": "public/assets/img/brand/groove-guide-official.png",
+    "provenance": "supplied original",
+    "sha256": "ebc3461b690f6a5612db8824f7e54004907f542b05514d0346c4b0ba002671d1"
+  },
+  {
+    "asset": "public/assets/img/brand/vybr8-official.png",
+    "provenance": "supplied original",
+    "sha256": "00f10eef2d0ae58e14b38fec7f5eee93ecf37b97e192f6bc86a1bb8135858862"
+  },
+  {
+    "asset": "public/assets/img/backgrounds/basketball-court.webp",
+    "provenance": "New image-generation output for a 2D chat wallpaper; not previously approved; WebP encoding only",
+    "source_output": "exec-d2462707-eaaf-465d-bda1-3cc83a3230de.png",
+    "sha256": "de4a20040355aac4cf0b671b8298170fc04343802c88d3360afde67e0d23dcc0",
+    "not_aurevia_world_asset": true
+  },
+  {
+    "asset": "public/assets/img/backgrounds/beach.webp",
+    "provenance": "New image-generation output for a 2D chat wallpaper; not previously approved; WebP encoding only",
+    "source_output": "exec-9e36b60b-38fb-4b27-a51e-ae127ceab1f4.png",
+    "sha256": "248c2aa8042d4abd6645653220d8d9af2f7b047b16e619312ac22801cbf7d011",
+    "not_aurevia_world_asset": true
+  }
+]

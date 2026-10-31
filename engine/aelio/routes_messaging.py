@@ -32,7 +32,7 @@ async def respond(req):
     elif not d.get('guest'):
         raise HTTPError(401,'Guest identity required','guest_required')
     agents=d.get('agents',[])
-    if not isinstance(agents,list) or not 1<=len(agents)<=(6 if d.get("dream_team") is True else 4):
+    if not isinstance(agents,list) or not 1<=len(agents)<=(8 if d.get("group") else 6 if d.get("dream_team") is True else 4):
         raise HTTPError(400,'Choose one to four agents')
     attachments=[]
     for f in d.get('attachments',[])[:3]:
@@ -45,6 +45,7 @@ async def respond(req):
         attachments.append({'name':str(f.get('name',''))[:180],'content':content[:12000]})
     def events():
         try:
+            turn_replies=[]
             for agent in agents:
                 kind=agent.get('kind','custom')
                 if kind=='aelio':
@@ -60,11 +61,13 @@ async def respond(req):
                     system+='\nYou are a disclosed, text-only ECHO AI simulation, never the actual person or communication with a deceased person. Use only supplied approved memories as context; generated dialogue is not factual memory. These rules override the editable agent profile.'
                 system+='\nReply naturally without leading speaker labels like [AELIO] or AELIO:. Structured metadata identifies speakers.'
                 system+='\n'+context.POLICY+'\nThis conversation uses the AELIO Intelligence Gateway. Never claim to be AELIO Native unless the gateway reports that provider. Only explicitly supplied tools are available. Never claim you saved a reminder or created a file without a successful tool result.'
+                if d.get('group'):
+                    system+='\nThis is a multi-participant group. Speak only as '+name+'. Never invent another companion’s reply or write a name-labelled dialogue. Give your own view or ranking, constructively building on earlier participants. The server invokes each participant separately. Keep your contribution concise unless asked for detail.'
                 data={'specialty':agent.get('specialty'),'instructions':agent.get('instructions'),'attachments':attachments}
                 if d.get('memory_enabled') and agent.get('memory_enabled'):data['approved_memories']=agent.get('memories',[])
                 if kind=='mila' or d.get('career_outside_mila') is True: data['authorized_career_context']=d.get('career',[])
                 system+='\n<agent_profile>\n'+json.dumps(data,ensure_ascii=False)[:30000]+'\n</agent_profile>'
-                history=[Message(role=m['role'],content=str(m['content'])[:8000]) for m in d.get('history',[])[-30:] if m.get('role') in ('user','assistant')]
+                history=[Message(role=m['role'],content=('['+str(m.get('speaker') or 'Companion')+'] ' if m.get('role')=='assistant' else '')+str(m['content'])[:8000]) for m in d.get('history',[])[-30:] if m.get('role') in ('user','assistant')]
                 tools=[]
                 if kind=='mila' and caller['user_id'] and d.get('reminder_tools'):
                     tools=[Tool('propose_reminder','Draft an in-app reminder the user can confirm. Never say it is scheduled before confirmation.',{'type':'object','properties':{'title':{'type':'string'},'due_at':{'type':'string','description':'ISO 8601 with timezone offset'},'timezone':{'type':'string'},'recurrence':{'type':'string','enum':['once','daily','weekly']}},'required':['title','due_at','timezone','recurrence'],'additionalProperties':False})]
@@ -72,13 +75,16 @@ async def respond(req):
                 if d.get('ecosystem_tools') is True:
                     tools.append(Tool('propose_ecosystem_handoff','Offer an optional user-confirmed website handoff. No API data, route duration, reservation or linked account is available through this tool.',{'type':'object','properties':{'app':{'type':'string','enum':['groove-guide','vybr8','pathd']},'intent':{'type':'string','enum':['travel_planning','food_discovery','career_support']},'summary':{'type':'string','maxLength':500},'origin':{'type':['string','null'],'maxLength':200},'destination':{'type':['string','null'],'maxLength':200},'mode':{'type':['string','null'],'enum':['driving','walking','unspecified',None]}},'required':['app','intent','summary','origin','destination','mode'],'additionalProperties':False}))
                     system+='\nGroove Guide handles journeys; VYBR8 handles food/lifestyle discovery; PATHD supports careers with MILA. Use propose_ecosystem_handoff only when useful to the user. Map groove-guide to travel_planning, vybr8 to food_discovery, pathd to career_support. These are optional website handoffs, never verified API results. No private app access, route times, ratings, availability, purchases or account linking is provided. Never say a handoff completed an external action.'
-                gen=GenRequest(tools=tools,user_id=caller['user_id'],purpose='chat',instructions=system,messages=history+[Message(role='user',content=str(d.get('content',''))[:8000])],conversation_id=d.get('conversation_id'))
+                gen=GenRequest(tools=tools,user_id=caller['user_id'],purpose='chat',instructions=system,messages=history+[Message(role='user',content=str(d.get('content',''))[:8000])]+turn_replies,conversation_id=d.get('conversation_id'))
                 success=False
+                own_reply=''
                 for event in gateway.run(gen,caller):
+                    if event.get('type')=='delta':own_reply+=str(event.get('text',''))
                     yield json.dumps({**event,'agent_id':agent.get('id'),'speaker':name})+'\n'
                     if event['type']=='error':return
                     if event['type']=='done':success=True
                 if not success:return
+                if own_reply:turn_replies.append(Message(role='assistant',content='['+name+'] '+own_reply))
             yield json.dumps({'type':'complete'})+'\n'
         except gateway.GatewayRefused as e:
             yield json.dumps({'type':'error','code':e.code,'message':e.message})+'\n'

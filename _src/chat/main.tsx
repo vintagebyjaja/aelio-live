@@ -1,3 +1,4 @@
+import {SharedNavigation} from "./SharedNavigation";
 import {ChatVoice} from "./ChatVoice";
 import {OfficialHub,MessagingInbox,GroupPortrait,AureviaPortal,AureviaEntry} from "./Messaging";
 import {NativeBrain,NativeNavigation} from "./NativeBrain";
@@ -44,13 +45,13 @@ const BACKGROUNDS = [
   "Custom Upload",
 ];
 const SCENES: Record<string, string> = {
-  "AELIO Original": "aelio-cinematic-home.webp",
+  "AELIO Original": "aelio-architecture-scene.webp",
   "Space & Galaxies": "aelio-scene-1.webp",
   "Nature & Waterfalls": "aelio-atmosphere-nature.webp",
   "City Skyline": "aelio-atmosphere-city.webp",
-  "Sunset & Beaches": "aelio-scene-3.webp",
+  "Sunset & Beaches": "backgrounds/beach.webp",
   "Sports Lounge": "aelio-atmosphere-studio.webp",
-  "Basketball Court": "aelio-atmosphere-studio.webp",
+  "Basketball Court": "backgrounds/basketball-court.webp",
   "Football Stadium": "aelio-atmosphere-city.webp",
   "Cigar Lounge": "aelio-atmosphere-studio.webp",
   "Executive Office": "aelio-architecture-scene.webp",
@@ -65,9 +66,9 @@ function App() {
   const generations=useRef<Record<string,AbortController>>({}),attempts=useRef<Record<string,any>>({}),followScroll=useRef(true),messageScroller=useRef<HTMLDivElement|null>(null);
   useEffect(()=>{
     let baseline=window.visualViewport?.height||window.innerHeight;
-    const detect=()=>{const height=window.visualViewport?.height||window.innerHeight;const editable=document.activeElement?.matches('input,textarea');if(!editable)baseline=Math.max(baseline,height);setKeyboardOpen(!!editable&&baseline-height>Math.max(120,baseline*.18));};
-    window.visualViewport?.addEventListener('resize',detect);window.addEventListener('resize',detect);document.addEventListener('focusin',detect);document.addEventListener('focusout',detect);
-    return()=>{window.visualViewport?.removeEventListener('resize',detect);window.removeEventListener('resize',detect);document.removeEventListener('focusin',detect);document.removeEventListener('focusout',detect);};
+    const detect=()=>{const height=window.visualViewport?.height||window.innerHeight;const editable=document.activeElement?.matches('input,textarea');if(!editable)baseline=Math.max(baseline,height);setKeyboardOpen(!!editable&&baseline-height>Math.max(120,baseline*.18));if((window.visualViewport?.scale||1)===1){document.documentElement.style.setProperty('--app-height',height+'px');document.documentElement.style.setProperty('--app-offset',(window.visualViewport?.offsetTop||0)+'px');}};
+    detect();window.visualViewport?.addEventListener('resize',detect);window.visualViewport?.addEventListener('scroll',detect);window.addEventListener('resize',detect);document.addEventListener('focusin',detect);document.addEventListener('focusout',detect);
+    return()=>{document.documentElement.style.removeProperty('--app-height');document.documentElement.style.removeProperty('--app-offset');window.visualViewport?.removeEventListener('resize',detect);window.visualViewport?.removeEventListener('scroll',detect);window.removeEventListener('resize',detect);document.removeEventListener('focusin',detect);document.removeEventListener('focusout',detect);};
   },[]);
   const [homeFiles, setHomeFiles] = useState<any[]>([]),
     [homeSending, setHomeSending] = useState(false),
@@ -115,7 +116,7 @@ function App() {
       location.pathname.startsWith("/account") ||
         location.pathname.startsWith("/auth")
         ? "account"
-        : ['library','brain','echo','allowance','aurevia','core','inbox','native'].includes(location.hash.slice(1))?location.hash.slice(1):!location.hash&&!new URLSearchParams(location.search).has('companion')?'core':"",
+        : location.hash==='#workspace-inbox'?'inbox':location.hash==='#companions'?'core':['library','brain','echo','allowance','aurevia','core','inbox','native'].includes(location.hash.slice(1))?location.hash.slice(1):!location.hash&&!new URLSearchParams(location.search).has('companion')?'core':"",
     ),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(""),
@@ -454,6 +455,8 @@ function App() {
                   id: key,
                   role: "assistant",
                   speaker: ev.speaker,
+                  agent_id: ev.agent_id,
+                  created_at: new Date().toISOString(),
                   content: streams[key],
                   request_id:requestId,local:true,
                 },
@@ -512,6 +515,8 @@ function App() {
     if(view==='native')setEnvironment('native');
     if(view==='core')setEnvironment('aelio');
     if(view==='inbox')setEnvironment('dreambox');
+    if(view==='workspace-inbox'){setDrawer(false);setHome(false);setPanel('inbox');if(record)history.pushState({aelioView:'workspace-inbox',aelioEnvironment:environment},'','#workspace-inbox');return;}
+    if(view==='companions'){setDrawer(false);setHome(false);setPanel('core');if(record)history.pushState({aelioView:'companions',aelioEnvironment:environment},'','#companions');return;}
     setDrawer(false);
     if (view === "home") {
       setHome(true);
@@ -529,6 +534,7 @@ function App() {
     const restore = () => {
       const state = history.state;
       const view = state?.aelioView || "home";
+      if(["aelio","dreambox","native"].includes(state?.aelioEnvironment))setEnvironment(state.aelioEnvironment);
       if (view === "chats" && state?.thread) {
         const thread = threads.find((t) => t.id === state.thread);
         if (thread) {
@@ -549,6 +555,8 @@ function App() {
           "native",
           "core",
           "inbox",
+          "workspace-inbox",
+          "companions",
           "echo",
           "library",
           "allowance",
@@ -560,7 +568,7 @@ function App() {
       )
         navigate(view, false);
     };
-    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo','aurevia','native','core','inbox'].includes(view))navigate(view,false);};
+    const fromHash=()=>{const view=location.hash.slice(1);if(['library','allowance','brain','echo','aurevia','native','core','inbox','workspace-inbox','companions'].includes(view))navigate(view,false);};
     addEventListener("popstate", restore);
     addEventListener("hashchange",fromHash);
     return () => {removeEventListener("popstate", restore);removeEventListener("hashchange",fromHash);};
@@ -758,8 +766,9 @@ function App() {
           onClick={() => setDrawer(false)}
         />
       )}
-      <nav className="environment-rail" aria-label="Environment navigation">{[['aelio','AELIO','◉'],['dreambox','Dreambox','☏'],['native','Native Brain','◇']].map(([id,label,icon])=><button key={id} aria-label={label} aria-current={environment===id?'page':undefined} onClick={()=>workspace(id)}><span>{icon}</span><small>{label}</small></button>)}<button onClick={()=>navigate('discover')}>Discover</button><button onClick={()=>navigate('library')}>Library</button><button onClick={()=>setWorldPanel(true)}>AUREVIA</button><button onClick={()=>navigate('appearance')}>Themes</button></nav>
+      <div className="environment-rail"><SharedNavigation panel={panel} environment={environment} onNavigate={navigate} onChats={()=>navigate("workspace-inbox")} onDreamTeam={()=>{const t=threads.find(t=>t.permanent_key==="dream-team");if(t)select(t);else if(!session)navigate("account");else setErr("The Dream Team thread is not available. Reload your conversations.");}} onAurevia={enterAurevia} onWorkspace={workspace}/></div>
       <aside id="aelio-sidebar" className={'sidebar '+(drawer?'open':'')}>
+       {environment!=='native'&&<div className="mobile-workspace-navigation"><SharedNavigation panel={panel} environment={environment} onNavigate={navigate} onChats={()=>navigate("workspace-inbox")} onDreamTeam={()=>{const t=threads.find(t=>t.permanent_key==="dream-team");if(t)select(t);else if(!session)navigate("account");else setErr("The Dream Team thread is not available. Reload your conversations.");}} onAurevia={enterAurevia} onWorkspace={workspace}/></div>}
        {environment==='native'?<NativeNavigation section={nativeSection} onSection={(id:string)=>{setNativeSection(id);navigate('native');setDrawer(false);}} onAurevia={enterAurevia} founder={account?.role==='founder'}/>:<MessagingInbox compact agents={agents} threads={listedThreads} current={cur} environment={environment} query={search} onQuery={setSearch} onOpen={environment==='dreambox'?openAdditionalCompanion:openCompanion} onSelect={select} onNavigate={navigate} onNew={()=>{setEnvironment('dreambox');navigate('new');}} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/>}
       </aside>
       {!collapsed&&<div className="sidebar-resizer" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" aria-valuemin={220} aria-valuemax={420} aria-valuenow={sidebarWidth} tabIndex={0} onDoubleClick={()=>resizeSidebar(245,true)} onKeyDown={(e:any)=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();resizeSidebar(e.key==='Home'?220:e.key==='End'?420:sidebarSize.current+(e.key==='ArrowRight'?16:-16),true);}}} onPointerDown={(e:any)=>{e.preventDefault();draggingSidebar.current={x:e.clientX,width:sidebarSize.current};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={(e:any)=>{if(draggingSidebar.current)resizeSidebar(draggingSidebar.current.width+e.clientX-draggingSidebar.current.x);}} onPointerUp={finishSidebarResize} onLostPointerCapture={finishSidebarResize}/>}
@@ -780,7 +789,7 @@ function App() {
             <button onClick={reload}>Retry account connection</button>
           </div>
         )}
-        {panel==='core'?<OfficialHub agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCore={coreEight} onAurevia={enterAurevia} onDiscover={()=>navigate('discover')} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='inbox'?<div className="full-inbox"><MessagingInbox agents={agents} threads={listedThreads} current={cur} environment="dreambox" query={search} onQuery={setSearch} onOpen={openAdditionalCompanion} onSelect={select} onNavigate={navigate} onNew={()=>navigate('new')} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/></div>:panel==='native'?<NativeBrain key={session?.user?.id||'guest'} section={nativeSection} signedIn={!!session} onSignIn={()=>navigate('account')} onAurevia={enterAurevia} onChat={()=>{setEnvironment('dreambox');if(cur)select(cur,false,true);else navigate('inbox');}} onPlans={()=>navigate('brain')} appearance={nativeAppearance} onAppearance={(value:string)=>{setNativeAppearance(value);try{localStorage.setItem('aelio.native.appearance',value);}catch{}}}/>:panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onReturn={()=>workspace(aureviaFrom)} returnLabel={aureviaFrom==='native'?'Native Brain':aureviaFrom==='dreambox'?'Dreambox':'AELIO'} onThread={(t:any)=>{if(t){select(t,false,true);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setEnvironment(aureviaFrom);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onEdit={(file:any)=>{const t=threads.find(t=>t.id===file.conversation_id);if(t){select(t);setImageSource(s=>({...s,[t.id]:file.id}));}else setErr('Open a conversation and attach this saved image to edit it.');}}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
+        {panel==='core'?<OfficialHub agents={agents} threads={threads} onOpen={openCompanion} onSelect={select} onCore={coreEight} onAurevia={enterAurevia} onDiscover={()=>navigate('discover')} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel==='inbox'?<div className="full-inbox"><MessagingInbox agents={agents} threads={listedThreads} current={cur} environment={environment} query={search} onQuery={setSearch} onOpen={environment==='dreambox'?openAdditionalCompanion:openCompanion} onSelect={select} onNavigate={navigate} onNew={()=>navigate('new')} onCore={coreEight} onAurevia={enterAurevia} onWorkspace={workspace}/></div>:panel==='native'?<NativeBrain key={session?.user?.id||'guest'} section={nativeSection} signedIn={!!session} onSignIn={()=>navigate('account')} onAurevia={enterAurevia} onChat={()=>{setEnvironment('dreambox');if(cur)select(cur,false,true);else navigate('inbox');}} onPlans={()=>navigate('brain')} appearance={nativeAppearance} onAppearance={(value:string)=>{setNativeAppearance(value);try{localStorage.setItem('aelio.native.appearance',value);}catch{}}}/>:panel==='aurevia'?<Suspense fallback={<AelioLoading/>}><Aurevia key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} conversation={cur} messages={messages[cur?.id]||[]} draft={drafts[cur?.id]||''} onDraft={(text:string)=>{if(cur)setDrafts(d=>({...d,[cur.id]:text}));}} onSend={()=>send(false,{conversation:cur,content:drafts[cur?.id]||'',files:[]})} busy={busy[cur?.id]} consent={consent} onConsent={setConsent} onReturn={()=>workspace(aureviaFrom)} returnLabel={aureviaFrom==='native'?'Native Brain':aureviaFrom==='dreambox'?'Dreambox':'AELIO'} onThread={(t:any)=>{if(t){select(t,false,true);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onChat={()=>{if(cur)select(cur);}} onGroup={async(ids:string[])=>{const t=await newThread(ids,'AUREVIA · Office meeting');if(t){setEnvironment(aureviaFrom);setPanel('aurevia');history.replaceState({aelioView:'aurevia'},'', '#aurevia');}}} onBrain={()=>navigate('brain')}/></Suspense>:panel==='library'?<ImageLibrary key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onEdit={(file:any)=>{const t=threads.find(t=>t.id===file.conversation_id);if(t){select(t);setImageSource(s=>({...s,[t.id]:file.id}));}else setErr('Open a conversation and attach this saved image to edit it.');}}/>:panel==='allowance'?<AllowancePanel key={session?.user?.id||'guest'} signedIn={!!session} onSignIn={()=>navigate('account')}/>:panel === "brain" ? <BrainWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} onNavigate={navigate}/> : panel === "echo" ? <EchoWorkspace key={session?.user?.id||"guest"} signedIn={!!session} onSignIn={()=>navigate('account')} agents={agents} threads={threads} onOpen={select} onChanged={refreshWorkspaces}/> : panel === "history" ? (
           <section className="panel">
             <p className="workspace-eyebrow">ROOM FOR EVERY CONVERSATION</p>
             <h1>Your conversations</h1>

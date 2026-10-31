@@ -18,8 +18,10 @@ export function coordinateTeam(agents,input){
  if(/\beverybody\b|\beveryone\b|\ball six\b|\ball of you\b/i.test(message))return agents;
  const keywords={naomi:/tech|code|build|software|debug|computer|app\b|product|innovation/g,angelo:/friend|hang|funny|joke|casual|relationship/g,oliver:/write|email|letter|professional|explain|debate/g,simone:/business|confidence|pitch|brand|strategy|leadership/g,chloe:/creative|brainstorm|ideas|design|motivat|inspir/g,reggie:/advice|perspective|life|decis|plan|goal|worry|stuck/g};
  const ranked=agents.map((a,i)=>({agent:a,score:(message.match(keywords[a.kind]||/$^/g)||[]).length,index:i})).sort((a,b)=>b.score-a.score||a.index-b.index);
- const many=/brainstorm|discuss|perspectives|plan together|team ideas/i.test(message);
+ const ranking=/\brank(?:ing)?\b|prioriti[sz]e|compare.*ideas|which.*(?:best|idea)/i.test(message);
+ const many=ranking||/brainstorm|discuss|perspectives|plan together|team ideas/i.test(message);
  const selected=ranked.filter(a=>a.score>0).slice(0,many?3:2).map(a=>a.agent);
+ if(ranking){for(const kind of ['reggie','simone','naomi']){const a=agents.find(a=>a.kind===kind);if(a&&!selected.includes(a)&&selected.length<3)selected.push(a);}}
  return selected.length?selected:agents.filter(a=>['angelo',...(many?['reggie']:[])].includes(a.kind)).slice(0,many?2:1);
 }
 

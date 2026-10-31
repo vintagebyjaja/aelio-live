@@ -1,0 +1,16 @@
+[
+  {
+    "source_archive": "AUREVIA_Approved_Visual_References.zip",
+    "source_entry": "World/Aurevia_City_Master_Reference.png",
+    "review_file": "approved-city.png",
+    "sha256": "49c79b97b1a6df4f713d2e8202c57b7251da0f9c6ed859946cc2782773f10567",
+    "role": "Approved 2D direction; never used as an interactive world backdrop"
+  },
+  {
+    "source_archive": "AUREVIA_Approved_Visual_References.zip",
+    "source_entry": "Residence/Principal_Office_Holographic_Concept.png",
+    "review_file": "approved-office.png",
+    "sha256": "c6b7b06fbc11ad74a93e3cdba187fafed5f90b864bc9e1fa90010ba8a807682a",
+    "role": "Approved 2D direction; never used as an interactive world backdrop"
+  }
+]

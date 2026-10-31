@@ -199,7 +199,11 @@ function sectionBody(p) {
       ["/dream-beyond/dream-spaces/", "Dream Spaces", "Dedicated workspaces for every project.", "holo"], ["/dream-beyond/agent-team/", "Agent Team", "Multiple perspectives, one conversation.", "campus"], ["/create/", "Create", "Turn ideas into reality.", "wireframe"]];
     const imgs = [1, 2, 3, 4, 5, 6].map(k => `<img src="/assets/img/companions/${["naomi", "angelo", "oliver", "simone", "chloe", "reggie"][k-1]}.webp" alt="" loading="lazy">`).join("");
     return `<section class="band"><div class="wrap"><div class="sec-h"><h2 class="h2">Experiences built <span class="gold">around you.</span></h2><p>Each part of AELIO has its own job. Find a conversation, explore an idea and choose your next step.</p></div>
-      <div class="bento">${xp.map(([h, t, d, v], k) => `<a class="xp xp-${k + 1}" href="${h}">${v === "personas" ? `<div class="persona-wall">${imgs}</div>` : `<div class="xp-vis">${visual(v)}</div>`}<small>${k ? "Explore" : "Start here"}</small><b>${t}</b><span>${d}</span></a>`).join("")}</div>
+      <div class="bento explore-cinematic">${xp.map(([h, t, d, v], k) => {
+        const artwork=['/assets/dream/og-dark-waterfront.webp','/assets/img/env/intelligence-sphere.webp','/assets/dream/business.webp','/assets/img/aelio-architecture-scene.webp','/assets/dream/new-ideas.webp'][k];
+        const detail=k===0?`<div class="persona-wall">${imgs}</div>`:k===3?`<div class="explore-collaborators" aria-hidden="true">${['naomi','oliver','chloe'].map(name=>`<img src="/assets/img/companions/${name}.webp" alt="">`).join('')}</div>`:k===4?`<div class="explore-studio" aria-hidden="true"><div class="studio-model"><i></i><i></i><i></i></div><div class="studio-code"><em>CREATE / STUDIO</em><code>&lt;imagine&gt;<br>&nbsp; build(yourIdea)<br>&lt;/imagine&gt;</code></div></div>`:'';
+        return `<a class="xp xp-${k+1}" href="${h}"><img class="explore-art" src="${artwork}" alt="" loading="lazy" width="800" height="600">${detail}<div class="explore-copy"><small>${k?'Explore':'Start here'}</small><b>${t}</b><span>${d}</span><span class="explore-link">${k?'Explore '+t:'Meet your companions'} <i aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 18 18 6M6 6h12v12"/></svg></i></span></div></a>`;
+      }).join("")}</div>
       ${rows(subs.filter(h => !xp.some(x => x[0] === h)))}</div></section>`;
   }
   if (p.nav === "dream") {

@@ -24,6 +24,8 @@ const paths: Record<string, string[]> = {
   send: ["M12 20V4m-7 7 7-7 7 7"],
   chat: ["M21 11a9 9 0 0 1-13 8l-6 3 2-6A9 9 0 1 1 21 11Z"],
   bulb: ["M9 18h6M9 21h6", "M8 15a7 7 0 1 1 8 0l-1 3H9l-1-3Z"],
+  echo: ["M8 8a6 6 0 0 1 8 8", "M5 5a10 10 0 0 1 14 14", "M11 11a2 2 0 0 1 2 2"],
+  library: ["M3 4h6v16H3zM11 4h4v16h-4zM17 5l3-1 4 15-3 1Z"],
   more: ["M5 12h.01M12 12h.01M19 12h.01"],
   arrow: ["M4 12h16m-6-6 6 6-6 6"],
   close: ["m5 5 14 14M19 5 5 19"],

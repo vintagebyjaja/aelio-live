@@ -1,3 +1,4 @@
+import {ZoomableImage} from "./ChatImages";
 import React, { useEffect, useRef, useState } from "react";
 import { call, fileURL } from "./client";
 import { friendly } from "./Experience";
@@ -239,7 +240,7 @@ export function ImageLibrary({
       )}
       <dialog
         ref={dialog}
-        className="image-preview"
+        className="image-preview chat-image-viewer"
         onCancel={close}
         onClick={(e: any) => {
           if (e.target === dialog.current) close();
@@ -251,7 +252,7 @@ export function ImageLibrary({
               ×
             </button>
             <h2>{preview.name}</h2>
-            <img src={preview.url} alt={preview.name} />
+            <ZoomableImage key={preview.id} url={preview.url} alt={preview.name}/>
             <button onClick={() => download(preview)}>Download image</button>
           </>
         )}

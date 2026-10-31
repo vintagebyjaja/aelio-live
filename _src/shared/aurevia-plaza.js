@@ -1,9 +1,9 @@
 // Shared spatial contract. Cinematic cameras and exploration use one scene, not image swaps.
 export const PLAZA_VIEWS=Object.freeze({
- arrival:{label:'Arrival',position:[9,3.2,16],look:[0,4,-3]},
+ arrival:{label:'Arrival',position:[-11,4,20],look:[1,5,-19]},
  orb:{label:'The Orb',position:[5.8,3.5,9],look:[0,4.3,0]},
  arcade:{label:'The Arcade',position:[-12,2.1,13],look:[-3,4,-18]},
- coast:{label:'Coastal panorama',position:[51,24,62],look:[0,1,-7]},
+ coast:{label:'Coastal panorama',position:[-59,26,69],look:[8,7,-36]},
 });
 export const PLAZA_OBSTACLES=Object.freeze([
  [-4.6,4.6,-4.6,4.6],
